@@ -1,0 +1,40 @@
+
+Bootstrap: docker
+From: nvcr.io/nvidia/nvhpc:24.9-devel-cuda12.6-ubuntu24.04
+
+%post
+    apt-get update -y
+    apt-get install -y \
+        wget \
+        python3 \
+        python3-pip \
+        python3-dev \
+        build-essential \
+        git
+
+    # Install Python packages for energy monitoring
+    pip3 install pynvml
+
+    # Install CMake 3.28.1 (matching your local version)
+    wget https://github.com/Kitware/CMake/releases/download/v3.28.1/cmake-3.28.1-linux-x86_64.sh
+    sh cmake-3.28.1-linux-x86_64.sh --prefix=/usr/local --skip-license
+    rm cmake-3.28.1-linux-x86_64.sh
+
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+%environment
+    export NV_BASE=/opt/nvidia/hpc_sdk/Linux_x86_64/24.9
+    export CUDA_HOME=$NV_BASE/cuda/12.6
+    export NVSHMEM_HOME=$NV_BASE/comm_libs/12.6/nvshmem
+
+    # Pre-emptively fix the NVSHMEM bootstrap crash
+    export NVSHMEM_BOOTSTRAP=MPI
+    export NVSHMEM_BOOTSTRAP_PLUGIN=nvshmem_bootstrap_mpi.so
+
+    export PATH=$NV_BASE/compilers/bin:$CUDA_HOME/bin:$PATH
+    # Placing container paths first helps avoid host library version conflicts
+    export LD_LIBRARY_PATH=$NVSHMEM_HOME/lib:$CUDA_HOME/lib64:$LD_LIBRARY_PATH
+
+%runscript
+    exec "$@"
