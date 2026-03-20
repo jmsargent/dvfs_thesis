@@ -1,0 +1,9 @@
+.broker/
+.gsync_broker.lock
+.gsync_broker_state.json
+.gsync_worker.lock
+.gsync_worker_state.json
+
+# save results in here
+# should not be sync problems with git if results are kept
+results
