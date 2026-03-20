@@ -2,12 +2,16 @@
   "git_sha": "7986ea9688d27197fbdfbc46b4f8297df9224e9f",
   "id": "003-test-hello-world",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/003-test-hello-world",
-  "last_update_at": "2026-03-20T16:46:26+01:00",
+  "last_update_at": "2026-03-20T16:46:31+01:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/003-test-hello-world/slurm-134148.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/003-test-hello-world/slurm-134148.out",
   "queued_at": "2026-03-20T16:46:20+01:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/003-test-hello-world/run.sbatch",
+  "slurm_info": {
+    "raw_state": "PENDING",
+    "source": "squeue"
+  },
   "slurm_job_id": 134148,
-  "state": "SUBMITTED",
+  "state": "PENDING",
   "submitted_at": "2026-03-20T16:46:22+01:00"
 }
