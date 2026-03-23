@@ -1,0 +1,9 @@
+{
+  "git_sha": "03809081bcbc8d7e44f76d56bd31e3cb035513fe",
+  "id": "023-experiment-collapse-profiling-outputs-into-slurm-output",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/023-experiment-collapse-profiling-outputs-into-slurm-output",
+  "last_update_at": "2026-03-23T23:25:34+01:00",
+  "queued_at": "2026-03-23T23:25:34+01:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/023-experiment-collapse-profiling-outputs-into-slurm-output/run.sbatch",
+  "state": "QUEUED"
+}
