@@ -2,3 +2,16 @@
 /bin/bash: line 7: sudo: command not found
 /bin/bash: line 11: python3: command not found
 /bin/bash: line 11: python3: command not found
+/bin/bash: line 19: kill: (3395862) - No such process
+/bin/bash: line 1: sudo: command not found
+--------------------------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun detected that one or more processes exited with non-zero status, thus causing
+the job to be terminated. The first process to do so was:
+
+  Process name: [[2582,1],1]
+  Exit code:    1
+--------------------------------------------------------------------------
