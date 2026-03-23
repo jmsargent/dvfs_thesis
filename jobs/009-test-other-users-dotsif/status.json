@@ -2,12 +2,21 @@
   "git_sha": "73bcd5081def5b557eb1bbecc6bee24ec96b6b16",
   "id": "009-test-other-users-dotsif",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/009-test-other-users-dotsif",
-  "last_update_at": "2026-03-23T15:04:31+01:00",
+  "last_update_at": "2026-03-23T15:04:33+01:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/009-test-other-users-dotsif/slurm-137363.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/009-test-other-users-dotsif/slurm-137363.out",
   "queued_at": "2026-03-23T15:04:26+01:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/009-test-other-users-dotsif/run.sbatch",
+  "slurm_info": {
+    "ElapsedRaw": "2",
+    "ExitCode": "0:0",
+    "JobIDRaw": "137363",
+    "MaxRSS": "",
+    "State": "COMPLETED",
+    "raw_state": "COMPLETED",
+    "source": "sacct"
+  },
   "slurm_job_id": 137363,
-  "state": "SUBMITTED",
+  "state": "COMPLETED",
   "submitted_at": "2026-03-23T15:04:27+01:00"
 }
