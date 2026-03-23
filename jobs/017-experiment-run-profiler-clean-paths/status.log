@@ -1,0 +1,7 @@
+[2026-03-23 22:12:14] QUEUED git_sha=7ef7fa8d6521e4b33d92bcd81816eb650174bdc6
+[2026-03-23 22:12:20] SUBMIT_FAILED: Command failed (rc=1): sbatch --uid=chjing --job-name=017-experiment-run-profiler-clean-paths --output=/data/users/chjing/dvfs_thesis/jobs/017-experiment-run-profiler-clean-paths/slurm-%j.out --error=/data/users/chjing/dvfs_thesis/jobs/017-experiment-run-profiler-clean-paths/slurm-%j.err /data/users/chjing/dvfs_thesis/jobs/017-experiment-run-profiler-clean-paths/run.sbatch
+cwd=/data/users/chjing/dvfs_thesis
+stdout=
+stderr=sbatch: error: This does not look like a batch script.  The first
+sbatch: error: line must start with #! followed by the path to an interpreter.
+sbatch: error: For instance: #!/bin/sh
