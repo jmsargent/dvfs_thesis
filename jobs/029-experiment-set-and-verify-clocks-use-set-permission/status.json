@@ -2,16 +2,21 @@
   "git_sha": "25eba45c723306f8178ecafb2df8c88e1963c217",
   "id": "029-experiment-set-and-verify-clocks-use-set-permission",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/029-experiment-set-and-verify-clocks-use-set-permission",
-  "last_update_at": "2026-03-24T00:12:00+01:00",
+  "last_update_at": "2026-03-24T00:12:30+01:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/029-experiment-set-and-verify-clocks-use-set-permission/slurm-137487.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/029-experiment-set-and-verify-clocks-use-set-permission/slurm-137487.out",
   "queued_at": "2026-03-24T00:11:58+01:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/029-experiment-set-and-verify-clocks-use-set-permission/run.sbatch",
   "slurm_info": {
-    "raw_state": "PENDING",
-    "source": "squeue"
+    "ElapsedRaw": "1",
+    "ExitCode": "4:0",
+    "JobIDRaw": "137487",
+    "MaxRSS": "",
+    "State": "FAILED",
+    "raw_state": "FAILED",
+    "source": "sacct"
   },
   "slurm_job_id": 137487,
-  "state": "PENDING",
+  "state": "FAILED",
   "submitted_at": "2026-03-24T00:12:00+01:00"
 }
