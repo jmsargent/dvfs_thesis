@@ -8,4 +8,7 @@ INFO:    Inserting Apptainer configuration...
 INFO:    Running post scriptlet
 [91mERROR  : Could not write info to setgroups: Permission denied
 [0m[91mERROR  : Error while waiting event for user namespace mappings: no event received
-[0m
+[0mINFO:    If error was from fakeroot, try --ignore-fakeroot-command and
+INFO:      maybe use fakeroot inside the %post section as described at
+INFO:      https://apptainer.org/docs/user/latest/fakeroot.html#fakeroot-inside-def
+FATAL:   While performing build: while running engine: while running %post section: exit status 1
