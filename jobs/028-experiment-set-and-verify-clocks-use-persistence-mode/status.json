@@ -1,0 +1,17 @@
+{
+  "git_sha": "b5683e5a6f20082ddf41dffceff3c2e579a48271",
+  "id": "028-experiment-set-and-verify-clocks-use-persistence-mode",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/028-experiment-set-and-verify-clocks-use-persistence-mode",
+  "last_update_at": "2026-03-24T00:09:00+01:00",
+  "log_err": "/data/users/chjing/dvfs_thesis/jobs/028-experiment-set-and-verify-clocks-use-persistence-mode/slurm-137486.err",
+  "log_out": "/data/users/chjing/dvfs_thesis/jobs/028-experiment-set-and-verify-clocks-use-persistence-mode/slurm-137486.out",
+  "queued_at": "2026-03-24T00:08:59+01:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/028-experiment-set-and-verify-clocks-use-persistence-mode/run.sbatch",
+  "slurm_info": {
+    "raw_state": "PENDING",
+    "source": "squeue"
+  },
+  "slurm_job_id": 137486,
+  "state": "PENDING",
+  "submitted_at": "2026-03-24T00:09:00+01:00"
+}
