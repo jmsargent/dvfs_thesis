@@ -2,16 +2,21 @@
   "git_sha": "18e4a8617921aa5d9aea0c4b2c6bef9590e4f350",
   "id": "025-experiment-check-available-clocks",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/025-experiment-check-available-clocks",
-  "last_update_at": "2026-03-23T23:46:59+01:00",
+  "last_update_at": "2026-03-23T23:47:29+01:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/025-experiment-check-available-clocks/slurm-137480.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/025-experiment-check-available-clocks/slurm-137480.out",
   "queued_at": "2026-03-23T23:46:56+01:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/025-experiment-check-available-clocks/run.sbatch",
   "slurm_info": {
-    "raw_state": "PENDING",
-    "source": "squeue"
+    "ElapsedRaw": "1",
+    "ExitCode": "0:0",
+    "JobIDRaw": "137480",
+    "MaxRSS": "",
+    "State": "COMPLETED",
+    "raw_state": "COMPLETED",
+    "source": "sacct"
   },
   "slurm_job_id": 137480,
-  "state": "PENDING",
+  "state": "COMPLETED",
   "submitted_at": "2026-03-23T23:46:56+01:00"
 }
