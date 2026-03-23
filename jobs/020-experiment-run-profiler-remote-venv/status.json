@@ -2,16 +2,21 @@
   "git_sha": "818a69655eba1bb227eba60628584b01e2bbbf74",
   "id": "020-experiment-run-profiler-remote-venv",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/020-experiment-run-profiler-remote-venv",
-  "last_update_at": "2026-03-23T23:01:12+01:00",
+  "last_update_at": "2026-03-23T23:01:27+01:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/020-experiment-run-profiler-remote-venv/slurm-137470.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/020-experiment-run-profiler-remote-venv/slurm-137470.out",
   "queued_at": "2026-03-23T23:00:58+01:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/020-experiment-run-profiler-remote-venv/run.sbatch",
   "slurm_info": {
-    "raw_state": "PENDING",
-    "source": "squeue"
+    "ElapsedRaw": "9",
+    "ExitCode": "1:0",
+    "JobIDRaw": "137470",
+    "MaxRSS": "",
+    "State": "FAILED",
+    "raw_state": "FAILED",
+    "source": "sacct"
   },
   "slurm_job_id": 137470,
-  "state": "PENDING",
+  "state": "FAILED",
   "submitted_at": "2026-03-23T23:01:00+01:00"
 }
