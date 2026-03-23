@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "/data/users/chjing/dvfs_thesis/chens_code/EnergyMonitor.py", line 10, in <module>
+    import pynvml
+ModuleNotFoundError: No module named 'pynvml'
+Traceback (most recent call last):
+  File "/data/users/chjing/dvfs_thesis/chens_code/EnergyMonitor.py", line 10, in <module>
+    import pynvml
+ModuleNotFoundError: No module named 'pynvml'
+/bin/bash: line 20: kill: (3396710) - No such process
+--------------------------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun detected that one or more processes exited with non-zero status, thus causing
+the job to be terminated. The first process to do so was:
+
+  Process name: [[3909,1],1]
+  Exit code:    1
+--------------------------------------------------------------------------

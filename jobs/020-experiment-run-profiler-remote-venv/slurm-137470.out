@@ -1,0 +1,14 @@
+Hello from rank: 0
+Hello from rank: 1
+Rank: 0 | Device count: 2 | Using device: 0 
+Rank: 1 | Device count: 2 | Using device: 1 
+Hello from NVSHMEM_PE=0/2
+2 GPUs detected, asked to use 2 GPUs
+TILED with N=2400 (2 of 1200x1200 tiles)
+SM Limit per kernel = 20
+cuBLAS workspace = 256 kB
+totalNodes=4
+bufferSize=5920
+tileSize=262144
+device 0 | 0 run | time (s): 0.0229
+Total time used (s): 0.0229
