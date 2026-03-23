@@ -1,0 +1,17 @@
+{
+  "git_sha": "d29191ac342487b43520b95198cfed82f5000864",
+  "id": "022-experiment-remote-venv-outside-apptainer",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/022-experiment-remote-venv-outside-apptainer",
+  "last_update_at": "2026-03-23T23:14:28+01:00",
+  "log_err": "/data/users/chjing/dvfs_thesis/jobs/022-experiment-remote-venv-outside-apptainer/slurm-137473.err",
+  "log_out": "/data/users/chjing/dvfs_thesis/jobs/022-experiment-remote-venv-outside-apptainer/slurm-137473.out",
+  "queued_at": "2026-03-23T23:14:25+01:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/022-experiment-remote-venv-outside-apptainer/run.sbatch",
+  "slurm_info": {
+    "raw_state": "PENDING",
+    "source": "squeue"
+  },
+  "slurm_job_id": 137473,
+  "state": "PENDING",
+  "submitted_at": "2026-03-23T23:14:28+01:00"
+}
