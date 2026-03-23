@@ -2,12 +2,16 @@
   "git_sha": "eeb5ca044cd847d1ea47b994fd7873fe5969fafd",
   "id": "015-experiment-run-profiler",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/015-experiment-run-profiler",
-  "last_update_at": "2026-03-23T21:37:20+01:00",
+  "last_update_at": "2026-03-23T21:37:26+01:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/015-experiment-run-profiler/slurm-137454.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/015-experiment-run-profiler/slurm-137454.out",
   "queued_at": "2026-03-23T21:37:18+01:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/015-experiment-run-profiler/run.sbatch",
+  "slurm_info": {
+    "raw_state": "RUNNING",
+    "source": "squeue"
+  },
   "slurm_job_id": 137454,
-  "state": "SUBMITTED",
+  "state": "RUNNING",
   "submitted_at": "2026-03-23T21:37:20+01:00"
 }
