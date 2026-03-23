@@ -1,0 +1,19 @@
+Warning: This option is deprecated and will be removed in future releases
+Treating as warning and moving on.
+Warning: This option is deprecated and will be removed in future releases
+Treating as warning and moving on.
+All done.
+Setting GPU 0 -> 2025MHz, GPU 1 -> 2010MHz
+The current user does not have permission to change clocks for GPU 00000000:0D:00.0.
+Terminating early due to previous errors.
+The current user does not have permission to change clocks for GPU 00000000:37:00.0.
+Terminating early due to previous errors.
+----------------------------------------------------
+Step 2: Verification
+----------------------------------------------------
+Field "clocks.max_gr" is not a valid field to query.
+
+----------------------------------------------------
+Step 3: Resetting
+The current user does not have permission to change clocks for GPU 00000000:0D:00.0.
+Terminating early due to previous errors.
