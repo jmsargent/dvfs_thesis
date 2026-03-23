@@ -25,16 +25,3 @@ apptainer exec --nv /data/users/sargent/dvfs_thesis/containers/container.sif bas
     # 4. Build
     make -j\$(nproc)
 "
-
-# Provide 'search' access to the directory chain
-chmod o+x /data/users/sargent
-chmod o+x /data/users/sargent/dvfs_thesis
-chmod o+x /data/users/sargent/dvfs_thesis/mustard
-chmod o+x /data/users/sargent/dvfs_thesis/mustard/build
-
-# Grant Read and Execute to the specific binaries
-chmod o+rx /data/users/sargent/dvfs_thesis/mustard/build/lu_mustard
-chmod o+rx /data/users/sargent/dvfs_thesis/mustard/build/cg_mustard
-chmod o+rx /data/users/sargent/dvfs_thesis/mustard/build/cholesky_mustard
-chmod o+rx /data/users/sargent/dvfs_thesis/mustard/build/p_lu_mustard
-chmod o+rx /data/users/sargent/dvfs_thesis/mustard/build/pingpong_mustard
