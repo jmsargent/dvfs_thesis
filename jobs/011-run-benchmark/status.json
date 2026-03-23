@@ -1,0 +1,9 @@
+{
+  "git_sha": "43df04afc4576f9dfb127f60e5940d25aaeed70f",
+  "id": "011-run-benchmark",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/011-run-benchmark",
+  "last_update_at": "2026-03-23T17:41:30+01:00",
+  "queued_at": "2026-03-23T17:41:30+01:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/011-run-benchmark/run.sbatch",
+  "state": "QUEUED"
+}
