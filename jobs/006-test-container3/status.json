@@ -1,0 +1,13 @@
+{
+  "git_sha": "601c81a4ec5968a6f3d84b1b9d47a6baadea55d5",
+  "id": "006-test-container3",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/006-test-container3",
+  "last_update_at": "2026-03-23T14:15:45+01:00",
+  "log_err": "/data/users/chjing/dvfs_thesis/jobs/006-test-container3/slurm-137346.err",
+  "log_out": "/data/users/chjing/dvfs_thesis/jobs/006-test-container3/slurm-137346.out",
+  "queued_at": "2026-03-23T14:15:38+01:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/006-test-container3/run.sbatch",
+  "slurm_job_id": 137346,
+  "state": "SUBMITTED",
+  "submitted_at": "2026-03-23T14:15:41+01:00"
+}
