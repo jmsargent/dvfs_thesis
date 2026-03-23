@@ -2,16 +2,21 @@
   "git_sha": "48c7b3937373c8b6c776cd60bb7a68452d731bc9",
   "id": "030-experiment-set-and-verify-clocks-use-set-permission-for-real-this-time",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/030-experiment-set-and-verify-clocks-use-set-permission-for-real-this-time",
-  "last_update_at": "2026-03-24T00:16:00+01:00",
+  "last_update_at": "2026-03-24T00:16:30+01:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/030-experiment-set-and-verify-clocks-use-set-permission-for-real-this-time/slurm-137488.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/030-experiment-set-and-verify-clocks-use-set-permission-for-real-this-time/slurm-137488.out",
   "queued_at": "2026-03-24T00:15:48+01:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/030-experiment-set-and-verify-clocks-use-set-permission-for-real-this-time/run.sbatch",
   "slurm_info": {
-    "raw_state": "PENDING",
-    "source": "squeue"
+    "ElapsedRaw": "1",
+    "ExitCode": "4:0",
+    "JobIDRaw": "137488",
+    "MaxRSS": "",
+    "State": "FAILED",
+    "raw_state": "FAILED",
+    "source": "sacct"
   },
   "slurm_job_id": 137488,
-  "state": "PENDING",
+  "state": "FAILED",
   "submitted_at": "2026-03-24T00:15:48+01:00"
 }
