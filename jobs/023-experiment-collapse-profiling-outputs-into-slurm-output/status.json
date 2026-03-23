@@ -1,8 +1,11 @@
 {
+  "cancel_kill_mtime_ns": 1774305254118204553,
+  "cancel_request_state": "queued",
+  "cancel_requested_at": "2026-03-23T23:34:18+01:00",
   "git_sha": "03809081bcbc8d7e44f76d56bd31e3cb035513fe",
   "id": "023-experiment-collapse-profiling-outputs-into-slurm-output",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/023-experiment-collapse-profiling-outputs-into-slurm-output",
-  "last_update_at": "2026-03-23T23:25:58+01:00",
+  "last_update_at": "2026-03-23T23:34:18+01:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/023-experiment-collapse-profiling-outputs-into-slurm-output/slurm-137476.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/023-experiment-collapse-profiling-outputs-into-slurm-output/slurm-137476.out",
   "queued_at": "2026-03-23T23:25:34+01:00",
