@@ -1,0 +1,5 @@
+INFO:    User not listed in /etc/subuid, trying root-mapped namespace
+INFO:    The %post section will be run under the fakeroot command
+WARNING: Cache disabled - cache location / is not writable.
+FATAL:   Unable to build from ../../containers/container.def: unable to open file ../../containers/container.def: open ../../containers/container.def: no such file or directory
+FATAL:   While checking container encryption: could not open image /data/users/containers/container.sif: failed to retrieve path for /data/users/containers/container.sif: lstat /data/users/containers: no such file or directory
