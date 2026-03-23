@@ -1,20 +1,26 @@
 {
+  "cancel_acknowledged_at": "2026-03-23T23:34:23+01:00",
   "cancel_kill_mtime_ns": 1774305254118204553,
-  "cancel_request_state": "queued",
-  "cancel_requested_at": "2026-03-23T23:34:18+01:00",
+  "cancel_request_state": "accepted",
+  "cancel_requested_at": "2026-03-23T23:34:21+01:00",
   "git_sha": "03809081bcbc8d7e44f76d56bd31e3cb035513fe",
   "id": "023-experiment-collapse-profiling-outputs-into-slurm-output",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/023-experiment-collapse-profiling-outputs-into-slurm-output",
-  "last_update_at": "2026-03-23T23:34:18+01:00",
+  "last_update_at": "2026-03-23T23:34:29+01:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/023-experiment-collapse-profiling-outputs-into-slurm-output/slurm-137476.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/023-experiment-collapse-profiling-outputs-into-slurm-output/slurm-137476.out",
   "queued_at": "2026-03-23T23:25:34+01:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/023-experiment-collapse-profiling-outputs-into-slurm-output/run.sbatch",
   "slurm_info": {
-    "raw_state": "RUNNING",
-    "source": "squeue"
+    "ElapsedRaw": "512",
+    "ExitCode": "0:0",
+    "JobIDRaw": "137476",
+    "MaxRSS": "",
+    "State": "CANCELLED by 0",
+    "raw_state": "CANCELLED by 0",
+    "source": "sacct"
   },
   "slurm_job_id": 137476,
-  "state": "RUNNING",
+  "state": "CANCELLED",
   "submitted_at": "2026-03-23T23:25:37+01:00"
 }
