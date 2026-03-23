@@ -6,3 +6,4 @@ __pycache__/
 .gsync_worker.lock
 .gsync_worker_state.json
 containers/container.sif
+.idea
