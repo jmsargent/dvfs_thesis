@@ -2,8 +2,16 @@
   "git_sha": "9e611b045566f99adb16b70f0e76d74a2cceb909",
   "id": "016-experiment-run-profiler-no-sudo",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/016-experiment-run-profiler-no-sudo",
-  "last_update_at": "2026-03-23T21:51:21+01:00",
+  "last_update_at": "2026-03-23T21:51:26+01:00",
+  "log_err": "/data/users/chjing/dvfs_thesis/jobs/016-experiment-run-profiler-no-sudo/slurm-137455.err",
+  "log_out": "/data/users/chjing/dvfs_thesis/jobs/016-experiment-run-profiler-no-sudo/slurm-137455.out",
   "queued_at": "2026-03-23T21:51:21+01:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/016-experiment-run-profiler-no-sudo/run.sbatch",
-  "state": "QUEUED"
+  "slurm_info": {
+    "raw_state": "RUNNING",
+    "source": "squeue"
+  },
+  "slurm_job_id": 137455,
+  "state": "RUNNING",
+  "submitted_at": "2026-03-23T21:51:23+01:00"
 }
