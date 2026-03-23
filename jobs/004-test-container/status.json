@@ -2,12 +2,21 @@
   "git_sha": "fe2d2d05e9692ac8f92b1f6ab554684be8471e39",
   "id": "004-test-container",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/004-test-container",
-  "last_update_at": "2026-03-23T13:35:59+01:00",
+  "last_update_at": "2026-03-23T13:36:01+01:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/004-test-container/slurm-137344.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/004-test-container/slurm-137344.out",
   "queued_at": "2026-03-23T13:35:52+01:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/004-test-container/run.sbatch",
+  "slurm_info": {
+    "ElapsedRaw": "1",
+    "ExitCode": "127:0",
+    "JobIDRaw": "137344",
+    "MaxRSS": "",
+    "State": "FAILED",
+    "raw_state": "FAILED",
+    "source": "sacct"
+  },
   "slurm_job_id": 137344,
-  "state": "SUBMITTED",
+  "state": "FAILED",
   "submitted_at": "2026-03-23T13:35:54+01:00"
 }
