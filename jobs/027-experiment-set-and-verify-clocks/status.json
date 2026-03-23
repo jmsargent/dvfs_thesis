@@ -2,16 +2,21 @@
   "git_sha": "107d5ed6e60c709f96f47a4bc3b386614e2a779e",
   "id": "027-experiment-set-and-verify-clocks",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/027-experiment-set-and-verify-clocks",
-  "last_update_at": "2026-03-24T00:00:15+01:00",
+  "last_update_at": "2026-03-24T00:00:30+01:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/027-experiment-set-and-verify-clocks/slurm-137483.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/027-experiment-set-and-verify-clocks/slurm-137483.out",
   "queued_at": "2026-03-24T00:00:14+01:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/027-experiment-set-and-verify-clocks/run.sbatch",
   "slurm_info": {
-    "raw_state": "PENDING",
-    "source": "squeue"
+    "ElapsedRaw": "1",
+    "ExitCode": "4:0",
+    "JobIDRaw": "137483",
+    "MaxRSS": "",
+    "State": "FAILED",
+    "raw_state": "FAILED",
+    "source": "sacct"
   },
   "slurm_job_id": 137483,
-  "state": "PENDING",
+  "state": "FAILED",
   "submitted_at": "2026-03-24T00:00:15+01:00"
 }
