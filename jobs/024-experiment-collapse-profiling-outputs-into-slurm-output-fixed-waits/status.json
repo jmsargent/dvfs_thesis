@@ -1,0 +1,13 @@
+{
+  "git_sha": "811c6d87919d9ee22fdc33586aaf6b975ef8771d",
+  "id": "024-experiment-collapse-profiling-outputs-into-slurm-output-fixed-waits",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/024-experiment-collapse-profiling-outputs-into-slurm-output-fixed-waits",
+  "last_update_at": "2026-03-23T23:36:20+01:00",
+  "log_err": "/data/users/chjing/dvfs_thesis/jobs/024-experiment-collapse-profiling-outputs-into-slurm-output-fixed-waits/slurm-137477.err",
+  "log_out": "/data/users/chjing/dvfs_thesis/jobs/024-experiment-collapse-profiling-outputs-into-slurm-output-fixed-waits/slurm-137477.out",
+  "queued_at": "2026-03-23T23:36:19+01:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/024-experiment-collapse-profiling-outputs-into-slurm-output-fixed-waits/run.sbatch",
+  "slurm_job_id": 137477,
+  "state": "SUBMITTED",
+  "submitted_at": "2026-03-23T23:36:20+01:00"
+}
