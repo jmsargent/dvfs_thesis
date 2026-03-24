@@ -3,7 +3,7 @@
 #SBATCH --ntasks=4
 #SBATCH --cpus-per-task=1
 #SBATCH --gres=gpu:L4:4
-#SBATCH --nodelist=ganymede
+#SBATCH --nodelist=ganymede,io
 #SBATCH --output=cholesky_dvfs_%j.out
 
 # 1. Paths
