@@ -9,6 +9,7 @@ VENV_PATH="/data/users/sargent/dvfs_thesis/venv_hpc"
 OTHER_USER="chjing"
 PROJECT_DIR="/data/users/${OTHER_USER}/dvfs_thesis"
 PROFILER_PATH="${PROJECT_DIR}/chens_code/EnergyMonitor.py"
+OUTPUT_FILE="stats_gpu0.csv"
 
 # 2. Setup IDs
 GPU_LIST=${SLURM_STEP_GPUS:-$SLURM_JOB_GPUS}
@@ -33,17 +34,31 @@ echo "Step 2: Monitoring"
 echo "----------------------------------------------------"
 
 # 6. Background monitoring on GPU 0
-# Duration set to 2 seconds as requested
-python3 "$PROFILER_PATH" --gpu-id ${ADDR[0]} --monitor --duration 2 --output stats_gpu0.csv &
+python3 "$PROFILER_PATH" --gpu-id ${ADDR[0]} --monitor --duration 2 --output "$OUTPUT_FILE" &
 MON_PID=$!
-# Use wait to ensure the monitor finishes its duration before resetting clocks
+
+# Wait for the 2-second monitor to complete
 wait $MON_PID
 
 echo "----------------------------------------------------"
-echo "Step 3: Resetting and Summary"
+echo "Step 3: Resetting Clocks"
 
 # 7. Reset clocks using script's reset logic
 python3 "$PROFILER_PATH" --gpu-id ${ADDR[0]} --reset-clocks
 python3 "$PROFILER_PATH" --gpu-id ${ADDR[1]} --reset-clocks
 
 deactivate
+
+echo "----------------------------------------------------"
+echo "Step 4: Consolidating Results"
+echo "----------------------------------------------------"
+
+# 8. Dump CSV data to Slurm log and cleanup
+if [ -f "$OUTPUT_FILE" ]; then
+    echo "--- BEGIN PROFILER DATA GPU ${ADDR[0]} ---"
+    cat "$OUTPUT_FILE"
+    rm "$OUTPUT_FILE"
+    echo "--- END PROFILER DATA GPU ${ADDR[0]} ---"
+else
+    echo "ERROR: $OUTPUT_FILE not found."
+fi
