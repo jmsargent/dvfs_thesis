@@ -2,12 +2,21 @@
   "git_sha": "b48b4438ac1069326b3ec623d68d9f487995479f",
   "id": "034-experiment-set-and-verify-clocks-use-energymonitor-change-perms",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/034-experiment-set-and-verify-clocks-use-energymonitor-change-perms",
-  "last_update_at": "2026-03-24T13:11:05+01:00",
+  "last_update_at": "2026-03-24T13:11:11+01:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/034-experiment-set-and-verify-clocks-use-energymonitor-change-perms/slurm-138518.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/034-experiment-set-and-verify-clocks-use-energymonitor-change-perms/slurm-138518.out",
   "queued_at": "2026-03-24T13:10:59+01:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/034-experiment-set-and-verify-clocks-use-energymonitor-change-perms/run.sbatch",
+  "slurm_info": {
+    "ElapsedRaw": "4",
+    "ExitCode": "0:0",
+    "JobIDRaw": "138518",
+    "MaxRSS": "",
+    "State": "COMPLETED",
+    "raw_state": "COMPLETED",
+    "source": "sacct"
+  },
   "slurm_job_id": 138518,
-  "state": "SUBMITTED",
+  "state": "COMPLETED",
   "submitted_at": "2026-03-24T13:11:02+01:00"
 }
