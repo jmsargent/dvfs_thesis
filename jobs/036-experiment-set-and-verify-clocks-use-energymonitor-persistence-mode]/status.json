@@ -1,11 +1,12 @@
 {
+  "cancel_acknowledged_at": "2026-03-24T13:49:52+01:00",
   "cancel_kill_mtime_ns": 1774356591237130543,
-  "cancel_request_state": "queued",
+  "cancel_request_state": "accepted",
   "cancel_requested_at": "2026-03-24T13:49:51+01:00",
   "git_sha": "9928bb9b951bf7499a25c7e0b942e48c0448bb05",
   "id": "036-experiment-set-and-verify-clocks-use-energymonitor-persistence-mode]",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/036-experiment-set-and-verify-clocks-use-energymonitor-persistence-mode]",
-  "last_update_at": "2026-03-24T13:49:51+01:00",
+  "last_update_at": "2026-03-24T13:49:57+01:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/036-experiment-set-and-verify-clocks-use-energymonitor-persistence-mode]/slurm-138828.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/036-experiment-set-and-verify-clocks-use-energymonitor-persistence-mode]/slurm-138828.out",
   "queued_at": "2026-03-24T13:29:32+01:00",
@@ -15,6 +16,6 @@
     "source": "squeue"
   },
   "slurm_job_id": 138828,
-  "state": "PENDING",
+  "state": "CANCEL_REQUESTED",
   "submitted_at": "2026-03-24T13:29:33+01:00"
 }
