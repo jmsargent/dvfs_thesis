@@ -1,0 +1,10 @@
+Applying frequencies via EnergyMonitor.py...
+Attempting to set GPU freq to 2025 MHz (using default memory freq 6251 MHz)...
+Error setting frequency: Insufficient Permissions
+Note: Frequency changes may require elevated privileges
+Attempting to set GPU freq to 2010 MHz (using default memory freq 6251 MHz)...
+Error setting frequency: Insufficient Permissions
+Note: Frequency changes may require elevated privileges
+----------------------------------------------------
+Step 2: Monitoring
+----------------------------------------------------
