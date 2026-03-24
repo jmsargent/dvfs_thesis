@@ -1,0 +1,71 @@
+----------------------------------------------------
+Adjusting clock modification permissions
+----------------------------------------------------
+Warning: This option is deprecated and will be removed in future releases
+Treating as warning and moving on.
+Warning: This option is deprecated and will be removed in future releases
+Treating as warning and moving on.
+All done.
+Applying frequencies via EnergyMonitor.py...
+Attempting to set GPU freq to 2025 MHz (using default memory freq 6251 MHz)...
+Error setting frequency: Insufficient Permissions
+Note: Frequency changes may require elevated privileges
+Attempting to set GPU freq to 2010 MHz (using default memory freq 6251 MHz)...
+Error setting frequency: Insufficient Permissions
+Note: Frequency changes may require elevated privileges
+----------------------------------------------------
+Step 2: Monitoring
+----------------------------------------------------
+Starting monitoring (interval: 0.1s)
+Duration: 2.0s
+Output file: stats_gpu0.csv
+
+Monitoring duration reached.
+
+Collected 19 samples
+Ensuring data is saved...
+Saving 19 data points to stats_gpu0.csv...
+Data saved successfully to stats_gpu0.csv
+
+Power Summary:
+  Average: 12.5W
+  Min: 12.4W
+  Max: 12.9W
+
+Energy Consumption (calculated from hardware counter):
+  Total: 23.239 J
+
+GPU Frequency Summary:
+  Average: 210MHz
+  Min: 210MHz
+  Max: 210MHz
+Main: Shutting down NVML.
+----------------------------------------------------
+Step 3: Resetting Clocks
+Error resetting clocks: Insufficient Permissions
+Error resetting clocks: Insufficient Permissions
+----------------------------------------------------
+Step 4: Consolidating Results
+----------------------------------------------------
+--- BEGIN PROFILER DATA GPU 1 ---
+timestamp,datetime,power_w,total_energy_mj,gpu_freq_mhz,mem_freq_mhz,temperature_c,gpu_util_pct,mem_util_pct
+1774356963.8195088,2026-03-24T13:56:03.819509,12.545,178779752,210,405,30,0,0
+1774356963.9325073,2026-03-24T13:56:03.932507,12.545,178780944,210,405,30,0,0
+1774356964.038443,2026-03-24T13:56:04.038443,12.545,178782134,210,405,30,0,0
+1774356964.1441054,2026-03-24T13:56:04.144105,12.545,178783289,210,405,30,0,0
+1774356964.2521167,2026-03-24T13:56:04.252117,12.545,178784470,210,405,30,0,0
+1774356964.357387,2026-03-24T13:56:04.357387,12.545,178785717,210,405,30,0,0
+1774356964.4631982,2026-03-24T13:56:04.463198,12.545,178786970,210,405,30,0,0
+1774356964.5691118,2026-03-24T13:56:04.569112,12.398,178788176,210,405,30,0,0
+1774356964.6752424,2026-03-24T13:56:04.675242,12.398,178789428,210,405,30,0,0
+1774356964.7809348,2026-03-24T13:56:04.780935,12.398,178790646,210,405,30,0,0
+1774356964.8866644,2026-03-24T13:56:04.886664,12.398,178791898,210,405,30,0,0
+1774356964.9923935,2026-03-24T13:56:04.992393,12.398,178793148,210,405,30,0,0
+1774356965.0982223,2026-03-24T13:56:05.098222,12.398,178794402,210,405,30,0,0
+1774356965.2045093,2026-03-24T13:56:05.204509,12.398,178795632,210,405,30,0,0
+1774356965.3100476,2026-03-24T13:56:05.310048,12.398,178796864,210,405,30,0,0
+1774356965.4159992,2026-03-24T13:56:05.415999,12.398,178798146,210,405,30,0,0
+1774356965.5221624,2026-03-24T13:56:05.522162,12.882,178800608,210,405,30,0,0
+1774356965.627874,2026-03-24T13:56:05.627874,12.882,178801806,210,405,30,0,0
+1774356965.7337697,2026-03-24T13:56:05.733770,12.882,178802991,210,405,30,0,0
+--- END PROFILER DATA GPU 1 ---
