@@ -6,16 +6,21 @@
   "git_sha": "9928bb9b951bf7499a25c7e0b942e48c0448bb05",
   "id": "036-experiment-set-and-verify-clocks-use-energymonitor-persistence-mode]",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/036-experiment-set-and-verify-clocks-use-energymonitor-persistence-mode]",
-  "last_update_at": "2026-03-24T13:49:57+01:00",
+  "last_update_at": "2026-03-24T13:49:58+01:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/036-experiment-set-and-verify-clocks-use-energymonitor-persistence-mode]/slurm-138828.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/036-experiment-set-and-verify-clocks-use-energymonitor-persistence-mode]/slurm-138828.out",
   "queued_at": "2026-03-24T13:29:32+01:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/036-experiment-set-and-verify-clocks-use-energymonitor-persistence-mode]/run.sbatch",
   "slurm_info": {
-    "raw_state": "PENDING",
-    "source": "squeue"
+    "ElapsedRaw": "0",
+    "ExitCode": "0:0",
+    "JobIDRaw": "138828",
+    "MaxRSS": "",
+    "State": "CANCELLED by 0",
+    "raw_state": "CANCELLED by 0",
+    "source": "sacct"
   },
   "slurm_job_id": 138828,
-  "state": "CANCEL_REQUESTED",
+  "state": "CANCELLED",
   "submitted_at": "2026-03-24T13:29:33+01:00"
 }
