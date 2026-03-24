@@ -11,7 +11,7 @@ IFS=',' read -ra ADDR <<< "$CLEAN_GPUS"
 
 # 2. Unlock permissions (Still requires sudo or Persistence Mode + Admin level)
 # If this fails on your cluster, contact your sysadmin to enable persistence mode.
-nvidia-smi -i "$CLEAN_GPUS" -acp UNRESTRICTED
+#nvidia-smi -i "$CLEAN_GPUS" -acp UNRESTRICTED
 
 # 3. Frequency targets (L4 specific examples)
 # Note: Energymonitor.py defaults memory to 6251 if not specified
@@ -31,7 +31,7 @@ echo "----------------------------------------------------"
 
 # 5. Background monitoring on GPU 0 while running a workload
 # Monitoring for 60 seconds at 100ms intervals
-python3 Energymonitor.py --gpu-id ${ADDR[0]} --monitor --duration 60 --output stats_gpu0.csv &
+python3 Energymonitor.py --gpu-id ${ADDR[0]} --monitor --duration 2 --output stats_gpu0.csv &
 MON_PID=$!
 
 # Execute your actual HPC workload here
@@ -41,6 +41,7 @@ wait $MON_PID
 
 echo "----------------------------------------------------"
 echo "Step 3: Resetting and Summary"
+
 # 6. Reset clocks using your script's reset logic
 python3 Energymonitor.py --gpu-id ${ADDR[0]} --reset-clocks
 python3 Energymonitor.py --gpu-id ${ADDR[1]} --reset-clocks
