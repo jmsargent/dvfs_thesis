@@ -2,12 +2,21 @@
   "git_sha": "eea0ec94cc8f4067272366d11929261ff66b29b2",
   "id": "039-experiment-set-and-verify-clocks-use-sudo-E-after-permissions-change",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/039-experiment-set-and-verify-clocks-use-sudo-E-after-permissions-change",
-  "last_update_at": "2026-03-24T17:04:55+01:00",
+  "last_update_at": "2026-03-24T17:05:08+01:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/039-experiment-set-and-verify-clocks-use-sudo-E-after-permissions-change/slurm-141699.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/039-experiment-set-and-verify-clocks-use-sudo-E-after-permissions-change/slurm-141699.out",
   "queued_at": "2026-03-24T17:04:54+01:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/039-experiment-set-and-verify-clocks-use-sudo-E-after-permissions-change/run.sbatch",
+  "slurm_info": {
+    "ElapsedRaw": "3",
+    "ExitCode": "0:0",
+    "JobIDRaw": "141699",
+    "MaxRSS": "",
+    "State": "COMPLETED",
+    "raw_state": "COMPLETED",
+    "source": "sacct"
+  },
   "slurm_job_id": 141699,
-  "state": "SUBMITTED",
+  "state": "COMPLETED",
   "submitted_at": "2026-03-24T17:04:55+01:00"
 }
