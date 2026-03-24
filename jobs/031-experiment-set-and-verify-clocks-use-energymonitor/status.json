@@ -1,0 +1,22 @@
+{
+  "git_sha": "896bb3460e4741a29b09d92bf1ebbb42b58d707c",
+  "id": "031-experiment-set-and-verify-clocks-use-energymonitor",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/031-experiment-set-and-verify-clocks-use-energymonitor",
+  "last_update_at": "2026-03-24T10:12:24+01:00",
+  "log_err": "/data/users/chjing/dvfs_thesis/jobs/031-experiment-set-and-verify-clocks-use-energymonitor/slurm-137494.err",
+  "log_out": "/data/users/chjing/dvfs_thesis/jobs/031-experiment-set-and-verify-clocks-use-energymonitor/slurm-137494.out",
+  "queued_at": "2026-03-24T10:12:20+01:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/031-experiment-set-and-verify-clocks-use-energymonitor/run.sbatch",
+  "slurm_info": {
+    "ElapsedRaw": "1",
+    "ExitCode": "2:0",
+    "JobIDRaw": "137494",
+    "MaxRSS": "",
+    "State": "FAILED",
+    "raw_state": "FAILED",
+    "source": "sacct"
+  },
+  "slurm_job_id": 137494,
+  "state": "FAILED",
+  "submitted_at": "2026-03-24T10:12:21+01:00"
+}
