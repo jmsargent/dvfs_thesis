@@ -2,12 +2,16 @@
   "git_sha": "fead12a596a90de4bd7f28bd687abf736d4d3fac",
   "id": "037-experiment-set-and-verify-clocks-use-sudo-E",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/037-experiment-set-and-verify-clocks-use-sudo-E",
-  "last_update_at": "2026-03-24T13:50:37+01:00",
+  "last_update_at": "2026-03-24T13:50:43+01:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/037-experiment-set-and-verify-clocks-use-sudo-E/slurm-139112.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/037-experiment-set-and-verify-clocks-use-sudo-E/slurm-139112.out",
   "queued_at": "2026-03-24T13:50:34+01:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/037-experiment-set-and-verify-clocks-use-sudo-E/run.sbatch",
+  "slurm_info": {
+    "raw_state": "PENDING",
+    "source": "squeue"
+  },
   "slurm_job_id": 139112,
-  "state": "SUBMITTED",
+  "state": "PENDING",
   "submitted_at": "2026-03-24T13:50:34+01:00"
 }
