@@ -8,3 +8,5 @@ __pycache__/
 containers/container.sif
 .idea
 venv_hpc
+venv
+.vscode
