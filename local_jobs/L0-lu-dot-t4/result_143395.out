@@ -1,0 +1,6 @@
+TILED with N=4800 (4 of 1200x1200 tiles)
+SM Limit per kernel = 20
+cuBLAS workspace = 256 kB
+device 0 | 0 run | time (s): 0.1985
+Total time used (s): 0.1985
+/var/spool/slurmd/job143395/slurm_script: line 35: kill: (3533870) - No such process
