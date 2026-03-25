@@ -1,0 +1,8 @@
+columns:
+    - name: todo
+      label: To Do
+    - name: in-progress
+      label: In Progress
+    - name: done
+      label: Done
+ci_task_pattern: TASK-[0-9]+
