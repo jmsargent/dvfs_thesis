@@ -1,1 +1,2 @@
 /var/spool/slurmd/job160525/slurm_script: line 83: 3864488 Killed                  python3 "$PROFILER_PATH" --monitor --gpu-id "${GPUS[$i]}" --interval 0.01 --output "${TEMP_CSV_BASE}_${i}.csv"
+/var/spool/slurmd/job160525/slurm_script: line 83: 3865260 Killed                  python3 "$PROFILER_PATH" --monitor --gpu-id "${GPUS[$i]}" --interval 0.01 --output "${TEMP_CSV_BASE}_${i}.csv"
