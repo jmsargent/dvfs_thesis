@@ -33,3 +33,54 @@ totalNodes=816
 bufferSize=1600
 tileSize=262144
 device 0 | Setup time (s): 3.1752
+device 0 | 0 run | time (s): 2.2057
+device 0 | 1 run | time (s): 2.1985
+device 0 | 2 run | time (s): 2.1998
+device 0 | 3 run | time (s): 2.2074
+device 0 | 4 run | time (s): 2.1996
+Total time used (s): 11.0111
+device 3 | Total program time (s): 21.0109
+device 2 | Total program time (s): 21.0603
+device 1 | Total program time (s): 21.1523
+device 0 | Total program time (s): 21.2057
+Program end timestamp: 1774612759.793850
+Starting monitoring (interval: 0.01s)
+Output file: /tmp/job_161652_cholesky_mustard_795_16_gpu_2.csv
+
+Signal SIGTERM received. Stopping monitoring...
+Signal handler attempting to save data to /tmp/job_161652_cholesky_mustard_795_16_gpu_2.csv...
+Saving 1477 data points to /tmp/job_161652_cholesky_mustard_795_16_gpu_2.csv...
+Data saved successfully to /tmp/job_161652_cholesky_mustard_795_16_gpu_2.csv
+Exiting due to signal.
+Main: Shutting down NVML.
+Starting monitoring (interval: 0.01s)
+Output file: /tmp/job_161652_cholesky_mustard_795_16_gpu_1.csv
+
+Signal SIGTERM received. Stopping monitoring...
+Signal handler attempting to save data to /tmp/job_161652_cholesky_mustard_795_16_gpu_1.csv...
+Saving 1505 data points to /tmp/job_161652_cholesky_mustard_795_16_gpu_1.csv...
+Data saved successfully to /tmp/job_161652_cholesky_mustard_795_16_gpu_1.csv
+Exiting due to signal.
+Main: Shutting down NVML.
+Starting monitoring (interval: 0.01s)
+Output file: /tmp/job_161652_cholesky_mustard_795_16_gpu_0.csv
+
+Signal SIGTERM received. Stopping monitoring...
+Signal handler attempting to save data to /tmp/job_161652_cholesky_mustard_795_16_gpu_0.csv...
+Saving 1472 data points to /tmp/job_161652_cholesky_mustard_795_16_gpu_0.csv...
+Data saved successfully to /tmp/job_161652_cholesky_mustard_795_16_gpu_0.csv
+Exiting due to signal.
+Main: Shutting down NVML.
+Starting monitoring (interval: 0.01s)
+Output file: /tmp/job_161652_cholesky_mustard_795_16_gpu_3.csv
+
+Signal SIGTERM received. Stopping monitoring...
+Signal handler attempting to save data to /tmp/job_161652_cholesky_mustard_795_16_gpu_3.csv...
+Saving 1475 data points to /tmp/job_161652_cholesky_mustard_795_16_gpu_3.csv...
+Data saved successfully to /tmp/job_161652_cholesky_mustard_795_16_gpu_3.csv
+Exiting due to signal.
+Main: Shutting down NVML.
+Reset to default clocks
+Reset to default clocks
+Reset to default clocks
+Reset to default clocks
