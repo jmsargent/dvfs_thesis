@@ -69,3 +69,4 @@ Saving 586 data points to /tmp/job_160526_lu_mustard_795_16_gpu_1.csv...
 Data saved successfully to /tmp/job_160526_lu_mustard_795_16_gpu_1.csv
 Exiting due to signal.
 Main: Shutting down NVML.
+Reset to default clocks
