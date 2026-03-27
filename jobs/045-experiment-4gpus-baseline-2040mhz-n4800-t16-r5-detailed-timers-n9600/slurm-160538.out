@@ -45298,3 +45298,10 @@ SM Limit per kernel = 20
 cuBLAS workspace = 256 kB
 device 1 | NVSHMEM init time (s): 5.2841
 device 2 | NVSHMEM init time (s): 5.2840
+totalNodes=1496
+bufferSize=9088
+tileSize=262144
+device 0 | Setup time (s): 3.2848
+device 0 | 0 run | time (s): 1.6244
+device 0 | 1 run | time (s): 1.6217
+device 0 | 2 run | time (s): 1.6238
