@@ -1,0 +1,10 @@
+TILED with N=4800 (4 of 1200x1200 tiles)
+SM Limit per kernel = 20
+cuBLAS workspace = 256 kB
+Setup time (s): 0.7609
+device 0 | 0 run | time (s): 0.1991
+Total time used (s): 0.1991
+Total program time (s): 26.3702
+Total program time (s): 26.4035
+Total program time (s): 26.4206
+Total program time (s): 26.4424

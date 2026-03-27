@@ -25,4 +25,4 @@ apptainer exec --nv --bind /dev/shm "$CONTAINER_PATH" mpirun -np 4 \
     -mca pml ob1 \
     -mca btl self,vader \
     -mca coll_hcoll_enable 0 \
-    $EXECUTABLE_PATH -n=4800 -t=16 --tiled -r=1
+    $EXECUTABLE_PATH -n=4800 -t=4 --tiled -r=1
