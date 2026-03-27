@@ -1,0 +1,13 @@
+{
+  "git_sha": "57dd176795254fc0c272cd3be13fcc81897ab9eb",
+  "id": "046-experiment-4gpus-baseline-2040mhz-n4800-t16-r5-wall-time-n9600",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/046-experiment-4gpus-baseline-2040mhz-n4800-t16-r5-wall-time-n9600",
+  "last_update_at": "2026-03-27T12:57:58+01:00",
+  "log_err": "/data/users/chjing/dvfs_thesis/jobs/046-experiment-4gpus-baseline-2040mhz-n4800-t16-r5-wall-time-n9600/slurm-161652.err",
+  "log_out": "/data/users/chjing/dvfs_thesis/jobs/046-experiment-4gpus-baseline-2040mhz-n4800-t16-r5-wall-time-n9600/slurm-161652.out",
+  "queued_at": "2026-03-27T12:57:56+01:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/046-experiment-4gpus-baseline-2040mhz-n4800-t16-r5-wall-time-n9600/run.sbatch",
+  "slurm_job_id": 161652,
+  "state": "SUBMITTED",
+  "submitted_at": "2026-03-27T12:57:57+01:00"
+}
