@@ -20834,3 +20834,18 @@ Rank: 1 | Device count: 4 | Using device: 1
 Rank: 3 | Device count: 4 | Using device: 3 
 Rank: 0 | Device count: 4 | Using device: 0 
 Rank: 2 | Device count: 4 | Using device: 2 
+device 1 | NVSHMEM init time (s): 5.8103
+Hello from NVSHMEM_PE=0/4
+4 GPUs detected, asked to use 4 GPUs
+Program start timestamp: 1774612840.849298
+device 0 | NVSHMEM init time (s): 5.8103
+device 3 | NVSHMEM init time (s): 5.8103
+device 2 | NVSHMEM init time (s): 5.8103
+TILED with N=9600 (16 of 600x600 tiles)
+SM Limit per kernel = 20
+cuBLAS workspace = 256 kB
+totalNodes=1496
+bufferSize=9088
+tileSize=262144
+device 0 | Setup time (s): 2.8818
+device 0 | 0 run | time (s): 4.1676
