@@ -28865,3 +28865,28 @@ Successfully set GPU frequency.
 Attempting to set GPU freq to 795 MHz (using default memory freq 6251 MHz)...
 Successfully set GPU frequency.
 Running lu_mustard...
+Hello from rank: 1
+Hello from rank: 3
+Hello from rank: 0
+Hello from rank: 2
+Rank: 1 | Device count: 4 | Using device: 1 
+Rank: 0 | Device count: 4 | Using device: 0 
+Rank: 2 | Device count: 4 | Using device: 2 
+Rank: 3 | Device count: 4 | Using device: 3 
+device 1 | NVSHMEM init time (s): 5.8408
+Hello from NVSHMEM_PE=0/4
+4 GPUs detected, asked to use 4 GPUs
+Program start timestamp: 1774612880.358325
+device 0 | NVSHMEM init time (s): 5.8408
+device 3 | NVSHMEM init time (s): 5.8408
+device 2 | NVSHMEM init time (s): 5.8408
+TILED with N=9600 (4 of 2400x2400 tiles)
+SM Limit per kernel = 20
+cuBLAS workspace = 256 kB
+totalNodes=30
+bufferSize=93056
+tileSize=262144
+device 0 | Setup time (s): 3.2239
+device 0 | 0 run | time (s): 3.8303
+device 0 | 1 run | time (s): 3.8280
+device 0 | 2 run | time (s): 3.8281
