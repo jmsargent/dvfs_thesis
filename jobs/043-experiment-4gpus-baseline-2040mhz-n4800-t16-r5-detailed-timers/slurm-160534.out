@@ -5064,3 +5064,11 @@ Successfully set GPU frequency.
 Attempting to set GPU freq to 2040 MHz (using default memory freq 6251 MHz)...
 Successfully set GPU frequency.
 Running cholesky_mustard...
+Hello from rank: 0
+Hello from rank: 2
+Hello from rank: 1
+Hello from rank: 3
+Rank: 1 | Device count: 4 | Using device: 1 
+Rank: 2 | Device count: 4 | Using device: 2 
+Rank: 0 | Device count: 4 | Using device: 0 
+Rank: 3 | Device count: 4 | Using device: 3 
