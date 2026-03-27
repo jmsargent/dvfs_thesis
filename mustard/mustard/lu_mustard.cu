@@ -693,6 +693,8 @@ void LU(bool tiled, bool verify, bool subgraph, bool dot)
 
 int main(int argc, char **argv)
 {   
+    auto program_start = std::chrono::high_resolution_clock::now();
+
     auto cmdl = argh::parser(argc, argv);
 
     if (!parseCommonArgs(cmdl, cfg)) {
@@ -706,7 +708,7 @@ int main(int argc, char **argv)
     if (!(cmdl["tiled"] || cmdl["subgraph"]))
         T = 1;
     B = N / T;
-    
+
     if (myPE == 0) {
         if (cmdl["tiled"])
             std::cout << "TILED";
@@ -722,13 +724,13 @@ int main(int argc, char **argv)
         }
     }
 
-    auto program_start = std::chrono::high_resolution_clock::now();
     LU(cmdl["tiled"], cmdl["verify"] && myPE == 0, cmdl["subgraph"], cmdl["dot"]);
-    auto program_end = std::chrono::high_resolution_clock::now();
 
+    nvshmem_finalize();
+
+    auto program_end = std::chrono::high_resolution_clock::now();
     double program_time = std::chrono::duration<double>(program_end - program_start).count();
     printf("Total program time (s): %4.4f\n", program_time);
 
-    nvshmem_finalize();
     return 0;
 }
