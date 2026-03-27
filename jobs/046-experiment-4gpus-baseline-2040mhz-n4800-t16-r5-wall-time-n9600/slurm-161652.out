@@ -20849,3 +20849,6 @@ bufferSize=9088
 tileSize=262144
 device 0 | Setup time (s): 2.8818
 device 0 | 0 run | time (s): 4.1676
+device 0 | 1 run | time (s): 4.1629
+device 0 | 2 run | time (s): 4.1665
+device 0 | 3 run | time (s): 4.1662
