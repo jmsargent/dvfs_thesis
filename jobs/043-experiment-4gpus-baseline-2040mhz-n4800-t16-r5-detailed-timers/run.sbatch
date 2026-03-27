@@ -25,7 +25,7 @@ source "$VENV_PATH/bin/activate"
 BENCHMARKS=("cholesky_mustard" "lu_mustard")
 FREQS=(795 2040)
 TILE_SIZES=(16 4)
-N_SIZE=9600
+N_SIZE=4800
 RUNS=5
 
 # 4. Master Loop

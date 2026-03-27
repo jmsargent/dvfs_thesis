@@ -509,7 +509,7 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
         auto setup_end = std::chrono::high_resolution_clock::now();
         double setup_time = std::chrono::duration<double>(setup_end - setup_start).count();
         printf("device %d | Setup time (s): %4.4f\n", myPE, setup_time);
-        
+
         for (int i = 0; i < runs; i++) {
             checkCudaErrors(cudaMemcpy(d_matrix, originalMatrix.get(), N * N * sizeof(double), cudaMemcpyHostToDevice));
             clock.start(s);
