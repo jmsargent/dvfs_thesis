@@ -5072,3 +5072,53 @@ Rank: 1 | Device count: 4 | Using device: 1
 Rank: 2 | Device count: 4 | Using device: 2 
 Rank: 0 | Device count: 4 | Using device: 0 
 Rank: 3 | Device count: 4 | Using device: 3 
+Hello from NVSHMEM_PE=0/4
+4 GPUs detected, asked to use 4 GPUs
+device 0 | NVSHMEM init time (s): 4.2236
+TILED with N=4800 (16 of 300x300 tiles)
+SM Limit per kernel = 20
+cuBLAS workspace = 256 kB
+device 1 | NVSHMEM init time (s): 4.2235
+device 2 | NVSHMEM init time (s): 4.2235
+device 3 | NVSHMEM init time (s): 4.2235
+totalNodes=816
+bufferSize=544
+tileSize=262144
+device 0 | Setup time (s): 0.9267
+device 0 | 0 run | time (s): 0.1319
+device 0 | 1 run | time (s): 0.1314
+device 0 | 2 run | time (s): 0.1332
+device 0 | 3 run | time (s): 0.1307
+device 0 | 4 run | time (s): 0.1305
+Total time used (s): 0.6577
+device 3 | Total program time (s): 6.2231
+device 0 | Total program time (s): 6.2405
+device 2 | Total program time (s): 6.2413
+device 1 | Total program time (s): 6.3019
+Starting monitoring (interval: 0.01s)
+Output file: /tmp/job_160534_cholesky_mustard_2040_16_gpu_1.csv
+
+Signal SIGTERM received. Stopping monitoring...
+Signal handler attempting to save data to /tmp/job_160534_cholesky_mustard_2040_16_gpu_1.csv...
+Saving 568 data points to /tmp/job_160534_cholesky_mustard_2040_16_gpu_1.csv...
+Data saved successfully to /tmp/job_160534_cholesky_mustard_2040_16_gpu_1.csv
+Exiting due to signal.
+Main: Shutting down NVML.
+Starting monitoring (interval: 0.01s)
+Output file: /tmp/job_160534_cholesky_mustard_2040_16_gpu_3.csv
+
+Signal SIGTERM received. Stopping monitoring...
+Signal handler attempting to save data to /tmp/job_160534_cholesky_mustard_2040_16_gpu_3.csv...
+Saving 575 data points to /tmp/job_160534_cholesky_mustard_2040_16_gpu_3.csv...
+Data saved successfully to /tmp/job_160534_cholesky_mustard_2040_16_gpu_3.csv
+Exiting due to signal.
+Main: Shutting down NVML.
+Starting monitoring (interval: 0.01s)
+Output file: /tmp/job_160534_cholesky_mustard_2040_16_gpu_0.csv
+
+Signal SIGTERM received. Stopping monitoring...
+Signal handler attempting to save data to /tmp/job_160534_cholesky_mustard_2040_16_gpu_0.csv...
+Saving 570 data points to /tmp/job_160534_cholesky_mustard_2040_16_gpu_0.csv...
+Data saved successfully to /tmp/job_160534_cholesky_mustard_2040_16_gpu_0.csv
+Exiting due to signal.
+Main: Shutting down NVML.
