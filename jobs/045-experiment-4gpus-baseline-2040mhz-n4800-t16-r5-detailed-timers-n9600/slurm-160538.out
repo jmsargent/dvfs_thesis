@@ -26272,3 +26272,5 @@ device 3 | NVSHMEM init time (s): 7.8520
 totalNodes=1496
 bufferSize=9088
 tileSize=262144
+device 0 | Setup time (s): 3.8106
+device 0 | 0 run | time (s): 4.1347
