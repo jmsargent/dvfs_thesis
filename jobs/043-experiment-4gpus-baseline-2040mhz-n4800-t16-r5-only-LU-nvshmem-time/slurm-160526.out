@@ -7357,3 +7357,56 @@ Hello from rank: 1
 Hello from rank: 3
 Rank: 3 | Device count: 4 | Using device: 3 
 Rank: 1 | Device count: 4 | Using device: 1 
+Rank: 2 | Device count: 4 | Using device: 2 
+Rank: 0 | Device count: 4 | Using device: 0 
+Hello from NVSHMEM_PE=0/4
+4 GPUs detected, asked to use 4 GPUs
+device 0 | NVSHMEM init time (s): 4.7267
+TILED with N=4800 (4 of 1200x1200 tiles)
+SM Limit per kernel = 20
+cuBLAS workspace = 256 kB
+device 1 | NVSHMEM init time (s): 4.7267
+device 2 | NVSHMEM init time (s): 4.7266
+device 3 | NVSHMEM init time (s): 4.7266
+totalNodes=30
+bufferSize=15648
+tileSize=262144
+device 0 | Setup time (s): 0.9911
+device 0 | 0 run | time (s): 0.1995
+device 0 | 1 run | time (s): 0.2001
+device 0 | 2 run | time (s): 0.1994
+device 0 | 3 run | time (s): 0.2001
+device 0 | 4 run | time (s): 0.1987
+Total time used (s): 0.9980
+device 3 | Total program time (s): 7.0927
+device 2 | Total program time (s): 7.1648
+device 0 | Total program time (s): 7.1729
+device 1 | Total program time (s): 7.2036
+Starting monitoring (interval: 0.01s)
+Output file: /tmp/job_160526_lu_mustard_2040_4_gpu_1.csv
+
+Signal SIGTERM received. Stopping monitoring...
+Signal handler attempting to save data to /tmp/job_160526_lu_mustard_2040_4_gpu_1.csv...
+Saving 608 data points to /tmp/job_160526_lu_mustard_2040_4_gpu_1.csv...
+Data saved successfully to /tmp/job_160526_lu_mustard_2040_4_gpu_1.csv
+Exiting due to signal.
+Main: Shutting down NVML.
+Starting monitoring (interval: 0.01s)
+Output file: /tmp/job_160526_lu_mustard_2040_4_gpu_0.csv
+
+Signal SIGTERM received. Stopping monitoring...
+Signal handler attempting to save data to /tmp/job_160526_lu_mustard_2040_4_gpu_0.csv...
+Saving 611 data points to /tmp/job_160526_lu_mustard_2040_4_gpu_0.csv...
+Data saved successfully to /tmp/job_160526_lu_mustard_2040_4_gpu_0.csv
+Exiting due to signal.
+Main: Shutting down NVML.
+Starting monitoring (interval: 0.01s)
+Output file: /tmp/job_160526_lu_mustard_2040_4_gpu_2.csv
+
+Signal SIGTERM received. Stopping monitoring...
+Signal handler attempting to save data to /tmp/job_160526_lu_mustard_2040_4_gpu_2.csv...
+Saving 617 data points to /tmp/job_160526_lu_mustard_2040_4_gpu_2.csv...
+Data saved successfully to /tmp/job_160526_lu_mustard_2040_4_gpu_2.csv
+Exiting due to signal.
+Main: Shutting down NVML.
+Reset to default clocks
