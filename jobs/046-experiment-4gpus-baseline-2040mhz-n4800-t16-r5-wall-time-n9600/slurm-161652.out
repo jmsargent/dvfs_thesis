@@ -28890,3 +28890,67 @@ device 0 | Setup time (s): 3.2239
 device 0 | 0 run | time (s): 3.8303
 device 0 | 1 run | time (s): 3.8280
 device 0 | 2 run | time (s): 3.8281
+device 0 | 3 run | time (s): 3.8302
+device 0 | 4 run | time (s): 3.8280
+Total time used (s): 19.1446
+device 3 | Total program time (s): 29.0862
+device 2 | Total program time (s): 29.1369
+device 0 | Total program time (s): 29.1680
+Program end timestamp: 1774612909.526330
+device 1 | Total program time (s): 29.2807
+Starting monitoring (interval: 0.01s)
+Output file: /tmp/job_161652_lu_mustard_795_4_gpu_2.csv
+
+Signal SIGTERM received. Stopping monitoring...
+Signal handler attempting to save data to /tmp/job_161652_lu_mustard_795_4_gpu_2.csv...
+Saving 1968 data points to /tmp/job_161652_lu_mustard_795_4_gpu_2.csv...
+Data saved successfully to /tmp/job_161652_lu_mustard_795_4_gpu_2.csv
+Exiting due to signal.
+Main: Shutting down NVML.
+Starting monitoring (interval: 0.01s)
+Output file: /tmp/job_161652_lu_mustard_795_4_gpu_1.csv
+
+Signal SIGTERM received. Stopping monitoring...
+Signal handler attempting to save data to /tmp/job_161652_lu_mustard_795_4_gpu_1.csv...
+Saving 1948 data points to /tmp/job_161652_lu_mustard_795_4_gpu_1.csv...
+Data saved successfully to /tmp/job_161652_lu_mustard_795_4_gpu_1.csv
+Exiting due to signal.
+
+Collected 1949 samples
+Ensuring data is saved...
+Saving 1949 data points to /tmp/job_161652_lu_mustard_795_4_gpu_1.csv...
+Data saved successfully to /tmp/job_161652_lu_mustard_795_4_gpu_1.csv
+
+Power Summary:
+  Average: 20.3W
+  Min: 16.3W
+  Max: 21.4W
+
+Energy Consumption (calculated from hardware counter):
+  Total: 692.022 J
+
+GPU Frequency Summary:
+  Average: 697MHz
+  Min: 210MHz
+  Max: 795MHz
+Main: Shutting down NVML.
+Starting monitoring (interval: 0.01s)
+Output file: /tmp/job_161652_lu_mustard_795_4_gpu_0.csv
+
+Signal SIGTERM received. Stopping monitoring...
+Signal handler attempting to save data to /tmp/job_161652_lu_mustard_795_4_gpu_0.csv...
+Saving 1899 data points to /tmp/job_161652_lu_mustard_795_4_gpu_0.csv...
+Data saved successfully to /tmp/job_161652_lu_mustard_795_4_gpu_0.csv
+Exiting due to signal.
+Main: Shutting down NVML.
+Starting monitoring (interval: 0.01s)
+Output file: /tmp/job_161652_lu_mustard_795_4_gpu_3.csv
+
+Signal SIGTERM received. Stopping monitoring...
+Signal handler attempting to save data to /tmp/job_161652_lu_mustard_795_4_gpu_3.csv...
+Saving 1927 data points to /tmp/job_161652_lu_mustard_795_4_gpu_3.csv...
+Data saved successfully to /tmp/job_161652_lu_mustard_795_4_gpu_3.csv
+Exiting due to signal.
+Main: Shutting down NVML.
+Reset to default clocks
+Reset to default clocks
