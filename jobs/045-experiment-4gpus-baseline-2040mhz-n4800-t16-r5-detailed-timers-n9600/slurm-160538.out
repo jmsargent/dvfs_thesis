@@ -45305,3 +45305,49 @@ device 0 | Setup time (s): 3.2848
 device 0 | 0 run | time (s): 1.6244
 device 0 | 1 run | time (s): 1.6217
 device 0 | 2 run | time (s): 1.6238
+device 0 | 3 run | time (s): 1.6240
+device 0 | 4 run | time (s): 1.6223
+Total time used (s): 8.1162
+device 2 | Total program time (s): 17.7699
+device 3 | Total program time (s): 17.7994
+device 0 | Total program time (s): 17.8211
+device 1 | Total program time (s): 17.8904
+Starting monitoring (interval: 0.01s)
+Output file: /tmp/job_160538_lu_mustard_2040_16_gpu_3.csv
+
+Signal SIGTERM received. Stopping monitoring...
+Signal handler attempting to save data to /tmp/job_160538_lu_mustard_2040_16_gpu_3.csv...
+Saving 1448 data points to /tmp/job_160538_lu_mustard_2040_16_gpu_3.csv...
+Data saved successfully to /tmp/job_160538_lu_mustard_2040_16_gpu_3.csv
+Exiting due to signal.
+Main: Shutting down NVML.
+Starting monitoring (interval: 0.01s)
+Output file: /tmp/job_160538_lu_mustard_2040_16_gpu_1.csv
+
+Signal SIGTERM received. Stopping monitoring...
+Signal handler attempting to save data to /tmp/job_160538_lu_mustard_2040_16_gpu_1.csv...
+Saving 1424 data points to /tmp/job_160538_lu_mustard_2040_16_gpu_1.csv...
+Data saved successfully to /tmp/job_160538_lu_mustard_2040_16_gpu_1.csv
+Exiting due to signal.
+Main: Shutting down NVML.
+Starting monitoring (interval: 0.01s)
+Output file: /tmp/job_160538_lu_mustard_2040_16_gpu_0.csv
+
+Signal SIGTERM received. Stopping monitoring...
+Signal handler attempting to save data to /tmp/job_160538_lu_mustard_2040_16_gpu_0.csv...
+Saving 1422 data points to /tmp/job_160538_lu_mustard_2040_16_gpu_0.csv...
+Data saved successfully to /tmp/job_160538_lu_mustard_2040_16_gpu_0.csv
+Exiting due to signal.
+Main: Shutting down NVML.
+Starting monitoring (interval: 0.01s)
+Output file: /tmp/job_160538_lu_mustard_2040_16_gpu_2.csv
+
+Signal SIGTERM received. Stopping monitoring...
+Signal handler attempting to save data to /tmp/job_160538_lu_mustard_2040_16_gpu_2.csv...
+Saving 1434 data points to /tmp/job_160538_lu_mustard_2040_16_gpu_2.csv...
+Data saved successfully to /tmp/job_160538_lu_mustard_2040_16_gpu_2.csv
+Exiting due to signal.
+Main: Shutting down NVML.
+Reset to default clocks
+Reset to default clocks
+Reset to default clocks
