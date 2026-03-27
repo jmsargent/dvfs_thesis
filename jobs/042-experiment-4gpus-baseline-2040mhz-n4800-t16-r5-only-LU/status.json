@@ -1,0 +1,9 @@
+{
+  "git_sha": "645b762e48636f89572233b40de6d36d035dbaa5",
+  "id": "042-experiment-4gpus-baseline-2040mhz-n4800-t16-r5-only-LU",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/042-experiment-4gpus-baseline-2040mhz-n4800-t16-r5-only-LU",
+  "last_update_at": "2026-03-27T10:11:58+01:00",
+  "queued_at": "2026-03-27T10:11:58+01:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/042-experiment-4gpus-baseline-2040mhz-n4800-t16-r5-only-LU/run.sbatch",
+  "state": "QUEUED"
+}
