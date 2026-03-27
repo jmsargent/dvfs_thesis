@@ -28,3 +28,9 @@ device 2 | NVSHMEM init time (s): 7.5688
 TILED with N=9600 (16 of 600x600 tiles)
 SM Limit per kernel = 20
 cuBLAS workspace = 256 kB
+totalNodes=816
+bufferSize=1600
+tileSize=262144
+device 0 | Setup time (s): 4.1598
+device 0 | 0 run | time (s): 2.1804
+device 0 | 1 run | time (s): 2.1770
