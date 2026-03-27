@@ -134,6 +134,8 @@ void trivialCholesky(bool verify)
 
 void tiledCholesky(bool verify, bool subgraph, bool dot)
 {
+    auto setup_start = std::chrono::high_resolution_clock::now();
+
     // Initialize data
     auto originalMatrix = std::make_unique<double[]>(N * N); // Column-major
     generateRandomSymmetricPositiveDefiniteMatrix(originalMatrix.get(), N);
@@ -467,6 +469,10 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
         if (verbose) showMemUsage();
         if (verbose) std::cout << "Launching..." << std::endl;
 
+        auto setup_end = std::chrono::high_resolution_clock::now();
+        double setup_time = std::chrono::duration<double>(setup_end - setup_start).count();
+        printf("device %d | Setup time (s): %4.4f\n", myPE, setup_time);
+
         for (int i = 0; i < runs; i++) {
             checkCudaErrors(cudaMemcpy(d_matrix, originalMatrix.get(), N * N * sizeof(double), cudaMemcpyHostToDevice));
             nvshmem_barrier_all();
@@ -499,6 +505,11 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
         if (dot)
             checkCudaErrors(cudaGraphDebugDotPrint(graph, "./graph.dot", 0));
         checkCudaErrors(cudaGraphInstantiate(&graphExec, graph, nullptr, nullptr, 0));
+
+        auto setup_end = std::chrono::high_resolution_clock::now();
+        double setup_time = std::chrono::duration<double>(setup_end - setup_start).count();
+        printf("device %d | Setup time (s): %4.4f\n", myPE, setup_time);
+        
         for (int i = 0; i < runs; i++) {
             checkCudaErrors(cudaMemcpy(d_matrix, originalMatrix.get(), N * N * sizeof(double), cudaMemcpyHostToDevice));
             clock.start(s);
@@ -543,6 +554,8 @@ void Cholesky(bool tiled, bool verify, bool subgraph, bool dot)
 
 int main(int argc, char **argv)
 {
+    auto program_start = std::chrono::high_resolution_clock::now();
+
     auto cmdl = argh::parser(argc, argv);
 
     if (!parseCommonArgs(cmdl, cfg)) {
@@ -550,8 +563,13 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    auto init_start = std::chrono::high_resolution_clock::now();
     initNvshmemDevice(cmdl, cfg);
+    auto init_end = std::chrono::high_resolution_clock::now();
+
     myPE = cfg.myPE;
+    double init_time = std::chrono::duration<double>(init_end - init_start).count();
+    printf("device %d | NVSHMEM init time (s): %4.4f\n", myPE, init_time);
 
     if (!(cmdl["tiled"] || cmdl["subgraph"]))
         T = 1;
@@ -575,5 +593,10 @@ int main(int argc, char **argv)
     Cholesky(cmdl["tiled"], cmdl["verify"] && myPE == 0, cmdl["subgraph"], cmdl["dot"]);
     
     nvshmem_finalize();
+
+    auto program_end = std::chrono::high_resolution_clock::now();
+    double program_time = std::chrono::duration<double>(program_end - program_start).count();
+    printf("device %d | Total program time (s): %4.4f\n", myPE, program_time);
+
     return 0;
 }
