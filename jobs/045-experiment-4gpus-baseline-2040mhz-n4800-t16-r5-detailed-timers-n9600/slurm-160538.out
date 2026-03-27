@@ -13405,3 +13405,75 @@ cuBLAS workspace = 256 kB
 device 2 | NVSHMEM init time (s): 8.0741
 device 3 | NVSHMEM init time (s): 8.0744
 device 1 | NVSHMEM init time (s): 8.0788
+totalNodes=816
+bufferSize=1600
+tileSize=262144
+device 0 | Setup time (s): 3.5976
+device 0 | 0 run | time (s): 0.8564
+device 0 | 1 run | time (s): 0.8610
+device 0 | 2 run | time (s): 0.8604
+device 0 | 3 run | time (s): 0.8598
+device 0 | 4 run | time (s): 0.8614
+Total time used (s): 4.2991
+device 0 | Total program time (s): 17.2551
+device 1 | Total program time (s): 17.3067
+device 3 | Total program time (s): 17.4420
+device 2 | Total program time (s): 17.7039
+Starting monitoring (interval: 0.01s)
+Output file: /tmp/job_160538_cholesky_mustard_2040_16_gpu_2.csv
+
+Signal SIGTERM received. Stopping monitoring...
+Signal handler attempting to save data to /tmp/job_160538_cholesky_mustard_2040_16_gpu_2.csv...
+Saving 1594 data points to /tmp/job_160538_cholesky_mustard_2040_16_gpu_2.csv...
+Data saved successfully to /tmp/job_160538_cholesky_mustard_2040_16_gpu_2.csv
+Exiting due to signal.
+Main: Shutting down NVML.
+Starting monitoring (interval: 0.01s)
+Output file: /tmp/job_160538_cholesky_mustard_2040_16_gpu_1.csv
+
+Signal SIGTERM received. Stopping monitoring...
+Signal handler attempting to save data to /tmp/job_160538_cholesky_mustard_2040_16_gpu_1.csv...
+Saving 1616 data points to /tmp/job_160538_cholesky_mustard_2040_16_gpu_1.csv...
+Data saved successfully to /tmp/job_160538_cholesky_mustard_2040_16_gpu_1.csv
+Exiting due to signal.
+Main: Shutting down NVML.
+Starting monitoring (interval: 0.01s)
+Output file: /tmp/job_160538_cholesky_mustard_2040_16_gpu_3.csv
+
+Signal SIGTERM received. Stopping monitoring...
+Signal handler attempting to save data to /tmp/job_160538_cholesky_mustard_2040_16_gpu_3.csv...
+Saving 1595 data points to /tmp/job_160538_cholesky_mustard_2040_16_gpu_3.csv...
+Data saved successfully to /tmp/job_160538_cholesky_mustard_2040_16_gpu_3.csv
+Exiting due to signal.
+Main: Shutting down NVML.
+Starting monitoring (interval: 0.01s)
+Output file: /tmp/job_160538_cholesky_mustard_2040_16_gpu_0.csv
+
+Signal SIGTERM received. Stopping monitoring...
+Signal handler attempting to save data to /tmp/job_160538_cholesky_mustard_2040_16_gpu_0.csv...
+Saving 1584 data points to /tmp/job_160538_cholesky_mustard_2040_16_gpu_0.csv...
+Data saved successfully to /tmp/job_160538_cholesky_mustard_2040_16_gpu_0.csv
+Exiting due to signal.
+
+Collected 1585 samples
+Ensuring data is saved...
+Saving 1585 data points to /tmp/job_160538_cholesky_mustard_2040_16_gpu_0.csv...
+Data saved successfully to /tmp/job_160538_cholesky_mustard_2040_16_gpu_0.csv
+
+Power Summary:
+  Average: 26.3W
+  Min: 16.4W
+  Max: 41.7W
+
+Energy Consumption (calculated from hardware counter):
+  Total: 655.848 J
+
+GPU Frequency Summary:
+  Average: 1413MHz
+  Min: 210MHz
+  Max: 2040MHz
+Main: Shutting down NVML.
+Reset to default clocks
+Reset to default clocks
+Reset to default clocks
+Reset to default clocks
