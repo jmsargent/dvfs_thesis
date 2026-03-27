@@ -1,7 +1,7 @@
 ---
 id: TASK-002
 title: generate DAGs for benchmarks
-status: in-progress
+status: done
 priority: ""
 due: ""
 assignee: jmsargent94@gmail.com

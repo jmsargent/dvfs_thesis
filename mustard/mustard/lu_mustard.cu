@@ -608,6 +608,7 @@ void tiledLU(bool verify, bool subgraph, bool dot)
 
         auto setup_end = std::chrono::high_resolution_clock::now();
         double setup_time = std::chrono::duration<double>(setup_end - setup_start).count();
+        printf("device %d | Setup time (s): %4.4f\n", myPE, setup_time);
 
         for (int i = 0; i < runs; i++) {
             checkCudaErrors(cudaMemcpy(d_matrix, originalMatrix.get(), N * N * sizeof(double), cudaMemcpyHostToDevice));
@@ -644,7 +645,7 @@ void tiledLU(bool verify, bool subgraph, bool dot)
 
         auto setup_end = std::chrono::high_resolution_clock::now();
         double setup_time = std::chrono::duration<double>(setup_end - setup_start).count();
-        printf("Setup time (s): %4.4f\n", setup_time);
+        printf("device %d | Setup time (s): %4.4f\n", myPE, setup_time);
 
         for (int i = 0; i < runs; i++) {
             checkCudaErrors(cudaMemcpy(d_matrix, originalMatrix.get(), N * N * sizeof(double), cudaMemcpyHostToDevice));
@@ -702,8 +703,12 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    auto init_start = std::chrono::high_resolution_clock::now();
     initNvshmemDevice(cmdl, cfg);
+    auto init_end = std::chrono::high_resolution_clock::now();
     myPE = cfg.myPE;
+    double init_time = std::chrono::duration<double>(init_end - init_start).count();
+    printf("device %d | NVSHMEM init time (s): %4.4f\n", myPE, init_time);
 
     if (!(cmdl["tiled"] || cmdl["subgraph"]))
         T = 1;
@@ -730,7 +735,7 @@ int main(int argc, char **argv)
 
     auto program_end = std::chrono::high_resolution_clock::now();
     double program_time = std::chrono::duration<double>(program_end - program_start).count();
-    printf("Total program time (s): %4.4f\n", program_time);
+    printf("device %d | Total program time (s): %4.4f\n", myPE, program_time);
 
     return 0;
 }
