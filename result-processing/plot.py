@@ -4,6 +4,8 @@ import glob
 import os
 import re
 import json
+from datetime import datetime
+
 
 def trim_to_active_window(df):
     """Trim dataframe to rows where GPU is actively computing.
@@ -17,13 +19,74 @@ def trim_to_active_window(df):
     return df.loc[active.index[0]:active.index[-1]]
 
 
-def plot_energy_over_time(input_dir, save_dir):
+def parse_slurm_timings(slurm_path):
+    """Parse phase timings per experiment from slurm output file.
+
+    Returns dict keyed by exp_id (e.g. 'cholesky_mustard_f795_t16').
+    Uses device 0 as the reference for all timers.
+    Raises ValueError if any timing field is missing for an experiment.
     """
-    Plots energy (Joules) per GPU over time for each unique experiment.
+    timings = {}
+    current_exp = None
+
+    with open(slurm_path) as f:
+        for line in f:
+            line = line.strip()
+
+            m = re.match(r'START_EXPERIMENT: BENCH=(.+?)_FREQ=(\d+)_TILE=(\d+)', line)
+            if m:
+                bench, freq, tile = m.group(1), m.group(2), m.group(3)
+                current_exp = f"{bench}_f{freq}_t{tile}"
+                timings[current_exp] = {
+                    'nvshmem_init': None,
+                    'setup': None,
+                    'total_calc': None,
+                    'total_program': None,
+                }
+                continue
+
+            if current_exp is None:
+                continue
+
+            t = timings[current_exp]
+
+            m = re.match(r'device 0 \| NVSHMEM init time \(s\): ([\d.]+)', line)
+            if m:
+                t['nvshmem_init'] = float(m.group(1))
+                continue
+
+            m = re.match(r'device 0 \| Setup time \(s\): ([\d.]+)', line)
+            if m:
+                t['setup'] = float(m.group(1))
+                continue
+
+            m = re.match(r'Total time used \(s\): ([\d.]+)', line)
+            if m:
+                t['total_calc'] = float(m.group(1))
+                continue
+
+            m = re.match(r'device 0 \| Total program time \(s\): ([\d.]+)', line)
+            if m:
+                t['total_program'] = float(m.group(1))
+
+    for exp_id, t in timings.items():
+        missing = [k for k, v in t.items() if v is None]
+        if missing:
+            raise ValueError(f"Missing timing fields {missing} for experiment '{exp_id}'")
+
+    return timings
+
+
+def plot_energy_over_time(input_dir, save_dir, slurm_path):
+    """
+    Plots energy (Joules) per GPU over time for each unique experiment,
+    with shaded regions for program phases parsed from the slurm output.
     Input files expected: bench_fFreq_tTile_gpuID.csv
     """
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
+
+    slurm_timings = parse_slurm_timings(slurm_path)
 
     # Load CUDA event timings if available
     timing_path = os.path.join(input_dir, "cuda_event_timings.json")
@@ -46,6 +109,11 @@ def plot_energy_over_time(input_dir, save_dir):
             experiments[exp_id].append(f)
 
     for exp_id, files in experiments.items():
+        if exp_id not in slurm_timings:
+            raise ValueError(f"No slurm timing data found for experiment: '{exp_id}'")
+
+        phase = slurm_timings[exp_id]
+
         plt.figure(figsize=(12, 7))
         ax = plt.gca()
         cmap = plt.get_cmap('tab10')
@@ -62,10 +130,10 @@ def plot_energy_over_time(input_dir, save_dir):
 
             df = pd.read_csv(filepath)
 
-            # Trim to active compute window using power threshold
+            # Trim to active compute window
             df = trim_to_active_window(df)
 
-            # Normalize time (start at 0)
+            # Normalize time (start at 0 from first active moment)
             df['elapsed_s'] = df['timestamp'] - df['timestamp'].min()
 
             # Normalize energy (mJ to J, start at 0)
@@ -76,6 +144,20 @@ def plot_energy_over_time(input_dir, save_dir):
                     color=cmap(i % 10),
                     linewidth=2,
                     alpha=0.8)
+
+        # Phase positions anchored at t=0 (first active GPU moment = program start).
+        nvshmem_end = phase['nvshmem_init']
+        setup_end   = nvshmem_end + phase['setup']
+        calc_end    = setup_end   + phase['total_calc']
+
+        phase_regions = [
+            (0,           nvshmem_end, 'NVSHMEM Init', 'steelblue',   0.15),
+            (nvshmem_end,   setup_end,   'CUDA Setup',   'darkorange',  0.15),
+            (setup_end,     calc_end,    'Calculation',  'forestgreen', 0.15),
+        ]
+
+        for x_start, x_end, label, color, alpha in phase_regions:
+            ax.axvspan(x_start, x_end, alpha=alpha, color=color, label=label)
 
         # Annotate with CUDA event timing if available
         subtitle = ""
@@ -91,7 +173,7 @@ def plot_energy_over_time(input_dir, save_dir):
         plt.title(f'Energy Consumption | {bench_name} | Freq={freq}MHz | T={tile}{subtitle}', fontsize=14)
 
         plt.grid(True, linestyle='--', alpha=0.4)
-        plt.legend(title="Devices", loc='best')
+        plt.legend(title="Devices / Phases", loc='best')
         plt.tight_layout()
 
         save_name = f"{exp_id}_energy_plot.png"
@@ -101,7 +183,10 @@ def plot_energy_over_time(input_dir, save_dir):
 
 
 if __name__ == "__main__":
-    EXTRACTED_DATA = "extracted_results"
-    PLOT_OUTPUT = "energy_comparison_plots2"
+    now = datetime.now().strftime("%Y-%m-%d_%H-%M")
 
-    plot_energy_over_time(EXTRACTED_DATA, PLOT_OUTPUT)
+    EXTRACTED_DATA = "/Users/jonathansargent/dvfs_thesis/result-processing/extracted_results-27thmarch1149"
+    PLOT_OUTPUT    = f"/Users/jonathansargent/dvfs_thesis/result-processing/energy_comparison_plots_{now}"
+    SLURM_FILE     = "/Users/jonathansargent/dvfs_thesis/jobs/043-experiment-4gpus-baseline-2040mhz-n4800-t16-r5-detailed-timers/slurm-160534.out"
+
+    plot_energy_over_time(EXTRACTED_DATA, PLOT_OUTPUT, SLURM_FILE)

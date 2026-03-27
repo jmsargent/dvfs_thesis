@@ -1,0 +1,97 @@
+I want to plot results that exist in directory: "result-processing/extracted_results-27thmarch1149"
+I want it to be saved in energy_comparison_plots_{current date + time}
+
+the slurm-out file is available at: "jobs/043-experiment-4gpus-baseline-2040mhz-n4800-t16-r5-detailed-timers/slurm-160534.out"
+
+There is new time measurements available in that file that measures the different phases of the program,
+NVSHMEM init time e.g: "device 3 | NVSHMEM init time (s): 4.9580"
+Cuda graph setup time e.g: "Setup time (s): 1.2079"
+a calculation single run time e.g: "device 0 | 0 run | time (s): 0.1324"
+total calculation runtime: e.g: "Total time used (s): 0.6527"
+total program time e.g: "device 3 | Total program time (s): 6.2233"
+
+the order of the timers are nvshmem init -> cuda setup -> total runtime
+program time spans all the other intervals
+
+In "result-processing/plot.py", there is a previous way of plotting.
+I would like to adapt the script, to also plot vertical bars in the graph, for the
+different intervalls of time that are outputted in the program
+
+
+---------------------------------------------
+
+1. Timing anchor / alignment                                                                                                                                                                          
+  The slurm timers are durations from program start (e.g. "NVSHMEM init time: 4.96s"), but the CSV timestamps are absolute wall-clock values. The current code trims the CSV to when gpu_util_pct > 0,  
+  so t=0 in the plot is the first active GPU moment — not program start. NVSHMEM init likely runs before GPU utilization spikes. How should the phase bars be anchored to the energy trace's time axis?
+
+I don't think it will be a problem since previous plots have been in the range of time 
+where nvshmem init time must have been included.
+B) Keep the current trimmed t=0, and adjust the phase bar positions by subtracting the offset between program start and the first active GPU moment.
+
+2. Which device's timers to use as reference
+NVSHMEM init is reported by all 4 devices, but setup time and per-run times are only reported by device 0. Total program time differs slightly across devices. Should device 0 always be the          
+reference, or should you average across devices?
+
+device 0 is reference.
+
+3. Individual run bars vs. aggregate                                                                                                                                                                  
+There are 5 individual run timings logged (run 0–4). Should each run boundary be shown as a separate vertical bar, or just a single bar for the start and end of the total calculation block?
+
+lets start with aggregate
+
+4. Phases shown as boundaries or spans
+  Should each phase be shown as a pair of vertical lines (start + end), a shaded region, or a single line at the phase boundary? The spec says "vertical bars" but doesn't clarify.
+
+lets try a shaded region, where region colors are titled
+
+5. Output directory timestamp format
+The spec says energy_comparison_plots_{current date + time} — what format? e.g. 20260327_1149, 2026-03-27_11-49, etc.? 
+
+I like the 2026-03-27_11-49 option better    
+
+6. Experiments with no slurm timing data                                                                                                                                                              
+The slurm file covers all 8 experiments in the CSV directory. If a future CSV directory doesn't have a matching slurm file (or an experiment in the CSV has no matching timing block), should the plot
+be generated without bars, or skipped/flagged?   
+
+An error should be thrown
+
+7. Experiment ID matching                                                                                                                                                                             
+The slurm file uses BENCH=cholesky_mustard_FREQ=795_TILE=16 while CSV filenames use cholesky_mustard_f795_t16. Should the script derive this mapping automatically, or is a fixed parsing rule
+sufficient?The naming is different (FREQ=795 vs f795, TILE=16 vs t16). The script needs to translate between these two formats to match them up.                                                                 
+This is likely straightforward to parse automatically — so the question is really: are there any edge cases in naming I should be aware of, or is a simple automatic mapping fine? It's probably not a
+concern worth worrying about.
+
+A simple automatic mapping should be fine
+
+
+---------------------------------------------
+NEXT SESSION TODO
+---------------------------------------------
+
+The benchmark programs (lu_mustard.cu and cholesky_mustard.cu) have been updated to print
+absolute Unix wall-clock timestamps at program start and end:
+
+  Program start timestamp: 1774605184.422989
+  Program end timestamp:   1774605191.712345
+
+These are printed by rank 0 (myPE == 0) only.
+
+Once new experiments have been run with the updated binaries, update result-processing/plot.py
+to use these timestamps for phase alignment:
+
+1. In parse_slurm_timings(), also parse:
+     - "Program start timestamp: <float>"  -> key 'program_start_ts'
+     - "Program end timestamp: <float>"    -> key 'program_end_ts'
+
+2. In plot_energy_over_time(), for each experiment, compute the anchor offset:
+     offset_s = program_start_ts - raw_csv_start_timestamp
+   where raw_csv_start_timestamp is df['timestamp'].iloc[0] (before trimming).
+
+3. Place phase shaded regions using this offset:
+     nvshmem_end = offset_s + phase['nvshmem_init']
+     setup_end   = nvshmem_end + phase['setup']
+     calc_end    = setup_end   + phase['total_calc']
+   These are positions on the elapsed_s axis (which is relative to first active GPU moment).
+
+4. The new results directory will be a fresh extracted_results folder from the new slurm run.
+   Point the script at the new directory and new slurm file.

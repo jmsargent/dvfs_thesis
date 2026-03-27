@@ -5,6 +5,7 @@
 #include <nvshmem.h>
 #include <nvshmemx.h>
 
+#include <chrono>
 #include <cstdlib>
 #include <iostream>
 #include <memory>
@@ -554,6 +555,7 @@ void Cholesky(bool tiled, bool verify, bool subgraph, bool dot)
 
 int main(int argc, char **argv)
 {
+    auto wall_start = std::chrono::system_clock::now();
     auto program_start = std::chrono::high_resolution_clock::now();
 
     auto cmdl = argh::parser(argc, argv);
@@ -568,6 +570,10 @@ int main(int argc, char **argv)
     auto init_end = std::chrono::high_resolution_clock::now();
 
     myPE = cfg.myPE;
+    if (myPE == 0) {
+        double unix_start = std::chrono::duration<double>(wall_start.time_since_epoch()).count();
+        printf("Program start timestamp: %.6f\n", unix_start);
+    }
     double init_time = std::chrono::duration<double>(init_end - init_start).count();
     printf("device %d | NVSHMEM init time (s): %4.4f\n", myPE, init_time);
 
@@ -597,6 +603,11 @@ int main(int argc, char **argv)
     auto program_end = std::chrono::high_resolution_clock::now();
     double program_time = std::chrono::duration<double>(program_end - program_start).count();
     printf("device %d | Total program time (s): %4.4f\n", myPE, program_time);
+    if (myPE == 0) {
+        auto wall_end = std::chrono::system_clock::now();
+        double unix_end = std::chrono::duration<double>(wall_end.time_since_epoch()).count();
+        printf("Program end timestamp: %.6f\n", unix_end);
+    }
 
     return 0;
 }

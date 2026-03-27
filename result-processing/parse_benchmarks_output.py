@@ -135,7 +135,7 @@ def save_cuda_timings(timings, output_dir):
 # Main
 # ---------------------------------------------------------------------------
 
-def parse_slurm_output(file_path, output_dir="extracted_results"):
+def parse_slurm_output(file_path, output_dir="extracted_results-27thmarch1149"):
     """Top-level entry point: extract profiler CSVs and CUDA timings."""
     os.makedirs(output_dir, exist_ok=True)
 
@@ -150,5 +150,5 @@ def parse_slurm_output(file_path, output_dir="extracted_results"):
 
 if __name__ == "__main__":
     parse_slurm_output(
-        "/data/users/sargent/dvfs_thesis/jobs/041-experiment-4gpus-baseline-2040mhz-n4800-t16-r5/slurm-142371.out"
+        "/Users/jonathansargent/dvfs_thesis/jobs/043-experiment-4gpus-baseline-2040mhz-n4800-t16-r5-detailed-timers/slurm-160534.out"
     )
