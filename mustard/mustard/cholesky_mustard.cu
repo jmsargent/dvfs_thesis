@@ -228,7 +228,8 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
         checkCudaErrors(cublasSetWorkspace(cublasHandle, d_workspace_cublas[0], cublasWorkspaceSize));
         tiledCholeskyGraphCreator->beginCaptureOperation(
             std::make_pair(k, k),
-            {std::make_pair(k, k)});
+            {std::make_pair(k, k)},
+            "POTRF(" + std::to_string(k) + "," + std::to_string(k) + ")");
         if (subgraph) {
             mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(smLimit, d_flags);
             if (myPE != 0) cudaMemcpy2DAsync(getMatrixBlock(d_matrix, k, k), 
@@ -265,7 +266,8 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
             checkCudaErrors(cublasSetWorkspace(cublasHandle, d_workspace_cublas[i], cublasWorkspaceSize));
             tiledCholeskyGraphCreator->beginCaptureOperation(
                 std::make_pair(i, k),
-                {std::make_pair(k, k), std::make_pair(i, k)});
+                {std::make_pair(k, k), std::make_pair(i, k)},
+                "TRSM(" + std::to_string(i) + "," + std::to_string(k) + ")");
             if (subgraph) {
                 mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(smLimit, d_flags);
                 if (myPE != 0 && k != 0) cudaMemcpy2DAsync(getMatrixBlock(d_matrix, i, k), 
@@ -310,7 +312,8 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
             checkCudaErrors(cublasSetWorkspace(cublasHandle, d_workspace_cublas[i + T], cublasWorkspaceSize));
             tiledCholeskyGraphCreator->beginCaptureOperation(
                 std::make_pair(i, i),
-                {std::make_pair(i, i), std::make_pair(i, k)});
+                {std::make_pair(i, i), std::make_pair(i, k)},
+                "SYRK(" + std::to_string(i) + "," + std::to_string(i) + "," + std::to_string(k) + ")");
             
             if (subgraph) {
                 mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(smLimit, d_flags);
@@ -352,7 +355,8 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
                 checkCudaErrors(cublasSetWorkspace(cublasHandle, d_workspace_cublas[2*T+ (i-1)*T + (j-1)], cublasWorkspaceSize));
                 tiledCholeskyGraphCreator->beginCaptureOperation(
                     std::make_pair(j, i),
-                    {std::make_pair(j, i), std::make_pair(j, k), std::make_pair(i, k)});
+                    {std::make_pair(j, i), std::make_pair(j, k), std::make_pair(i, k)},
+                    "GEMM(" + std::to_string(j) + "," + std::to_string(i) + "," + std::to_string(k) + ")");
                 if (subgraph) {
                     mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(smLimit, d_flags);
                     if (myPE != 0) {
@@ -442,6 +446,10 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
                                                             dst, queue, d_dependencies);
         if (verbose) showMemUsage();
         if (verbose) std::cout << "Uploading graphs..." << std::endl;
+
+        if (!cfg.invocationPath.empty()) {
+            tiledCholeskyGraphCreator->printInvocations(cfg.invocationPath, myPE);
+        }
 
         cudaGraphExec_t *h_subgraphsExec = new cudaGraphExec_t[totalNodes];
         cudaGraphExec_t *d_subgraphsExec;

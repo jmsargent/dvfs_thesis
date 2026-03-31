@@ -178,7 +178,8 @@ cudaGraph_t recordSubgraph(double* subMatrix, int subT,
             
         tiledLUGraphCreator->beginCaptureOperation(
             std::make_pair(k, k),
-            {std::make_pair(k, k)});
+            {std::make_pair(k, k)},
+            "GETRF_SUB(" + std::to_string(k) + "," + std::to_string(k) + ")");
         checkCudaErrors(cusolverDnDgetrf(
             cusolverDnHandle,
             subB,
@@ -196,7 +197,8 @@ cudaGraph_t recordSubgraph(double* subMatrix, int subT,
             // L[i][k] = TRSM(A[i][k], A[k][k]) // the U part of A[k][k]
             tiledLUGraphCreator->beginCaptureOperation(
                 std::make_pair(k, i),
-                {std::make_pair(k, k), std::make_pair(k, i)});
+                {std::make_pair(k, k), std::make_pair(k, i)},
+                "TRSM_L_SUB(" + std::to_string(k) + "," + std::to_string(i) + ")");
             checkCudaErrors(cublasDtrsm(
                 cublasHandle,
                 CUBLAS_SIDE_LEFT, // used to be right for cholesky
@@ -216,7 +218,8 @@ cudaGraph_t recordSubgraph(double* subMatrix, int subT,
             checkCudaErrors(cublasSetWorkspace(cublasHandle, d_workspace_cublas[T+i-1], cublasWorkspaceSize));
             tiledLUGraphCreator->beginCaptureOperation(
                 std::make_pair(i, k),
-                {std::make_pair(k, k), std::make_pair(i, k)});
+                {std::make_pair(k, k), std::make_pair(i, k)},
+                "TRSM_R_SUB(" + std::to_string(i) + "," + std::to_string(k) + ")");
             checkCudaErrors(cublasDtrsm(
                 cublasHandle,
                 CUBLAS_SIDE_RIGHT, 
@@ -234,7 +237,8 @@ cudaGraph_t recordSubgraph(double* subMatrix, int subT,
                 checkCudaErrors(cublasSetWorkspace(cublasHandle, d_workspace_cublas[2*subT+j-1], cublasWorkspaceSize));
                 tiledLUGraphCreator->beginCaptureOperation(
                     std::make_pair(i, j),
-                    {std::make_pair(i, k), std::make_pair(k, j), std::make_pair(i, j)});
+                    {std::make_pair(i, k), std::make_pair(k, j), std::make_pair(i, j)},
+                    "GEMM_SUB(" + std::to_string(i) + "," + std::to_string(j) + "," + std::to_string(k) + ")");
                 checkCudaErrors(cublasGemmEx(
                     cublasHandle,
                     CUBLAS_OP_N,
@@ -351,7 +355,8 @@ void tiledLU(bool verify, bool subgraph, bool dot)
         checkCudaErrors(cublasSetWorkspace(cublasHandle, d_workspace_cublas[0], cublasWorkspaceSize));
         tiledLUGraphCreator->beginCaptureOperation(
             std::make_pair(k, k),
-            {std::make_pair(k, k)});
+            {std::make_pair(k, k)},
+            "GETRF(" + std::to_string(k) + "," + std::to_string(k) + ")");
         if (subgraph) {
             mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(smLimit, d_flags);
             if (myPE != 0) cudaMemcpy2DAsync(getMatrixBlock(d_matrix, k, k), 
@@ -398,7 +403,8 @@ void tiledLU(bool verify, bool subgraph, bool dot)
             checkCudaErrors(cublasSetWorkspace(cublasHandle, d_workspace_cublas[i], cublasWorkspaceSize));
             tiledLUGraphCreator->beginCaptureOperation(
                 std::make_pair(k, i),
-                {std::make_pair(k, k), std::make_pair(k, i)});
+                {std::make_pair(k, k), std::make_pair(k, i)},
+                "TRSM_L(" + std::to_string(k) + "," + std::to_string(i) + ")");
             if (subgraph) {
                 mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(smLimit, d_flags);
                 if (myPE != 0 && k != 0) cudaMemcpy2DAsync(getMatrixBlock(d_matrix, k, i), 
@@ -443,7 +449,8 @@ void tiledLU(bool verify, bool subgraph, bool dot)
             checkCudaErrors(cublasSetWorkspace(cublasHandle, d_workspace_cublas[T+i], cublasWorkspaceSize));
             tiledLUGraphCreator->beginCaptureOperation(
                 std::make_pair(i, k),
-                {std::make_pair(k, k), std::make_pair(i, k)});
+                {std::make_pair(k, k), std::make_pair(i, k)},
+                "TRSM_R(" + std::to_string(i) + "," + std::to_string(k) + ")");
             
             if (subgraph) {
                 mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(smLimit, d_flags);
@@ -488,7 +495,8 @@ void tiledLU(bool verify, bool subgraph, bool dot)
                 checkCudaErrors(cublasSetWorkspace(cublasHandle, d_workspace_cublas[2*T + j-1], cublasWorkspaceSize));
                 tiledLUGraphCreator->beginCaptureOperation(
                     std::make_pair(i, j),
-                    {std::make_pair(i, k), std::make_pair(k, j), std::make_pair(i, j)});
+                    {std::make_pair(i, k), std::make_pair(k, j), std::make_pair(i, j)},
+                    "GEMM(" + std::to_string(i) + "," + std::to_string(j) + "," + std::to_string(k) + ")");
                 if (subgraph) {
                     mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(smLimit, d_flags);
                     if (myPE != 0) {
@@ -578,6 +586,10 @@ void tiledLU(bool verify, bool subgraph, bool dot)
                                                             dst, queue, d_dependencies);
         if (verbose) showMemUsage();
         if (verbose) std::cout << "Uploading graphs..." << std::endl;
+
+        if (!cfg.invocationPath.empty()) {
+            tiledLUGraphCreator->printInvocations(cfg.invocationPath, myPE);
+        }
 
         cudaGraphExec_t *h_subgraphsExec = new cudaGraphExec_t[totalNodes];
         cudaGraphExec_t *d_subgraphsExec;

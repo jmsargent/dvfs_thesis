@@ -15,6 +15,7 @@ struct MustardConfig {
     int    workspace = 256;   // cuBLAS workspace in kB
     int    smLimit = 20;
     int    runs = 1;
+    std::string invocationPath = "";
 };
 
 // Print common options shared by all executables.
@@ -28,7 +29,8 @@ inline void printCommonUsage()
               << "    -r, --runs=<int>     Number of timing runs                    [default: 1]\n"
               << "    -v, --verbose        Enable verbose output\n"
               << "    --verify             Verify result correctness\n"
-              << "    --dot                Dump execution graph in DOT format\n";
+              << "    --dot                Dump execution graph in DOT format\n"
+              << "    --invocations=<path> Log task IDs and names to the specified path\n";
 }
 
 // Print usage for lu_mustard / cholesky_mustard (single-node).
@@ -93,6 +95,7 @@ inline bool parseCommonArgs(argh::parser& cmdl, MustardConfig& cfg)
         std::cerr << "Error: Must provide a valid number of runs! Got '" << cmdl({"run", "r", "R"}).str() << "'" << std::endl;
         return false;
     }
+    cmdl("invocations", "") >> cfg.invocationPath;
     return true;
 }
 

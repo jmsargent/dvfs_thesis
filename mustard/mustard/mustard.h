@@ -12,6 +12,8 @@
 #include <vector>
 #include <utility>
 #include <algorithm>
+#include <fstream>
+#include <string>
 
 #include "utils.h"
 #include "broker_queue.h"
@@ -135,6 +137,7 @@ namespace mustard {
         cudaGraph_t *subgraphs;
         cudaGraph_t graph;
         std::vector<std::vector<int>> subgraphDependencies;
+        std::vector<std::string> subgraphOpNames;
 
         TiledGraphCreator(cudaStream_t stream, cudaGraph_t graph, bool subgraph = false, int totalNodes = 1) : stream(stream), graph(graph)
         {
@@ -142,10 +145,11 @@ namespace mustard {
             this->subgraph = subgraph;
             this->subgraphs = new cudaGraph_t[totalNodes];
             this->subgraphDependencies.resize(totalNodes);
+            this->subgraphOpNames.resize(totalNodes);
             this->index_counter = 0;
         }
 
-        void beginCaptureOperation(MatrixTile tileToWrite, std::initializer_list<MatrixTile> tilesToRead)
+        void beginCaptureOperation(MatrixTile tileToWrite, std::initializer_list<MatrixTile> tilesToRead, const std::string& opName = "")
         {            
             auto tiles = std::vector<MatrixTile>(tilesToRead);
             tiles.push_back(tileToWrite);
@@ -159,6 +163,7 @@ namespace mustard {
                                                             nullptr, dependencies.size(), cudaStreamCaptureModeGlobal));
             } else {
                 this->subgraphDependencies[index_counter] = this->getSubgraphDependencies(tiles);
+                this->subgraphOpNames[index_counter] = opName;
                 
                 checkCudaErrors(cudaGraphCreate(&this->subgraphs[index_counter], 0));
                 checkCudaErrors(cudaStreamBeginCaptureToGraph(this->stream, this->subgraphs[index_counter], nullptr, 
@@ -192,6 +197,20 @@ namespace mustard {
                 }
                 std::cout << std::endl;
             }
+        }
+
+        void printInvocations(const std::string& path, int myPE)
+        {
+            std::string filename = path + "_PE" + std::to_string(myPE) + ".txt";
+            std::ofstream out(filename);
+            if (!out.is_open()) {
+                std::cerr << "Error: Could not open file " << filename << " for writing invocations." << std::endl;
+                return;
+            }
+            for (int i = 0; i < index_counter; i++) {
+                out << i << ": " << subgraphOpNames[i] << "\n";
+            }
+            out.close();
         }
 
         void insertDependencyKernel(int src, int dst, BrokerWorkDistributor queue, int* d_dependencies)
