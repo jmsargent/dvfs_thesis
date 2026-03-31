@@ -42,6 +42,8 @@ def parse_slurm_timings(slurm_path):
                     'setup': None,
                     'total_calc': None,
                     'total_program': None,
+                    'program_start_ts': None,
+                    'program_end_ts': None,
                 }
                 continue
 
@@ -68,6 +70,16 @@ def parse_slurm_timings(slurm_path):
             m = re.match(r'device 0 \| Total program time \(s\): ([\d.]+)', line)
             if m:
                 t['total_program'] = float(m.group(1))
+                continue
+
+            m = re.match(r'Program start timestamp: ([\d.]+)', line)
+            if m:
+                t['program_start_ts'] = float(m.group(1))
+                continue
+
+            m = re.match(r'Program end timestamp: ([\d.]+)', line)
+            if m:
+                t['program_end_ts'] = float(m.group(1))
 
     for exp_id, t in timings.items():
         missing = [k for k, v in t.items() if v is None]
@@ -124,6 +136,16 @@ def plot_energy_over_time(input_dir, save_dir, slurm_path):
         freq = freq_tile[0]
         tile = freq_tile[1]
 
+        # Use gpu0's CSV to compute the anchor offset between program start and
+        # the first active GPU moment (t=0 on the elapsed_s axis).
+        gpu0_file = sorted(files)[0]
+        df0_raw = pd.read_csv(gpu0_file)
+        raw_csv_start = df0_raw['timestamp'].iloc[0]
+        active_rows = df0_raw[df0_raw['gpu_util_pct'] > 0]
+        first_active_ts = df0_raw.loc[active_rows.index[0], 'timestamp'] if not active_rows.empty else raw_csv_start
+        # program_start_on_plot: where program start falls on the elapsed_s axis
+        program_start_on_plot = phase['program_start_ts'] - first_active_ts
+
         for i, filepath in enumerate(sorted(files)):
             gpu_match = re.search(r"gpu(\d+)", os.path.basename(filepath))
             gpu_id = gpu_match.group(1) if gpu_match else i
@@ -134,7 +156,7 @@ def plot_energy_over_time(input_dir, save_dir, slurm_path):
             df = trim_to_active_window(df)
 
             # Normalize time (start at 0 from first active moment)
-            df['elapsed_s'] = df['timestamp'] - df['timestamp'].min()
+            df['elapsed_s'] = df['timestamp'] - first_active_ts
 
             # Normalize energy (mJ to J, start at 0)
             df['energy_j'] = (df['total_energy_mj'] - df['total_energy_mj'].iloc[0]) / 1000.0
@@ -145,13 +167,13 @@ def plot_energy_over_time(input_dir, save_dir, slurm_path):
                     linewidth=2,
                     alpha=0.8)
 
-        # Phase positions anchored at t=0 (first active GPU moment = program start).
-        nvshmem_end = phase['nvshmem_init']
+        # Phase positions on the elapsed_s axis, anchored via the program start timestamp.
+        nvshmem_end = program_start_on_plot + phase['nvshmem_init']
         setup_end   = nvshmem_end + phase['setup']
         calc_end    = setup_end   + phase['total_calc']
 
         phase_regions = [
-            (0,           nvshmem_end, 'NVSHMEM Init', 'steelblue',   0.15),
+            (program_start_on_plot, nvshmem_end, 'NVSHMEM Init', 'steelblue',   0.15),
             (nvshmem_end,   setup_end,   'CUDA Setup',   'darkorange',  0.15),
             (setup_end,     calc_end,    'Calculation',  'forestgreen', 0.15),
         ]
@@ -185,8 +207,8 @@ def plot_energy_over_time(input_dir, save_dir, slurm_path):
 if __name__ == "__main__":
     now = datetime.now().strftime("%Y-%m-%d_%H-%M")
 
-    EXTRACTED_DATA = "/Users/jonathansargent/dvfs_thesis/result-processing/extracted_results-27thmarch1149"
+    EXTRACTED_DATA = "/Users/jonathansargent/dvfs_thesis/result-processing/extracted_results-27thmarch1352"
     PLOT_OUTPUT    = f"/Users/jonathansargent/dvfs_thesis/result-processing/energy_comparison_plots_{now}"
-    SLURM_FILE     = "/Users/jonathansargent/dvfs_thesis/jobs/043-experiment-4gpus-baseline-2040mhz-n4800-t16-r5-detailed-timers/slurm-160534.out"
+    SLURM_FILE     = "/Users/jonathansargent/dvfs_thesis/jobs/046-experiment-4gpus-baseline-2040mhz-n4800-t16-r5-wall-time-n9600/slurm-161652.out"
 
     plot_energy_over_time(EXTRACTED_DATA, PLOT_OUTPUT, SLURM_FILE)
