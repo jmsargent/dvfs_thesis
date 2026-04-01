@@ -1,1 +1,2 @@
 CUDA error at /data/users/sargent/dvfs_thesis/mustard/mustard/cholesky_mustard.cu:440 code=700 "cudaDeviceSynchronize()" 
+slurmstepd-europa: error: *** JOB 167174 ON europa CANCELLED AT 2026-04-01T16:29:12 DUE TO TIME LIMIT ***
