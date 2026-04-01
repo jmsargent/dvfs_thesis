@@ -1,8 +1,11 @@
 {
+  "cancel_kill_mtime_ns": 1775069410876869756,
+  "cancel_request_state": "queued",
+  "cancel_requested_at": "2026-04-01T20:50:10+02:00",
   "git_sha": "d22770f09b9516c60a43703819182509773a399b",
   "id": "056-run-subgraph-cholesky4",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/056-run-subgraph-cholesky4",
-  "last_update_at": "2026-04-01T19:43:09+02:00",
+  "last_update_at": "2026-04-01T20:50:10+02:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/056-run-subgraph-cholesky4/slurm-167226.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/056-run-subgraph-cholesky4/slurm-167226.out",
   "queued_at": "2026-04-01T19:43:03+02:00",
