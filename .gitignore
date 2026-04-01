@@ -10,3 +10,4 @@ containers/container.sif
 venv_hpc
 venv
 .vscode
+**/.DS_Store
