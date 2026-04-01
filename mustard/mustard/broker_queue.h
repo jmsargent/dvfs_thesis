@@ -31,6 +31,12 @@ public:
 		count = (int *)nvshmem_malloc(sizeof(int));
 		head = (unsigned int *)nvshmem_malloc(sizeof(unsigned int));
 		tail = (unsigned int *)nvshmem_malloc(sizeof(unsigned int));
+
+		cudaMemset((void *)tickets,     0, sizeof(Ticket) * N);
+		cudaMemset(ring_buffer,         0, sizeof(unsigned int) * N);
+		cudaMemset(count, 0, sizeof(int));
+		cudaMemset(head,  0, sizeof(unsigned int));
+		cudaMemset(tail,  0, sizeof(unsigned int));
 	}
 
 	void free_mem()
