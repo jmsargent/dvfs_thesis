@@ -2,8 +2,12 @@
   "git_sha": "7504c9813ea6475547011109db030f9d0120df55",
   "id": "050-run-subgraph",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/050-run-subgraph",
-  "last_update_at": "2026-04-01T15:39:18+02:00",
+  "last_update_at": "2026-04-01T15:39:23+02:00",
+  "log_err": "/data/users/chjing/dvfs_thesis/jobs/050-run-subgraph/slurm-167139.err",
+  "log_out": "/data/users/chjing/dvfs_thesis/jobs/050-run-subgraph/slurm-167139.out",
   "queued_at": "2026-04-01T15:39:18+02:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/050-run-subgraph/run.sbatch",
-  "state": "QUEUED"
+  "slurm_job_id": 167139,
+  "state": "SUBMITTED",
+  "submitted_at": "2026-04-01T15:39:21+02:00"
 }
