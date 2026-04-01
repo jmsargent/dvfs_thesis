@@ -10,3 +10,154 @@ Rank: 1 | Device count: 4 | Using device: 1
 Rank: 0 | Device count: 4 | Using device: 0 
 Rank: 2 | Device count: 4 | Using device: 2 
 Rank: 3 | Device count: 4 | Using device: 3 
+device 3 | NVSHMEM init time (s): 92.1126
+device 1 | NVSHMEM init time (s): 92.1128
+Hello from NVSHMEM_PE=0/4
+4 GPUs detected, asked to use 4 GPUs
+Program start timestamp: 1775071999.083656
+device 0 | NVSHMEM init time (s): 92.1128
+SUBGRAPH with N=2400 (4 of 600x600 tiles)
+SM Limit per kernel = 20
+cuBLAS workspace = 256 kB
+device 2 | NVSHMEM init time (s): 92.1128
+totalNodes=20
+bufferSize=1600
+tileSize=262144
+0:
+1: 0
+2: 0
+3: 0
+4: 1
+5: 1 2
+6: 1 3
+7: 2
+8: 2 3
+9: 3
+10: 4
+11: 5 10
+12: 6 10
+13: 7 11
+14: 8 11 12
+15: 9 12
+16: 13
+17: 14 16
+18: 15 17
+19: 18
+Creating queue...
+Allocating memory...
+Setting dependencies...
+Populating the queue...
+Inserting dependency kernels...
+GPU memory usage: used = 1726.187500, free = 20863.125000 MB, total = 22589.312500 MB
+Uploading graphs...
+Initializing scheduler...
+device 3 | Setup time (s): 0.3913
+device 1 | Setup time (s): 0.3914
+device 2 | Setup time (s): 0.3942
+GPU memory usage: used = 1730.187500, free = 20859.125000 MB, total = 22589.312500 MB
+Launching...
+device 0 | Setup time (s): 0.3937
+========= Invalid __global__ atomic of size 8 bytes
+========= Invalid __global__ atomic of size 8 bytes
+========= Invalid __global__ atomic of size 8 bytes
+========= Invalid __global__ atomic of size 8 bytes
+=========     at T1 nvshmemi_transfer_amo_fetch<unsigned int>(void *, T1, T1, int, nvshmemi_amo_t)+0x11b20
+=========     by thread (0,0,0) in block (0,0,0)
+=========     Address 0x0 is out of bounds
+=========     and is 1099578736640 bytes before the nearest allocation at 0x10004000000 of size 536870912 bytes
+=========     at T1 nvshmemi_transfer_amo_fetch<unsigned int>(void *, T1, T1, int, nvshmemi_amo_t)+0x11b20
+=========     by thread (0,0,0) in block (0,0,0)
+=========     Address 0x0 is out of bounds
+=========     and is 1099578736640 bytes before the nearest allocation at 0x10004000000 of size 536870912 bytes
+=========     Device Frame:mustard::kernel_scheduler(BrokerWorkDistributorT<(BrokerConsistency)1>, volatile int *, CUgraphExec_st **, int, int)+0x140
+=========     Saved host backtrace up to driver entry point at kernel launch time
+=========     Host Frame: [0x33ec2d]
+=========                in /.singularity.d/libs/libcuda.so.1
+=========     Host Frame: [0x227dc]
+=========                in /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/lib64/libcudart.so.12
+=========     Device Frame:mustard::kernel_scheduler(BrokerWorkDistributorT<(BrokerConsistency)1>, volatile int *, CUgraphExec_st **, int, int)+0x140
+=========     Saved host backtrace up to driver entry point at kernel launch time
+=========     Host Frame: [0x33ec2d]
+=========                in /.singularity.d/libs/libcuda.so.1
+=========     Host Frame: [0x227dc]
+=========                in /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/lib64/libcudart.so.12
+=========     at T1 nvshmemi_transfer_amo_fetch<unsigned int>(void *, T1, T1, int, nvshmemi_amo_t)+0x11b20
+=========     by thread (0,0,0) in block (0,0,0)
+=========     Address 0x0 is out of bounds
+=========     and is 1099578736640 bytes before the nearest allocation at 0x10004000000 of size 536870912 bytes
+=========     Device Frame:mustard::kernel_scheduler(BrokerWorkDistributorT<(BrokerConsistency)1>, volatile int *, CUgraphExec_st **, int, int)+0x140
+=========     Saved host backtrace up to driver entry point at kernel launch time
+=========     Host Frame: [0x33ec2d]
+=========                in /.singularity.d/libs/libcuda.so.1
+=========     Host Frame: [0x227dc]
+=========                in /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/lib64/libcudart.so.12
+=========     Host Frame:cudaGraphLaunch [0x776fe]
+=========                in /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/lib64/libcudart.so.12
+=========     Host Frame:tiledCholesky(bool, bool, bool) [0x95fe]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame:cudaGraphLaunch [0x776fe]
+=========                in /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/lib64/libcudart.so.12
+=========     Host Frame:cudaGraphLaunch [0x776fe]
+=========                in /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/lib64/libcudart.so.12
+=========     at T1 nvshmemi_transfer_amo_fetch<unsigned int>(void *, T1, T1, int, nvshmemi_amo_t)+0x11b20
+=========     by thread (0,0,0) in block (0,0,0)
+=========     Address 0x0 is out of bounds
+=========     and is 1099578736640 bytes before the nearest allocation at 0x10004000000 of size 536870912 bytes
+=========     Device Frame:mustard::kernel_scheduler(BrokerWorkDistributorT<(BrokerConsistency)1>, volatile int *, CUgraphExec_st **, int, int)+0x140
+=========     Saved host backtrace up to driver entry point at kernel launch time
+=========     Host Frame: [0x33ec2d]
+=========                in /.singularity.d/libs/libcuda.so.1
+=========     Host Frame: [0x227dc]
+=========                in /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/lib64/libcudart.so.12
+=========     Host Frame:cudaGraphLaunch [0x776fe]
+=========                in /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/lib64/libcudart.so.12
+=========     Host Frame:tiledCholesky(bool, bool, bool) [0x95fe]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame:tiledCholesky(bool, bool, bool) [0x95fe]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame:Cholesky(bool, bool, bool, bool) [0xa25c]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame:Cholesky(bool, bool, bool, bool) [0xa25c]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame:Cholesky(bool, bool, bool, bool) [0xa25c]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame:main [0xaa26]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame: [0x29d8f]
+=========                in /lib/x86_64-linux-gnu/libc.so.6
+=========     Host Frame:__libc_start_main [0x29e3f]
+=========                in /lib/x86_64-linux-gnu/libc.so.6
+=========     Host Frame:tiledCholesky(bool, bool, bool) [0x95fe]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame:main [0xaa26]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame: [0x29d8f]
+=========                in /lib/x86_64-linux-gnu/libc.so.6
+=========     Host Frame:__libc_start_main [0x29e3f]
+=========                in /lib/x86_64-linux-gnu/libc.so.6
+=========     Host Frame:_start [0x5c04]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+========= 
+=========     Host Frame:_start [0x5c04]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+========= 
+=========     Host Frame:Cholesky(bool, bool, bool, bool) [0xa25c]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame:main [0xaa26]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame: [0x29d8f]
+=========                in /lib/x86_64-linux-gnu/libc.so.6
+=========     Host Frame:__libc_start_main [0x29e3f]
+=========                in /lib/x86_64-linux-gnu/libc.so.6
+=========     Host Frame:_start [0x5c04]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+========= 
+=========     Host Frame:main [0xaa26]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame: [0x29d8f]
+=========                in /lib/x86_64-linux-gnu/libc.so.6
+=========     Host Frame:__libc_start_main [0x29e3f]
+=========                in /lib/x86_64-linux-gnu/libc.so.6
+=========     Host Frame:_start [0x5c04]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+========= 
