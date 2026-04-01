@@ -1,20 +1,26 @@
 {
+  "cancel_acknowledged_at": "2026-04-01T20:50:11+02:00",
   "cancel_kill_mtime_ns": 1775069410876869756,
-  "cancel_request_state": "queued",
+  "cancel_request_state": "accepted",
   "cancel_requested_at": "2026-04-01T20:50:10+02:00",
   "git_sha": "d22770f09b9516c60a43703819182509773a399b",
   "id": "056-run-subgraph-cholesky4",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/056-run-subgraph-cholesky4",
-  "last_update_at": "2026-04-01T20:50:10+02:00",
+  "last_update_at": "2026-04-01T20:50:12+02:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/056-run-subgraph-cholesky4/slurm-167226.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/056-run-subgraph-cholesky4/slurm-167226.out",
   "queued_at": "2026-04-01T19:43:03+02:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/056-run-subgraph-cholesky4/run.sbatch",
   "slurm_info": {
-    "raw_state": "PENDING",
-    "source": "squeue"
+    "ElapsedRaw": "0",
+    "ExitCode": "0:0",
+    "JobIDRaw": "167226",
+    "MaxRSS": "",
+    "State": "CANCELLED by 0",
+    "raw_state": "CANCELLED by 0",
+    "source": "sacct"
   },
   "slurm_job_id": 167226,
-  "state": "PENDING",
+  "state": "CANCELLED",
   "submitted_at": "2026-04-01T19:43:05+02:00"
 }
