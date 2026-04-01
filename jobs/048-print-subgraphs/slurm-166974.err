@@ -1,0 +1,2 @@
+/var/spool/slurmd/job166974/slurm_script: line 107: syntax error near unexpected token `('
+/var/spool/slurmd/job166974/slurm_script: line 107: `            for i in (0 1 2 3); do'
