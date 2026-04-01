@@ -1,0 +1,9 @@
+{
+  "git_sha": "7232ec88595df493f3712e9a97a231a2de6df6e9",
+  "id": "047-print-subgraphs",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/047-print-subgraphs",
+  "last_update_at": "2026-04-01T12:43:31+02:00",
+  "queued_at": "2026-04-01T12:43:31+02:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/047-print-subgraphs/run.sbatch",
+  "state": "QUEUED"
+}
