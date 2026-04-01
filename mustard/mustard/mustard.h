@@ -69,13 +69,19 @@ namespace mustard {
         nvshmem_int_atomic_fetch_add(dependencies + nodeIndex, -1, PE);
     }
     
-    __global__ void kernel_dep_update(BrokerWorkDistributor queue, 
-                                             int *dependencies, 
+    // queue_pe0 must be a BrokerWorkDistributor whose internal pointers have been replaced
+    // with nvshmem_ptr(..., 0) peer-mapped addresses (done on the host before graph capture).
+    // d_dependencies_pe0 must likewise be nvshmem_ptr(d_dependencies, 0).
+    // This kernel runs inside subgraphs that are device-launched from kernel_scheduler, which
+    // is itself host-launched (no NVSHMEM proxy state in the chain).  Replacing NVSHMEM ops
+    // with peer CUDA atomics + __threadfence_system avoids the null proxy channel fault.
+    __global__ void kernel_dep_update(BrokerWorkDistributor queue_pe0,
+                                             int *d_dependencies_pe0,
                                              int nodeIndex)
     {
-        int old = nvshmem_int_atomic_fetch_add(dependencies + nodeIndex, -1, 0); // on PE 0
+        int old = atomicAdd(d_dependencies_pe0 + nodeIndex, -1);
         if (old == 1) {
-            queue.enqueue(nodeIndex, 0);
+            queue_pe0.enqueue_remote(nodeIndex);
         }
     }
 
@@ -114,9 +120,18 @@ namespace mustard {
         }
     }
 
+    // queue_pe0 must hold PE 0's peer-mapped pointers (from nvshmem_ptr(..., 0) on host).
+    // flags         = local PE's d_flags (for FLAGS_OCCUP, which is tracked per-PE).
+    // flags_pe0     = PE 0's d_flags via peer pointer (for FLAGS_SUBG_COUNT, which is global).
+    // Replacing NVSHMEM ops with peer CUDA atomics avoids the null proxy channel fault that
+    // occurs when this graph is launched from the host via cudaGraphLaunch (job 058).
+    // cudaStreamGraphFireAndForget remains valid because schedulerExec is instantiated with
+    // cudaGraphInstantiateFlagDeviceLaunch, which enables device-launch semantics even for
+    // host-initiated launches on SM 8.x (L40S / Ada Lovelace).
     __global__ void kernel_scheduler(
-        BrokerWorkDistributor queue,
+        BrokerWorkDistributor queue_pe0,
         volatile int *flags,
+        volatile int *flags_pe0,
         cudaGraphExec_t *subgraphs,
         int totalSubgraphs,
         int device)
@@ -124,14 +139,14 @@ namespace mustard {
         unsigned int placeholder = UINT32_MAX;
         bool placeholder_bool = false;
 
-        while (nvshmem_int_atomic_fetch((int *)&flags[FLAGS_SUBG_COUNT], 0) < totalSubgraphs)
+        while (atomicAdd((int *)&flags_pe0[FLAGS_SUBG_COUNT], 0) < totalSubgraphs)
         {
-            if (flags[FLAGS_OCCUP] < (100) && queue.size(0) > 0)
+            if (flags[FLAGS_OCCUP] < (100) && queue_pe0.size_local() > 0)
             {
-                queue.dequeue(placeholder_bool, placeholder, 0);
+                queue_pe0.dequeue_local(placeholder_bool, placeholder);
                 if (placeholder_bool) {
                     cudaGraphLaunch(subgraphs[placeholder], cudaStreamGraphFireAndForget);
-                    nvshmem_int_atomic_inc((int *)&flags[FLAGS_SUBG_COUNT], 0);
+                    atomicAdd((int *)&flags_pe0[FLAGS_SUBG_COUNT], 1);
                 }
             }
         }
@@ -220,7 +235,9 @@ namespace mustard {
             out.close();
         }
 
-        void insertDependencyKernel(int src, int dst, BrokerWorkDistributor queue, int* d_dependencies)
+        // queue_pe0 and d_dependencies_pe0 must carry PE 0's peer-mapped pointers so that
+        // kernel_dep_update can use plain CUDA atomics instead of NVSHMEM ops.
+        void insertDependencyKernel(int src, int dst, BrokerWorkDistributor queue_pe0, int* d_dependencies_pe0)
         {
             cudaGraphNode_t dependencyUpdateNode;
             cudaKernelNodeParams params = {0};
@@ -228,7 +245,7 @@ namespace mustard {
             params.blockDim = dim3(1, 1, 1);
             params.extra = NULL;
             params.func = (void *)kernel_dep_update;
-            void *kernelArgs[3] = {&queue, &d_dependencies, &dst}; 
+            void *kernelArgs[3] = {&queue_pe0, &d_dependencies_pe0, &dst};
             params.kernelParams = kernelArgs;
             std::vector<cudaGraphNode_t> deps;
             deps.push_back(getTail(this->subgraphs[src]));

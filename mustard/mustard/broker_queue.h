@@ -177,6 +177,84 @@ public:
 		return false;
 	}
 
+	// enqueue_remote is like enqueue_local but uses __threadfence_system() instead of
+	// __threadfence().  Use this when the queue struct has been pre-loaded with PE 0's
+	// peer-mapped pointers so that writes are visible across device boundaries (PCIe P2P
+	// or NVLink).  Safe to call from any PE, including PE 0 (superset of enqueue_local).
+	__device__ inline bool enqueue_remote(const unsigned int &data)
+	{
+		int Num = atomicAdd(count, 0);
+		bool writeData = false;
+		while (!writeData && Num < N)
+		{
+			if (atomicAdd(count, 1) < N)
+				writeData = true;
+			else
+				Num = atomicAdd(count, -1) - 1;
+		}
+
+		if (writeData)
+		{
+			const unsigned int Pos = atomicAdd(tail, 1u);
+			const unsigned int P   = Pos % N;
+			const unsigned int B   = 2 * (Pos / N);
+
+			while (*(volatile Ticket *)&tickets[P] != B) { __threadfence_system(); }
+			ring_buffer[P] = data;
+			__threadfence_system();
+			*(volatile Ticket *)&tickets[P] = B + 1;
+			__threadfence_system();
+		}
+		return false;
+	}
+
+	// size_local: read queue occupancy using a plain CUDA atomic (no NVSHMEM).
+	// Valid when this struct holds PE 0's peer-mapped pointers (or on PE 0 locally).
+	__device__ int size_local() const
+	{
+		return atomicAdd(const_cast<int *>(count), 0);
+	}
+
+	// ensureDequeue_local / readData_local / dequeue_local mirror the NVSHMEM-based
+	// ensureDequeue / readData / dequeue but use plain CUDA atomics with
+	// __threadfence_system() so they work when the struct holds PE 0's peer-mapped
+	// pointers (cross-device access via PCIe P2P or NVLink).
+	__forceinline__ __device__ bool ensureDequeue_local()
+	{
+		int Num = atomicAdd(count, 0);
+		bool ensurance = false;
+		while (!ensurance && Num > 0)
+		{
+			if (atomicAdd(count, -1) > 0)
+				ensurance = true;
+			else
+				Num = atomicAdd(count, 1) + 1;
+		}
+		return ensurance;
+	}
+
+	__forceinline__ __device__ void readData_local(unsigned int &val)
+	{
+		const unsigned int Pos = atomicAdd(head, 1u);
+		const unsigned int P   = Pos % N;
+
+		// Spin until the producer has written the ticket value that signals this slot is ready.
+		// __threadfence_system() ensures we see the producer's write even if it is on another GPU.
+		while (*(volatile Ticket *)&tickets[P] != 2 * (Pos / N) + 1) { __threadfence_system(); }
+		val = ring_buffer[P];
+		__threadfence_system();
+		// Advance the ticket so the slot can be reused by a future producer.
+		*(volatile Ticket *)&tickets[P] = 2 * ((Pos + N) / N);
+		__threadfence_system();
+	}
+
+	__device__ inline void dequeue_local(bool &hasData, unsigned int &data)
+	{
+		hasData = ensureDequeue_local();
+		if (hasData)
+			readData_local(data);
+	}
+
 	__device__ inline void dequeue(bool &hasData, unsigned int &data, int pe)
 	{
 		hasData = ensureDequeue(pe);
