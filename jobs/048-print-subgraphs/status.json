@@ -2,12 +2,21 @@
   "git_sha": "41c9c6ffbcaa67ba3f5d1ba85293e89812a599c5",
   "id": "048-print-subgraphs",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/048-print-subgraphs",
-  "last_update_at": "2026-04-01T14:38:36+02:00",
+  "last_update_at": "2026-04-01T14:38:45+02:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/048-print-subgraphs/slurm-166974.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/048-print-subgraphs/slurm-166974.out",
   "queued_at": "2026-04-01T14:38:35+02:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/048-print-subgraphs/run.sbatch",
+  "slurm_info": {
+    "ElapsedRaw": "1",
+    "ExitCode": "2:0",
+    "JobIDRaw": "166974",
+    "MaxRSS": "",
+    "State": "FAILED",
+    "raw_state": "FAILED",
+    "source": "sacct"
+  },
   "slurm_job_id": 166974,
-  "state": "SUBMITTED",
+  "state": "FAILED",
   "submitted_at": "2026-04-01T14:38:35+02:00"
 }
