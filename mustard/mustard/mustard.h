@@ -92,7 +92,14 @@ namespace mustard {
         for (int i = tid; i < totalNodes; i = i + gridDim.x * blockDim.x)
         {
             if (dependencies[i] == 0)
-                queue.enqueue(i, 0);
+                // enqueue_local instead of enqueue(i, 0): this kernel is launched from the host
+                // via <<<>>>, which does not initialize the NVSHMEM per-kernel proxy state.
+                // enqueue(i, 0) routes through nvshmemi_transfer_amo_fetch which dereferences
+                // the null proxy channel pointer -> code 700 (confirmed job 057, compute-sanitizer).
+                // enqueue_local uses plain CUDA atomics on the same NVSHMEM-allocated memory,
+                // which is valid because this kernel only runs on PE 0 (local operations only).
+                // queue.enqueue(i, 0);
+                queue.enqueue_local(i);
         }
     }
 

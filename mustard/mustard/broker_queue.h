@@ -137,6 +137,46 @@ public:
 		return false;
 	}
 
+	// enqueue_local uses plain CUDA atomics instead of NVSHMEM ops.
+	// Only valid when the caller runs on the PE that owns the queue (local PE).
+	// Required for host-launched kernels (<<<>>>) where the NVSHMEM per-kernel
+	// proxy state is not initialized, causing nvshmemi_transfer_amo_fetch to
+	// dereference a null proxy channel pointer (confirmed by compute-sanitizer,
+	// job 057: "Invalid __global__ atomic ... Address 0x0 is out of bounds").
+	__device__ inline bool enqueue_local(const unsigned int &data)
+	{
+		// ensureEnqueue: reserve a slot in the count
+		int Num = atomicAdd(count, 0);
+		bool writeData = false;
+		while (!writeData && Num < N)
+		{
+			if (atomicAdd(count, 1) < N)
+			{
+				writeData = true;
+			}
+			else
+			{
+				Num = atomicAdd(count, -1) - 1;
+			}
+		}
+
+		if (writeData)
+		{
+			// putData: claim a position in the ring buffer
+			const unsigned int Pos = atomicAdd(tail, 1u);
+			const unsigned int P   = Pos % N;
+			const unsigned int B   = 2 * (Pos / N);
+
+			// wait for the slot's ticket to equal B (slot is free)
+			while (*(volatile Ticket *)&tickets[P] != B) { __threadfence(); }
+
+			ring_buffer[P] = data;
+			__threadfence();
+			*(volatile Ticket *)&tickets[P] = B + 1;
+		}
+		return false;
+	}
+
 	__device__ inline void dequeue(bool &hasData, unsigned int &data, int pe)
 	{
 		hasData = ensureDequeue(pe);
