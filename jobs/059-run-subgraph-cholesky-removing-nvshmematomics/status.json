@@ -1,0 +1,13 @@
+{
+  "git_sha": "ac4805df753f144c2d4114a99af030d22b402953",
+  "id": "059-run-subgraph-cholesky-removing-nvshmematomics",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/059-run-subgraph-cholesky-removing-nvshmematomics",
+  "last_update_at": "2026-04-01T22:18:20+02:00",
+  "log_err": "/data/users/chjing/dvfs_thesis/jobs/059-run-subgraph-cholesky-removing-nvshmematomics/slurm-167350.err",
+  "log_out": "/data/users/chjing/dvfs_thesis/jobs/059-run-subgraph-cholesky-removing-nvshmematomics/slurm-167350.out",
+  "queued_at": "2026-04-01T22:18:19+02:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/059-run-subgraph-cholesky-removing-nvshmematomics/run.sbatch",
+  "slurm_job_id": 167350,
+  "state": "SUBMITTED",
+  "submitted_at": "2026-04-01T22:18:20+02:00"
+}
