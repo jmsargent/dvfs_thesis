@@ -2,16 +2,21 @@
   "git_sha": "1162eee2544d3064382b8808ea8659ee7be8b91e",
   "id": "054-run-subgraph-cholesky3",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/054-run-subgraph-cholesky3",
-  "last_update_at": "2026-04-01T16:32:34+02:00",
+  "last_update_at": "2026-04-01T17:02:51+02:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/054-run-subgraph-cholesky3/slurm-167201.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/054-run-subgraph-cholesky3/slurm-167201.out",
   "queued_at": "2026-04-01T16:31:48+02:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/054-run-subgraph-cholesky3/run.sbatch",
   "slurm_info": {
-    "raw_state": "RUNNING",
-    "source": "squeue"
+    "ElapsedRaw": "1821",
+    "ExitCode": "0:0",
+    "JobIDRaw": "167201",
+    "MaxRSS": "",
+    "State": "TIMEOUT",
+    "raw_state": "TIMEOUT",
+    "source": "sacct"
   },
   "slurm_job_id": 167201,
-  "state": "RUNNING",
+  "state": "TIMEOUT",
   "submitted_at": "2026-04-01T16:31:50+02:00"
 }
