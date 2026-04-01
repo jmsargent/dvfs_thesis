@@ -161,3 +161,85 @@ device 0 | Setup time (s): 0.3937
 =========     Host Frame:_start [0x5c04]
 =========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
 ========= 
+========= Program hit cudaErrorLaunchFailure (error 719) due to "unspecified launch failure" on CUDA API call to cudaStreamSynchronize.
+=========     Saved host backtrace up to driver entry point at error
+=========     Host Frame: [0x469065]
+=========                in /.singularity.d/libs/libcuda.so.1
+=========     Host Frame:cudaStreamSynchronize [0x757ba]
+=========                in /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/lib64/libcudart.so.12
+=========     Host Frame:tiledCholesky(bool, bool, bool) [0x962d]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame:Cholesky(bool, bool, bool, bool) [0xa25c]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame:main [0xaa26]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame: [0x29d8f]
+=========                in /lib/x86_64-linux-gnu/libc.so.6
+=========     Host Frame:__libc_start_main [0x29e3f]
+=========                in /lib/x86_64-linux-gnu/libc.so.6
+=========     Host Frame:_start [0x5c04]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+========= 
+========= Program hit cudaErrorLaunchFailure (error 719) due to "unspecified launch failure" on CUDA API call to cudaStreamSynchronize.
+=========     Saved host backtrace up to driver entry point at error
+=========     Host Frame: [0x469065]
+=========                in /.singularity.d/libs/libcuda.so.1
+=========     Host Frame:cudaStreamSynchronize [0x757ba]
+=========                in /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/lib64/libcudart.so.12
+=========     Host Frame:tiledCholesky(bool, bool, bool) [0x962d]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame:Cholesky(bool, bool, bool, bool) [0xa25c]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame:main [0xaa26]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame: [0x29d8f]
+=========                in /lib/x86_64-linux-gnu/libc.so.6
+=========     Host Frame:__libc_start_main [0x29e3f]
+=========                in /lib/x86_64-linux-gnu/libc.so.6
+=========     Host Frame:_start [0x5c04]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+========= 
+========= Program hit cudaErrorLaunchFailure (error 719) due to "unspecified launch failure" on CUDA API call to cudaStreamSynchronize.
+=========     Saved host backtrace up to driver entry point at error
+=========     Host Frame: [0x469065]
+=========                in /.singularity.d/libs/libcuda.so.1
+=========     Host Frame:cudaStreamSynchronize [0x757ba]
+=========                in /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/lib64/libcudart.so.12
+=========     Host Frame:tiledCholesky(bool, bool, bool) [0x962d]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame:Cholesky(bool, bool, bool, bool) [0xa25c]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame:main [0xaa26]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame: [0x29d8f]
+=========                in /lib/x86_64-linux-gnu/libc.so.6
+=========     Host Frame:__libc_start_main [0x29e3f]
+=========                in /lib/x86_64-linux-gnu/libc.so.6
+=========     Host Frame:_start [0x5c04]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+========= 
+========= Program hit cudaErrorLaunchFailure (error 719) due to "unspecified launch failure" on CUDA API call to cudaStreamSynchronize.
+=========     Saved host backtrace up to driver entry point at error
+=========     Host Frame: [0x469065]
+=========                in /.singularity.d/libs/libcuda.so.1
+=========     Host Frame:cudaStreamSynchronize [0x757ba]
+=========                in /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/lib64/libcudart.so.12
+=========     Host Frame:tiledCholesky(bool, bool, bool) [0x962d]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame:Cholesky(bool, bool, bool, bool) [0xa25c]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame:main [0xaa26]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+=========     Host Frame: [0x29d8f]
+=========                in /lib/x86_64-linux-gnu/libc.so.6
+=========     Host Frame:__libc_start_main [0x29e3f]
+=========                in /lib/x86_64-linux-gnu/libc.so.6
+=========     Host Frame:_start [0x5c04]
+=========                in /data/users/chjing/dvfs_thesis/mustard/build/cholesky_mustard
+========= 
+========= Target application returned an error
+========= ERROR SUMMARY: 2 errors
+========= Target application returned an error
+========= ERROR SUMMARY: 2 errors
+========= Target application returned an error
+========= ERROR SUMMARY: 2 errors
