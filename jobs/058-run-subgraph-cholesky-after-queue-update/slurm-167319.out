@@ -1,0 +1,12 @@
+========= COMPUTE-SANITIZER
+========= COMPUTE-SANITIZER
+========= COMPUTE-SANITIZER
+========= COMPUTE-SANITIZER
+Hello from rank: 1
+Hello from rank: 0
+Hello from rank: 2
+Hello from rank: 3
+Rank: 1 | Device count: 4 | Using device: 1 
+Rank: 0 | Device count: 4 | Using device: 0 
+Rank: 2 | Device count: 4 | Using device: 2 
+Rank: 3 | Device count: 4 | Using device: 3 
