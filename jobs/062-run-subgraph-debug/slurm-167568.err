@@ -1,0 +1,7 @@
+INFO:    Terminating squashfuse_ll after timeout
+INFO:    Timeouts can be caused by a running background process
+[callisto:1892785] *** Process received signal ***
+[callisto:1892785] Signal: Bus error (7)
+[callisto:1892785] Signal code: Non-existant physical address (2)
+[callisto:1892785] Failing at address: 0x7a6e82adad00
+[callisto:1892785] *** End of error message ***

@@ -504,3 +504,4 @@ callisto:1893417:1893417 [1] NVSHMEM INFO mspace_malloc called with 8 bytes
 callisto:1893417:1893417 [1] NVSHMEM INFO free chunk with size = 408419328 bytes found
 callisto:1893417:1893417 [1] NVSHMEM INFO [1] type: 23nvshmemi_symmetric_heap allocated 8 bytes, 0 count, 0 alignment ptr: 0x1000ba80400
 callisto:1893417:1893417 [1] NVSHMEM INFO Calling ncclCommInitRank, teami->size = 4, teami->my_pe = 1
+Exit code: 124
