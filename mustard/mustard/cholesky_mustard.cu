@@ -433,35 +433,17 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
         }
         if (verbose) std::cout << "Populating the queue..." << std::endl;
 
-        checkCudaErrors(cudaMemcpy((void *)d_dependencies, (void *)h_dependencies,
+        checkCudaErrors(cudaMemcpy((void *)d_dependencies, (void *)h_dependencies, 
                                 sizeof(int) * totalNodes, cudaMemcpyHostToDevice));
         if (myPE == 0)
             mustard::kernel_populate_queue<<<108, 1024>>>(queue, d_dependencies, totalNodes);
         checkCudaErrors(cudaDeviceSynchronize());
-
-        // Build PE-0 peer-mapped views of the queue, flags, and dependency array.
-        // kernel_dep_update and kernel_scheduler use NVSHMEM ops that target PE 0, but those
-        // kernels run in graphs launched without NVSHMEM proxy state (host cudaGraphLaunch).
-        // Replacing the NVSHMEM ops with plain CUDA atomics on peer-mapped pointers is valid
-        // because nvshmem_malloc enables P2P access between all PEs on this node.
-        // On PE 0 nvshmem_ptr returns the local pointer unchanged, so this is safe for all PEs.
-        volatile int *d_flags_pe0 = (volatile int *)nvshmem_ptr((void *)d_flags, 0);
-
-        BrokerWorkDistributor queue_pe0 = queue; // shallow-copy N and all pointers, then remap
-        queue_pe0.count       = (int *)nvshmem_ptr((void *)queue.count,              0);
-        queue_pe0.head        = (unsigned int *)nvshmem_ptr((void *)queue.head,       0);
-        queue_pe0.tail        = (unsigned int *)nvshmem_ptr((void *)queue.tail,       0);
-        queue_pe0.tickets     = (volatile BrokerWorkDistributor::Ticket *)nvshmem_ptr((void *)queue.tickets, 0);
-        queue_pe0.ring_buffer = (unsigned int *)nvshmem_ptr((void *)queue.ring_buffer, 0);
-
-        int *d_dependencies_pe0 = (int *)nvshmem_ptr((void *)d_dependencies, 0);
-
         if (verbose) std::cout << "Inserting dependency kernels..." << std::endl;
 
         for (int dst = 0; dst < totalNodes; dst++)
-            for (int src_ind = 0; src_ind < h_dependencies[dst]; src_ind++)
-                tiledCholeskyGraphCreator->insertDependencyKernel(tiledCholeskyGraphCreator->subgraphDependencies[dst][src_ind],
-                                                            dst, queue_pe0, d_dependencies_pe0);
+            for (int src_ind = 0; src_ind < h_dependencies[dst]; src_ind++) 
+                tiledCholeskyGraphCreator->insertDependencyKernel(tiledCholeskyGraphCreator->subgraphDependencies[dst][src_ind], 
+                                                            dst, queue, d_dependencies);
         if (verbose) showMemUsage();
         if (verbose) std::cout << "Uploading graphs..." << std::endl;
 
@@ -489,9 +471,7 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
         cudaGraphExec_t schedulerExec;
         checkCudaErrors(cudaGraphCreate(&schedulerGraph, 0));
         cudaStreamBeginCapture(s, cudaStreamCaptureModeGlobal);
-        // queue_pe0 / d_flags_pe0: PE-0 peer-mapped pointers for cross-device CUDA atomics.
-        // d_flags: local PE's flags for per-PE FLAGS_OCCUP tracking.
-        mustard::kernel_scheduler<<<1, 1, 0, s>>>(queue_pe0, d_flags, d_flags_pe0, d_subgraphsExec, totalNodes, myPE);
+        mustard::kernel_scheduler<<<1, 1, 0, s>>>(queue, d_flags, d_subgraphsExec, totalNodes, myPE);
         cudaStreamEndCapture(s, &schedulerGraph);
         checkCudaErrors(cudaGraphInstantiate(&schedulerExec, schedulerGraph, cudaGraphInstantiateFlagDeviceLaunch));
         checkCudaErrors(cudaDeviceSynchronize());

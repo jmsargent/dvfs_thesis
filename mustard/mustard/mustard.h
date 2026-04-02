@@ -69,19 +69,13 @@ namespace mustard {
         nvshmem_int_atomic_fetch_add(dependencies + nodeIndex, -1, PE);
     }
     
-    // queue_pe0 must be a BrokerWorkDistributor whose internal pointers have been replaced
-    // with nvshmem_ptr(..., 0) peer-mapped addresses (done on the host before graph capture).
-    // d_dependencies_pe0 must likewise be nvshmem_ptr(d_dependencies, 0).
-    // This kernel runs inside subgraphs that are device-launched from kernel_scheduler, which
-    // is itself host-launched (no NVSHMEM proxy state in the chain).  Replacing NVSHMEM ops
-    // with peer CUDA atomics + __threadfence_system avoids the null proxy channel fault.
-    __global__ void kernel_dep_update(BrokerWorkDistributor queue_pe0,
-                                             int *d_dependencies_pe0,
+    __global__ void kernel_dep_update(BrokerWorkDistributor queue, 
+                                             int *dependencies, 
                                              int nodeIndex)
     {
-        int old = atomicAdd(d_dependencies_pe0 + nodeIndex, -1);
+        int old = nvshmem_int_atomic_fetch_add(dependencies + nodeIndex, -1, 0); // on PE 0
         if (old == 1) {
-            queue_pe0.enqueue_remote(nodeIndex);
+            queue.enqueue(nodeIndex, 0);
         }
     }
 
@@ -98,14 +92,7 @@ namespace mustard {
         for (int i = tid; i < totalNodes; i = i + gridDim.x * blockDim.x)
         {
             if (dependencies[i] == 0)
-                // enqueue_local instead of enqueue(i, 0): this kernel is launched from the host
-                // via <<<>>>, which does not initialize the NVSHMEM per-kernel proxy state.
-                // enqueue(i, 0) routes through nvshmemi_transfer_amo_fetch which dereferences
-                // the null proxy channel pointer -> code 700 (confirmed job 057, compute-sanitizer).
-                // enqueue_local uses plain CUDA atomics on the same NVSHMEM-allocated memory,
-                // which is valid because this kernel only runs on PE 0 (local operations only).
-                // queue.enqueue(i, 0);
-                queue.enqueue_local(i);
+                queue.enqueue(i, 0);
         }
     }
 
@@ -120,18 +107,9 @@ namespace mustard {
         }
     }
 
-    // queue_pe0 must hold PE 0's peer-mapped pointers (from nvshmem_ptr(..., 0) on host).
-    // flags         = local PE's d_flags (for FLAGS_OCCUP, which is tracked per-PE).
-    // flags_pe0     = PE 0's d_flags via peer pointer (for FLAGS_SUBG_COUNT, which is global).
-    // Replacing NVSHMEM ops with peer CUDA atomics avoids the null proxy channel fault that
-    // occurs when this graph is launched from the host via cudaGraphLaunch (job 058).
-    // cudaStreamGraphFireAndForget remains valid because schedulerExec is instantiated with
-    // cudaGraphInstantiateFlagDeviceLaunch, which enables device-launch semantics even for
-    // host-initiated launches on SM 8.x (L40S / Ada Lovelace).
     __global__ void kernel_scheduler(
-        BrokerWorkDistributor queue_pe0,
+        BrokerWorkDistributor queue,
         volatile int *flags,
-        volatile int *flags_pe0,
         cudaGraphExec_t *subgraphs,
         int totalSubgraphs,
         int device)
@@ -139,14 +117,14 @@ namespace mustard {
         unsigned int placeholder = UINT32_MAX;
         bool placeholder_bool = false;
 
-        while (atomicAdd((int *)&flags_pe0[FLAGS_SUBG_COUNT], 0) < totalSubgraphs)
+        while (nvshmem_int_atomic_fetch((int *)&flags[FLAGS_SUBG_COUNT], 0) < totalSubgraphs)
         {
-            if (flags[FLAGS_OCCUP] < (100) && queue_pe0.size_local() > 0)
+            if (flags[FLAGS_OCCUP] < (100) && queue.size(0) > 0)
             {
-                queue_pe0.dequeue_local(placeholder_bool, placeholder);
+                queue.dequeue(placeholder_bool, placeholder, 0);
                 if (placeholder_bool) {
                     cudaGraphLaunch(subgraphs[placeholder], cudaStreamGraphFireAndForget);
-                    atomicAdd((int *)&flags_pe0[FLAGS_SUBG_COUNT], 1);
+                    nvshmem_int_atomic_inc((int *)&flags[FLAGS_SUBG_COUNT], 0);
                 }
             }
         }
@@ -235,9 +213,7 @@ namespace mustard {
             out.close();
         }
 
-        // queue_pe0 and d_dependencies_pe0 must carry PE 0's peer-mapped pointers so that
-        // kernel_dep_update can use plain CUDA atomics instead of NVSHMEM ops.
-        void insertDependencyKernel(int src, int dst, BrokerWorkDistributor queue_pe0, int* d_dependencies_pe0)
+        void insertDependencyKernel(int src, int dst, BrokerWorkDistributor queue, int* d_dependencies)
         {
             cudaGraphNode_t dependencyUpdateNode;
             cudaKernelNodeParams params = {0};
@@ -245,7 +221,7 @@ namespace mustard {
             params.blockDim = dim3(1, 1, 1);
             params.extra = NULL;
             params.func = (void *)kernel_dep_update;
-            void *kernelArgs[3] = {&queue_pe0, &d_dependencies_pe0, &dst};
+            void *kernelArgs[3] = {&queue, &d_dependencies, &dst}; 
             params.kernelParams = kernelArgs;
             std::vector<cudaGraphNode_t> deps;
             deps.push_back(getTail(this->subgraphs[src]));

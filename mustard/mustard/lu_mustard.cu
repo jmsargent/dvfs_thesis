@@ -578,25 +578,12 @@ void tiledLU(bool verify, bool subgraph, bool dot)
         if (myPE == 0)
             mustard::kernel_populate_queue<<<108, 1024>>>(queue, d_dependencies, totalNodes);
         checkCudaErrors(cudaDeviceSynchronize());
-
-        // Build PE-0 peer-mapped views (same pattern as cholesky_mustard.cu).
-        volatile int *d_flags_pe0 = (volatile int *)nvshmem_ptr((void *)d_flags, 0);
-
-        BrokerWorkDistributor queue_pe0 = queue;
-        queue_pe0.count       = (int *)nvshmem_ptr((void *)queue.count,              0);
-        queue_pe0.head        = (unsigned int *)nvshmem_ptr((void *)queue.head,       0);
-        queue_pe0.tail        = (unsigned int *)nvshmem_ptr((void *)queue.tail,       0);
-        queue_pe0.tickets     = (volatile BrokerWorkDistributor::Ticket *)nvshmem_ptr((void *)queue.tickets, 0);
-        queue_pe0.ring_buffer = (unsigned int *)nvshmem_ptr((void *)queue.ring_buffer, 0);
-
-        int *d_dependencies_pe0 = (int *)nvshmem_ptr((void *)d_dependencies, 0);
-
         if (verbose) std::cout << "Inserting dependency kernels..." << std::endl;
 
         for (int dst = 0; dst < totalNodes; dst++)
-            for (int src_ind = 0; src_ind < h_dependencies[dst]; src_ind++)
-                tiledLUGraphCreator->insertDependencyKernel(tiledLUGraphCreator->subgraphDependencies[dst][src_ind],
-                                                            dst, queue_pe0, d_dependencies_pe0);
+            for (int src_ind = 0; src_ind < h_dependencies[dst]; src_ind++) 
+                tiledLUGraphCreator->insertDependencyKernel(tiledLUGraphCreator->subgraphDependencies[dst][src_ind], 
+                                                            dst, queue, d_dependencies);
         if (verbose) showMemUsage();
         if (verbose) std::cout << "Uploading graphs..." << std::endl;
 
@@ -624,7 +611,7 @@ void tiledLU(bool verify, bool subgraph, bool dot)
         cudaGraphExec_t schedulerExec;
         checkCudaErrors(cudaGraphCreate(&schedulerGraph, 0));
         cudaStreamBeginCapture(s, cudaStreamCaptureModeGlobal);
-        mustard::kernel_scheduler<<<1, 1, 0, s>>>(queue_pe0, d_flags, d_flags_pe0, d_subgraphsExec, totalNodes, myPE);
+        mustard::kernel_scheduler<<<1, 1, 0, s>>>(queue, d_flags, d_subgraphsExec, totalNodes, myPE);
         cudaStreamEndCapture(s, &schedulerGraph);
         checkCudaErrors(cudaGraphInstantiate(&schedulerExec, schedulerGraph, cudaGraphInstantiateFlagDeviceLaunch));
         checkCudaErrors(cudaDeviceSynchronize());
