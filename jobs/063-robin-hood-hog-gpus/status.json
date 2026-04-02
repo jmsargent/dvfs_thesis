@@ -1,0 +1,13 @@
+{
+  "git_sha": "60a3458b42ccd8b48d28b6adbe2f241ddf10e8d3",
+  "id": "063-robin-hood-hog-gpus",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/063-robin-hood-hog-gpus",
+  "last_update_at": "2026-04-02T13:20:10+02:00",
+  "log_err": "/data/users/chjing/dvfs_thesis/jobs/063-robin-hood-hog-gpus/slurm-167614.err",
+  "log_out": "/data/users/chjing/dvfs_thesis/jobs/063-robin-hood-hog-gpus/slurm-167614.out",
+  "queued_at": "2026-04-02T13:20:03+02:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/063-robin-hood-hog-gpus/run.sbatch",
+  "slurm_job_id": 167614,
+  "state": "SUBMITTED",
+  "submitted_at": "2026-04-02T13:20:06+02:00"
+}
