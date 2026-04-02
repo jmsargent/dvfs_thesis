@@ -1046,7 +1046,7 @@ void tiledLUStatic(bool verify, bool dot)
             waitParams.blockDim = dim3(1);
             waitParams.func = (void *)mustard::kernel_wait_static;
             int n_deps = (int)deps.size();
-            void *waitArgs[3] = {&d_task_deps[task], &n_deps, &d_completion_flags};
+            void *waitArgs[4] = {&d_task_deps[task], &n_deps, &d_completion_flags, &verbose};
             waitParams.kernelParams = waitArgs;
             checkCudaErrors(cudaGraphAddKernelNode(&waitNode, sg, nullptr, 0, &waitParams));
 
@@ -1067,8 +1067,8 @@ void tiledLUStatic(bool verify, bool dot)
         signalParams.blockDim = dim3(1);
         signalParams.func = (void *)mustard::kernel_signal_static;
         int task_id_val = task;
-        void *signalArgs[4] = {&task_id_val, &d_completion_flags,
-                               &d_task_notify_pes[task], &n_notify};
+        void *signalArgs[5] = {&task_id_val, &d_completion_flags,
+                               &d_task_notify_pes[task], &n_notify, &verbose};
         signalParams.kernelParams = signalArgs;
         checkCudaErrors(cudaGraphAddKernelNode(&signalNode, sg, &tail, 1, &signalParams));
     }

@@ -615,6 +615,8 @@ void tiledCholeskyStatic(bool verify, bool dot)
         std::cout << "bufferSize=" << workspaceInBytesOnDevice << std::endl;
         std::cout << "tileSize=" << cublasWorkspaceSize << std::endl;
     }
+    printf("device %d | tiledCholeskyStatic: building %d graphs\n", myPE, totalNodes);
+    fflush(stdout);
 
     cudaStream_t s;
     checkCudaErrors(cudaStreamCreate(&s));
@@ -786,6 +788,8 @@ void tiledCholeskyStatic(bool verify, bool dot)
     }
 
     checkCudaErrors(cudaDeviceSynchronize());
+    printf("device %d | tiledCholeskyStatic: graph construction done\n", myPE);
+    fflush(stdout);
 
     // Static task assignment — round-robin
     std::vector<std::vector<int>> pe_tasks(nPEs);
@@ -897,7 +901,7 @@ void tiledCholeskyStatic(bool verify, bool dot)
             waitParams.blockDim = dim3(1);
             waitParams.func = (void *)mustard::kernel_wait_static;
             int n_deps = (int)deps.size();
-            void *waitArgs[3] = {&d_task_deps[task], &n_deps, &d_completion_flags};
+            void *waitArgs[4] = {&d_task_deps[task], &n_deps, &d_completion_flags, &verbose};
             waitParams.kernelParams = waitArgs;
             checkCudaErrors(cudaGraphAddKernelNode(&waitNode, sg, nullptr, 0, &waitParams));
 
@@ -918,8 +922,8 @@ void tiledCholeskyStatic(bool verify, bool dot)
         signalParams.blockDim = dim3(1);
         signalParams.func = (void *)mustard::kernel_signal_static;
         int task_id_val = task;
-        void *signalArgs[4] = {&task_id_val, &d_completion_flags,
-                               &d_task_notify_pes[task], &n_notify};
+        void *signalArgs[5] = {&task_id_val, &d_completion_flags,
+                               &d_task_notify_pes[task], &n_notify, &verbose};
         signalParams.kernelParams = signalArgs;
         checkCudaErrors(cudaGraphAddKernelNode(&signalNode, sg, &tail, 1, &signalParams));
     }
@@ -938,6 +942,8 @@ void tiledCholeskyStatic(bool verify, bool dot)
         cudaGraphUpload(h_subgraphsExec[task], s);
     }
     checkCudaErrors(cudaDeviceSynchronize());
+    printf("device %d | tiledCholeskyStatic: graphs instantiated, entering timing loop\n", myPE);
+    fflush(stdout);
 
     if (!cfg.invocationPath.empty())
         tiledCholeskyGraphCreator->printInvocations(cfg.invocationPath, myPE);
@@ -945,6 +951,7 @@ void tiledCholeskyStatic(bool verify, bool dot)
     auto setup_end = std::chrono::high_resolution_clock::now();
     double setup_time = std::chrono::duration<double>(setup_end - setup_start).count();
     printf("device %d | Setup time (s): %4.4f\n", myPE, setup_time);
+    fflush(stdout);
 
     CudaEventClock clock;
     double totalTime = 0.0;
@@ -963,9 +970,16 @@ void tiledCholeskyStatic(bool verify, bool dot)
         }
         nvshmem_barrier_all();
 
+        printf("device %d | run %d: launching %zu tasks\n", myPE, i, my_tasks_sorted.size());
+        fflush(stdout);
         clock.start(s);
-        for (int task : my_tasks_sorted)
+        for (int task : my_tasks_sorted) {
+            printf("device %d | launching task %d\n", myPE, task);
+            fflush(stdout);
             checkCudaErrors(cudaGraphLaunch(h_subgraphsExec[task], s));
+        }
+        printf("device %d | run %d: all tasks launched, waiting for stream\n", myPE, i);
+        fflush(stdout);
         checkCudaErrors(cudaStreamSynchronize(s));
         clock.end(s);
         checkCudaErrors(cudaDeviceSynchronize());
