@@ -131,6 +131,25 @@ namespace mustard {
     }
 
 
+    __global__ void kernel_signal_static(int task_id,
+                                          int* d_completion_flags,
+                                          int* d_notify_pes,
+                                          int n_notify_pes)
+    {
+        int one = 1;
+        nvshmem_fence();
+        for (int i = 0; i < n_notify_pes; i++) {
+            nvshmem_int_put(&d_completion_flags[task_id], &one, 1, d_notify_pes[i]);
+        }
+    }
+
+    __global__ void kernel_wait_static(int* d_deps, int n_deps, int* d_completion_flags)
+    {
+        for (int i = 0; i < n_deps; i++) {
+            while (d_completion_flags[d_deps[i]] == 0) { }
+        }
+    }
+
     class TiledGraphCreator
     {
     public:

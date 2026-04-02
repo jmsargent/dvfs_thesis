@@ -15,6 +15,7 @@ struct MustardConfig {
     int    workspace = 256;   // cuBLAS workspace in kB
     int    smLimit = 20;
     int    runs = 1;
+    bool   staticMultiGPU = false;
     std::string invocationPath = "";
 };
 
@@ -41,7 +42,8 @@ inline void printSingleNodeUsage(const char* progName, const char* decomposition
               << "  The number of GPUs is determined by the number of NVSHMEM PEs (MPI ranks).\n"
               << "\n  Mode (pick one; default is single-kernel if none given):\n"
               << "    --tiled              Tiled execution (one graph per tile step)\n"
-              << "    --subgraph           Sub-graph (mustard) execution\n";
+              << "    --subgraph           Sub-graph (mustard) execution\n"
+              << "    --static-multigpu    Static multi-GPU scheduling (round-robin, no atomics)\n";
     printCommonUsage();
     std::cerr << "\n  Examples:\n"
               << "    " << progName << " -n=600 -t=2 --tiled --verify\n"
@@ -96,6 +98,7 @@ inline bool parseCommonArgs(argh::parser& cmdl, MustardConfig& cfg)
         return false;
     }
     cmdl("invocations", "") >> cfg.invocationPath;
+    cfg.staticMultiGPU = cmdl["static-multigpu"];
     return true;
 }
 

@@ -694,9 +694,471 @@ void tiledLU(bool verify, bool subgraph, bool dot)
     }
 }
 
-void LU(bool tiled, bool verify, bool subgraph, bool dot)
+void tiledLUStatic(bool verify, bool dot)
 {
-    if (tiled && myPE == 0)
+    auto setup_start = std::chrono::high_resolution_clock::now();
+
+    int nPEs = nvshmem_n_pes();
+
+    // Initialize data
+    auto originalMatrix = std::make_unique<double[]>(N * N); // Column-major
+    generateRandomSymmetricPositiveDefiniteMatrix(originalMatrix.get(), N);
+
+    // NVSHMEM allocations (all PEs participate)
+    volatile int *d_flags = (volatile int *) nvshmem_malloc(sizeof(int) * 32);
+    double *d_matrices    = (double *) nvshmem_malloc(N * N * sizeof(double));
+    double *d_matrix      = (double *) nvshmem_ptr(d_matrices, myPE);
+    double *d_matrix_remote = nullptr;
+    checkCudaErrors(cudaMemcpy(d_matrix, originalMatrix.get(), N * N * sizeof(double), cudaMemcpyHostToDevice));
+    if (myPE != 0)
+        d_matrix_remote = (double *) nvshmem_ptr(d_matrices, 0);
+
+    auto getMatrixBlock = [&](double* matrix, int i, int j) {
+        return matrix + i * B + j * B * N;
+    };
+
+    // Initialize libraries
+    cusolverDnHandle_t cusolverDnHandle;
+    cusolverDnParams_t cusolverDnParams;
+    cublasHandle_t cublasHandle;
+    checkCudaErrors(cusolverDnCreate(&cusolverDnHandle));
+    checkCudaErrors(cusolverDnCreateParams(&cusolverDnParams));
+    checkCudaErrors(cublasCreate(&cublasHandle));
+    checkCudaErrors(cublasSetSmCountTarget(cublasHandle, smLimit));
+
+    double one = 1.0;
+    double minusOne = -1.0;
+
+    int workspaceInBytesOnDevice;
+    checkCudaErrors(cusolverDnDgetrf_bufferSize(cusolverDnHandle, B, B, d_matrix, N,
+                                                &workspaceInBytesOnDevice));
+
+    double *d_workspace_cusolver;
+    int workspaces = T * T;
+    void **d_workspace_cublas = (void **)malloc(sizeof(void *) * workspaces);
+    int *d_info;
+    workspaceInBytesOnDevice *= 8;
+    checkCudaErrors(cudaMalloc(&d_workspace_cusolver, workspaceInBytesOnDevice));
+    int cublasWorkspaceSize = 1024 * workspace;
+    for (int i = 0; i < workspaces; i++)
+        checkCudaErrors(cudaMalloc(&d_workspace_cublas[i], cublasWorkspaceSize));
+    checkCudaErrors(cudaMalloc(&d_info, sizeof(int)));
+
+    cudaGraph_t graph;
+    checkCudaErrors(cudaGraphCreate(&graph, 0));
+
+    int totalNodes = T;
+    for (int k = 0; k < T; k++)
+        for (int i = k + 1; i < T; i++)
+            totalNodes += 2 + (T-(k+1));
+
+    if (verbose) {
+        std::cout << "totalNodes=" << totalNodes << std::endl;
+        std::cout << "bufferSize=" << workspaceInBytesOnDevice << std::endl;
+        std::cout << "tileSize=" << cublasWorkspaceSize << std::endl;
+    }
+
+    cudaStream_t s;
+    checkCudaErrors(cudaStreamCreate(&s));
+    checkCudaErrors(cusolverDnSetStream(cusolverDnHandle, s));
+    checkCudaErrors(cublasSetStream(cublasHandle, s));
+    checkCudaErrors(cublasSetWorkspace(cublasHandle, d_workspace_cublas[0], cublasWorkspaceSize));
+
+    auto tiledLUGraphCreator = std::make_unique<mustard::TiledGraphCreator>(s, graph, true, totalNodes);
+
+    // Graph construction — verbatim copy of the subgraph path in tiledLU
+    for (int k = 0; k < T; k++)
+    {
+        checkCudaErrors(cublasSetWorkspace(cublasHandle, d_workspace_cublas[0], cublasWorkspaceSize));
+        tiledLUGraphCreator->beginCaptureOperation(
+            std::make_pair(k, k),
+            {std::make_pair(k, k)},
+            "GETRF(" + std::to_string(k) + "," + std::to_string(k) + ")");
+        mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(smLimit, d_flags);
+        if (myPE != 0) cudaMemcpy2DAsync(getMatrixBlock(d_matrix, k, k),
+                                         sizeof(double) * N,
+                                         getMatrixBlock(d_matrix_remote, k, k),
+                                         sizeof(double) * N,
+                                         sizeof(double) * B,
+                                         B, cudaMemcpyDeviceToDevice, s);
+        if (B <= MAX_TILE)
+            checkCudaErrors(cusolverDnDgetrf(
+                cusolverDnHandle, B, B,
+                getMatrixBlock(d_matrix, k, k), N,
+                d_workspace_cusolver, NULL, d_info));
+        if (myPE != 0) cudaMemcpy2DAsync(getMatrixBlock(d_matrix_remote, k, k),
+                                         sizeof(double) * N,
+                                         getMatrixBlock(d_matrix, k, k),
+                                         sizeof(double) * N,
+                                         sizeof(double) * B,
+                                         B, cudaMemcpyDeviceToDevice, s);
+        mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(-smLimit, d_flags);
+        tiledLUGraphCreator->endCaptureOperation();
+
+        if (B > MAX_TILE) {
+            int subT = ceil((float)B / (float)MAX_TILE);
+            cudaGraph_t subLU = recordSubgraph(getMatrixBlock(d_matrix, k, k), subT,
+                                               s, cusolverDnHandle, cublasHandle,
+                                               d_workspace_cusolver, d_workspace_cublas,
+                                               cublasWorkspaceSize, d_info);
+            tiledLUGraphCreator->insertSubgraph(subLU);
+        }
+
+        for (int i = k + 1; i < T; i++)
+        {
+            checkCudaErrors(cublasSetWorkspace(cublasHandle, d_workspace_cublas[i], cublasWorkspaceSize));
+            tiledLUGraphCreator->beginCaptureOperation(
+                std::make_pair(k, i),
+                {std::make_pair(k, k), std::make_pair(k, i)},
+                "TRSM_L(" + std::to_string(k) + "," + std::to_string(i) + ")");
+            mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(smLimit, d_flags);
+            if (myPE != 0 && k != 0) cudaMemcpy2DAsync(getMatrixBlock(d_matrix, k, i),
+                                            sizeof(double) * N,
+                                            getMatrixBlock(d_matrix_remote, k, i),
+                                            sizeof(double) * N,
+                                            sizeof(double) * B,
+                                            B, cudaMemcpyDeviceToDevice, s);
+            if (myPE != 0) cudaMemcpy2DAsync(getMatrixBlock(d_matrix, k, k),
+                                            sizeof(double) * N,
+                                            getMatrixBlock(d_matrix_remote, k, k),
+                                            sizeof(double) * N,
+                                            sizeof(double) * B,
+                                            B, cudaMemcpyDeviceToDevice, s);
+            checkCudaErrors(cublasDtrsm(
+                cublasHandle,
+                CUBLAS_SIDE_LEFT,
+                CUBLAS_FILL_MODE_LOWER,
+                CUBLAS_OP_N,
+                CUBLAS_DIAG_UNIT,
+                B, B,
+                &one,
+                getMatrixBlock(d_matrix, k, k), N,
+                getMatrixBlock(d_matrix, k, i), N));
+            if (myPE != 0) cudaMemcpy2DAsync(getMatrixBlock(d_matrix_remote, k, i),
+                                            sizeof(double) * N,
+                                            getMatrixBlock(d_matrix, k, i),
+                                            sizeof(double) * N,
+                                            sizeof(double) * B,
+                                            B, cudaMemcpyDeviceToDevice, s);
+            mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(-smLimit, d_flags);
+            tiledLUGraphCreator->endCaptureOperation();
+        }
+
+        for (int i = k + 1; i < T; i++)
+        {
+            checkCudaErrors(cublasSetWorkspace(cublasHandle, d_workspace_cublas[T+i], cublasWorkspaceSize));
+            tiledLUGraphCreator->beginCaptureOperation(
+                std::make_pair(i, k),
+                {std::make_pair(k, k), std::make_pair(i, k)},
+                "TRSM_R(" + std::to_string(i) + "," + std::to_string(k) + ")");
+            mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(smLimit, d_flags);
+            if (myPE != 0 && k != 0) cudaMemcpy2DAsync(getMatrixBlock(d_matrix, i, k),
+                                            sizeof(double) * N,
+                                            getMatrixBlock(d_matrix_remote, i, k),
+                                            sizeof(double) * N,
+                                            sizeof(double) * B,
+                                            B, cudaMemcpyDeviceToDevice, s);
+            if (myPE != 0) cudaMemcpy2DAsync(getMatrixBlock(d_matrix, k, k),
+                                            sizeof(double) * N,
+                                            getMatrixBlock(d_matrix_remote, k, k),
+                                            sizeof(double) * N,
+                                            sizeof(double) * B,
+                                            B, cudaMemcpyDeviceToDevice, s);
+            checkCudaErrors(cublasDtrsm(
+                cublasHandle,
+                CUBLAS_SIDE_RIGHT,
+                CUBLAS_FILL_MODE_UPPER,
+                CUBLAS_OP_N,
+                CUBLAS_DIAG_NON_UNIT,
+                B, B,
+                &one,
+                getMatrixBlock(d_matrix, k, k), N,
+                getMatrixBlock(d_matrix, i, k), N));
+            if (myPE != 0) cudaMemcpy2DAsync(getMatrixBlock(d_matrix_remote, i, k),
+                                            sizeof(double) * N,
+                                            getMatrixBlock(d_matrix, i, k),
+                                            sizeof(double) * N,
+                                            sizeof(double) * B,
+                                            B, cudaMemcpyDeviceToDevice, s);
+            mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(-smLimit, d_flags);
+            tiledLUGraphCreator->endCaptureOperation();
+
+            for (int j = k + 1; j < T; j++)
+            {
+                checkCudaErrors(cublasSetWorkspace(cublasHandle, d_workspace_cublas[2*T + j-1], cublasWorkspaceSize));
+                tiledLUGraphCreator->beginCaptureOperation(
+                    std::make_pair(i, j),
+                    {std::make_pair(i, k), std::make_pair(k, j), std::make_pair(i, j)},
+                    "GEMM(" + std::to_string(i) + "," + std::to_string(j) + "," + std::to_string(k) + ")");
+                mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(smLimit, d_flags);
+                if (myPE != 0) {
+                    cudaMemcpy2DAsync(getMatrixBlock(d_matrix, i, k),
+                                      sizeof(double) * N,
+                                      getMatrixBlock(d_matrix_remote, i, k),
+                                      sizeof(double) * N,
+                                      sizeof(double) * B,
+                                      B, cudaMemcpyDeviceToDevice, s);
+                    cudaMemcpy2DAsync(getMatrixBlock(d_matrix, k, j),
+                                      sizeof(double) * N,
+                                      getMatrixBlock(d_matrix_remote, k, j),
+                                      sizeof(double) * N,
+                                      sizeof(double) * B,
+                                      B, cudaMemcpyDeviceToDevice, s);
+                    cudaMemcpy2DAsync(getMatrixBlock(d_matrix, i, j),
+                                      sizeof(double) * N,
+                                      getMatrixBlock(d_matrix_remote, i, j),
+                                      sizeof(double) * N,
+                                      sizeof(double) * B,
+                                      B, cudaMemcpyDeviceToDevice, s);
+                }
+                checkCudaErrors(cublasGemmEx(
+                    cublasHandle,
+                    CUBLAS_OP_N, CUBLAS_OP_N,
+                    B, B, B,
+                    &minusOne,
+                    getMatrixBlock(d_matrix, i, k), CUDA_R_64F, N,
+                    getMatrixBlock(d_matrix, k, j), CUDA_R_64F, N,
+                    &one,
+                    getMatrixBlock(d_matrix, i, j), CUDA_R_64F, N,
+                    CUBLAS_COMPUTE_64F,
+                    CUBLAS_GEMM_DEFAULT));
+                if (myPE != 0) cudaMemcpy2DAsync(getMatrixBlock(d_matrix_remote, i, j),
+                                                  sizeof(double) * N,
+                                                  getMatrixBlock(d_matrix, i, j),
+                                                  sizeof(double) * N,
+                                                  sizeof(double) * B,
+                                                  B, cudaMemcpyDeviceToDevice, s);
+                mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(-smLimit, d_flags);
+                tiledLUGraphCreator->endCaptureOperation();
+            }
+        }
+    }
+
+    checkCudaErrors(cudaDeviceSynchronize());
+
+    // Static task assignment — round-robin
+    std::vector<std::vector<int>> pe_tasks(nPEs);
+    for (int i = 0; i < totalNodes; i++)
+        pe_tasks[i % nPEs].push_back(i);
+
+    std::vector<int> task_pe(totalNodes);
+    for (int i = 0; i < totalNodes; i++)
+        task_pe[i] = i % nPEs;
+
+    // Topological sort of myPE's tasks respecting same-PE dependencies
+    std::vector<int> my_tasks_sorted;
+    std::set<int> topo_done;
+    while (my_tasks_sorted.size() < pe_tasks[myPE].size()) {
+        bool progress = false;
+        for (int task : pe_tasks[myPE]) {
+            if (topo_done.count(task)) continue;
+            bool ready = true;
+            for (int dep : tiledLUGraphCreator->subgraphDependencies[task]) {
+                if (task_pe[dep] == myPE && !topo_done.count(dep)) {
+                    ready = false;
+                    break;
+                }
+            }
+            if (ready) {
+                my_tasks_sorted.push_back(task);
+                topo_done.insert(task);
+                progress = true;
+            }
+        }
+        if (!progress) break;
+    }
+
+    // NVSHMEM completion flags
+    int *d_completion_flags = (int *) nvshmem_malloc(sizeof(int) * totalNodes);
+    checkCudaErrors(cudaMemset(d_completion_flags, 0, sizeof(int) * totalNodes));
+
+    // Reverse dependency map
+    std::vector<std::vector<int>> dependents(totalNodes);
+    for (int j = 0; j < totalNodes; j++)
+        for (int dep : tiledLUGraphCreator->subgraphDependencies[j])
+            dependents[dep].push_back(j);
+
+    // Allocate per-task device arrays for deps and notify PEs
+    std::vector<int*> d_task_deps(totalNodes, nullptr);
+    std::vector<int*> d_task_notify_pes(totalNodes, nullptr);
+
+    for (int task : pe_tasks[myPE]) {
+        auto& deps = tiledLUGraphCreator->subgraphDependencies[task];
+        if (!deps.empty()) {
+            checkCudaErrors(cudaMalloc(&d_task_deps[task], sizeof(int) * deps.size()));
+            checkCudaErrors(cudaMemcpy(d_task_deps[task], deps.data(),
+                                       sizeof(int) * deps.size(), cudaMemcpyHostToDevice));
+        }
+
+        std::set<int> notify_set;
+        for (int dep_task : dependents[task])
+            notify_set.insert(task_pe[dep_task]);
+        std::vector<int> notify_vec(notify_set.begin(), notify_set.end());
+        if (!notify_vec.empty()) {
+            checkCudaErrors(cudaMalloc(&d_task_notify_pes[task], sizeof(int) * notify_vec.size()));
+            checkCudaErrors(cudaMemcpy(d_task_notify_pes[task], notify_vec.data(),
+                                       sizeof(int) * notify_vec.size(), cudaMemcpyHostToDevice));
+        }
+    }
+
+    // Helper to find tail node of a subgraph
+    auto getSubgraphTail = [](cudaGraph_t g) -> cudaGraphNode_t {
+        size_t numEdges;
+        MUSTARD_cudaGraphGetEdges(g, nullptr, nullptr, &numEdges);
+        if (numEdges == 0) {
+            size_t numNodes = 1;
+            cudaGraphNode_t node;
+            cudaGraphGetNodes(g, &node, &numNodes);
+            return node;
+        }
+        std::vector<cudaGraphNode_t> from(numEdges), to(numEdges);
+        MUSTARD_cudaGraphGetEdges(g, from.data(), to.data(), &numEdges);
+        std::map<cudaGraphNode_t, bool> hasOutgoing;
+        std::set<cudaGraphNode_t> noOutgoing;
+        for (size_t e = 0; e < numEdges; e++) {
+            hasOutgoing[from[e]] = true;
+            noOutgoing.erase(from[e]);
+            if (!hasOutgoing[to[e]]) noOutgoing.insert(to[e]);
+        }
+        if (noOutgoing.size() == 1) return *noOutgoing.begin();
+        size_t numNodes = 0;
+        cudaGraphGetNodes(g, nullptr, &numNodes);
+        std::vector<cudaGraphNode_t> nodes(numNodes);
+        cudaGraphGetNodes(g, nodes.data(), &numNodes);
+        return nodes.back();
+    };
+
+    // Inject wait and signal kernels into owned subgraphs
+    for (int task : pe_tasks[myPE]) {
+        cudaGraph_t sg = tiledLUGraphCreator->subgraphs[task];
+        auto& deps = tiledLUGraphCreator->subgraphDependencies[task];
+
+        // Prepend wait kernel (only if task has dependencies)
+        if (!deps.empty()) {
+            size_t numRoots;
+            cudaGraphGetRootNodes(sg, nullptr, &numRoots);
+            std::vector<cudaGraphNode_t> roots(numRoots);
+            cudaGraphGetRootNodes(sg, roots.data(), &numRoots);
+
+            cudaGraphNode_t waitNode;
+            cudaKernelNodeParams waitParams = {0};
+            waitParams.gridDim  = dim3(1);
+            waitParams.blockDim = dim3(1);
+            waitParams.func = (void *)mustard::kernel_wait_static;
+            int n_deps = (int)deps.size();
+            void *waitArgs[3] = {&d_task_deps[task], &n_deps, &d_completion_flags};
+            waitParams.kernelParams = waitArgs;
+            checkCudaErrors(cudaGraphAddKernelNode(&waitNode, sg, nullptr, 0, &waitParams));
+
+            for (auto& root : roots)
+                MUSTARD_cudaGraphAddDependencies(sg, &waitNode, &root, 1);
+        }
+
+        // Append signal kernel
+        std::set<int> notify_set;
+        for (int dep_task : dependents[task])
+            notify_set.insert(task_pe[dep_task]);
+        int n_notify = (int)notify_set.size();
+
+        cudaGraphNode_t tail = getSubgraphTail(sg);
+        cudaGraphNode_t signalNode;
+        cudaKernelNodeParams signalParams = {0};
+        signalParams.gridDim  = dim3(1);
+        signalParams.blockDim = dim3(1);
+        signalParams.func = (void *)mustard::kernel_signal_static;
+        int task_id_val = task;
+        void *signalArgs[4] = {&task_id_val, &d_completion_flags,
+                               &d_task_notify_pes[task], &n_notify};
+        signalParams.kernelParams = signalArgs;
+        checkCudaErrors(cudaGraphAddKernelNode(&signalNode, sg, &tail, 1, &signalParams));
+    }
+
+    // Instantiate and upload owned subgraphs
+    cudaGraphExec_t *h_subgraphsExec = new cudaGraphExec_t[totalNodes];
+    for (int task : pe_tasks[myPE]) {
+        if (dot) {
+            char filename[32];
+            sprintf(filename, "./graph_%d_%d.dot", task, myPE);
+            checkCudaErrors(cudaGraphDebugDotPrint(tiledLUGraphCreator->subgraphs[task], filename, 0));
+        }
+        checkCudaErrors(cudaGraphInstantiate(&h_subgraphsExec[task],
+                                             tiledLUGraphCreator->subgraphs[task],
+                                             nullptr, nullptr, 0));
+        cudaGraphUpload(h_subgraphsExec[task], s);
+    }
+    checkCudaErrors(cudaDeviceSynchronize());
+
+    if (!cfg.invocationPath.empty())
+        tiledLUGraphCreator->printInvocations(cfg.invocationPath, myPE);
+
+    auto setup_end = std::chrono::high_resolution_clock::now();
+    double setup_time = std::chrono::duration<double>(setup_end - setup_start).count();
+    printf("device %d | Setup time (s): %4.4f\n", myPE, setup_time);
+
+    CudaEventClock clock;
+    double totalTime = 0.0;
+
+    for (int i = 0; i < runs; i++) {
+        checkCudaErrors(cudaMemcpy(d_matrix, originalMatrix.get(), N * N * sizeof(double),
+                                   cudaMemcpyHostToDevice));
+
+        // Reset completion flags on all PEs
+        nvshmem_barrier_all();
+        if (myPE == 0) {
+            std::vector<int> zeros(totalNodes, 0);
+            for (int pe = 0; pe < nPEs; pe++)
+                nvshmem_int_put(d_completion_flags, zeros.data(), totalNodes, pe);
+            nvshmem_quiet();
+        }
+        nvshmem_barrier_all();
+
+        clock.start(s);
+        for (int task : my_tasks_sorted)
+            checkCudaErrors(cudaGraphLaunch(h_subgraphsExec[task], s));
+        checkCudaErrors(cudaStreamSynchronize(s));
+        clock.end(s);
+        checkCudaErrors(cudaDeviceSynchronize());
+        nvshmem_barrier_all();
+
+        float time = clock.getTimeInSeconds();
+        printf("device %d | %d run | time (s): %4.4f\n", myPE, i, time);
+        totalTime += time;
+    }
+    printf("Total time used (s): %4.4f\n", totalTime);
+
+    if (verify) {
+        double *h_L = (double *)malloc(N * N * sizeof(double));
+        double *h_U = (double *)malloc(N * N * sizeof(double));
+        checkCudaErrors(cudaMemcpy(h_L, d_matrix, N * N * sizeof(double), cudaMemcpyDeviceToHost));
+        memset(h_U, 0, N * N * sizeof(double));
+        cleanCusolverLUDecompositionResult(h_L, h_U, N);
+        printf("Result passes verification: %d\n",
+               verifyLUDecomposition(originalMatrix.get(), h_L, h_U, N, verbose));
+        free(h_L);
+        free(h_U);
+    }
+
+    // Cleanup
+    for (int task : pe_tasks[myPE]) {
+        if (d_task_deps[task])       checkCudaErrors(cudaFree(d_task_deps[task]));
+        if (d_task_notify_pes[task]) checkCudaErrors(cudaFree(d_task_notify_pes[task]));
+    }
+    delete[] h_subgraphsExec;
+    nvshmem_free(d_completion_flags);
+    nvshmem_free(d_matrices);
+    nvshmem_free((void*)d_flags);
+    checkCudaErrors(cudaFree(d_info));
+    checkCudaErrors(cudaFree(d_workspace_cusolver));
+    for (int i = 0; i < workspaces; i++)
+        checkCudaErrors(cudaFree(d_workspace_cublas[i]));
+    free(d_workspace_cublas);
+}
+
+void LU(bool tiled, bool verify, bool subgraph, bool staticMultiGPU, bool dot)
+{
+    if (staticMultiGPU)
+        tiledLUStatic(verify, dot);
+    else if (tiled && myPE == 0)
         tiledLU(verify, subgraph, dot);
     else if (subgraph)
         tiledLU(verify, subgraph, dot);
@@ -727,7 +1189,7 @@ int main(int argc, char **argv)
     double init_time = std::chrono::duration<double>(init_end - init_start).count();
     printf("device %d | NVSHMEM init time (s): %4.4f\n", myPE, init_time);
 
-    if (!(cmdl["tiled"] || cmdl["subgraph"]))
+    if (!(cmdl["tiled"] || cmdl["subgraph"] || cmdl["static-multigpu"]))
         T = 1;
     B = N / T;
 
@@ -736,17 +1198,19 @@ int main(int argc, char **argv)
             std::cout << "TILED";
         else if (cmdl["subgraph"])
             std::cout << "SUBGRAPH";
+        else if (cmdl["static-multigpu"])
+            std::cout << "STATIC-MULTIGPU";
         else
             std::cout << "Single-kernel";
         std::cout << " with N=" << N << " (" << T << " of " << B << "x" << B << " tiles)" << std::endl;
 
-        if (cmdl[{"subgraph", "tiled"}]) {
+        if (cmdl[{"subgraph", "tiled"}] || cmdl["static-multigpu"]) {
             std::cout << "SM Limit per kernel = " << smLimit << std::endl;
             std::cout << "cuBLAS workspace = " << workspace << " kB" << std::endl;
         }
     }
 
-    LU(cmdl["tiled"], cmdl["verify"] && myPE == 0, cmdl["subgraph"], cmdl["dot"]);
+    LU(cmdl["tiled"], cmdl["verify"] && myPE == 0, cmdl["subgraph"], cmdl["static-multigpu"], cmdl["dot"]);
 
     nvshmem_finalize();
 
