@@ -19,3 +19,451 @@ Legend:
   PIX  = Connection traversing at most a single PCIe bridge
   NV#  = Connection traversing a bonded set of # NVLinks
 === TOPOLOGY ===
+========= COMPUTE-SANITIZER
+========= COMPUTE-SANITIZER
+========= COMPUTE-SANITIZER
+========= COMPUTE-SANITIZER
+Hello from rank: 2
+Hello from rank: 0
+Hello from rank: 3
+Hello from rank: 1
+Rank: 2 | Device count: 4 | Using device: 2 
+Rank: 0 | Device count: 4 | Using device: 0 
+Rank: 3 | Device count: 4 | Using device: 3 
+Rank: 1 | Device count: 4 | Using device: 1 
+callisto:2075111:2075111 [2] NVSHMEM INFO host name: callisto hash 7572233631607008
+callisto:2075122:2075122 [1] NVSHMEM INFO host name: callisto hash 7572233631607008
+callisto:2075120:2075120 [0] NVSHMEM INFO host name: callisto hash 7572233631607008
+callisto:2075118:2075118 [3] NVSHMEM INFO host name: callisto hash 7572233631607008
+callisto:2075111:2075111 [2] NVSHMEM INFO PE distribution has been identified as NVSHMEMI_PE_DIST_BLOCK
+callisto:2075111:2075111 [2] NVSHMEM INFO PE 2 (process) affinity to 2 CPUs:
+     2 66 
+callisto:2075122:2075122 [1] NVSHMEM INFO PE distribution has been identified as NVSHMEMI_PE_DIST_BLOCK
+callisto:2075118:2075118 [3] NVSHMEM INFO PE distribution has been identified as NVSHMEMI_PE_DIST_BLOCK
+callisto:2075120:2075120 [0] NVSHMEM INFO PE distribution has been identified as NVSHMEMI_PE_DIST_BLOCK
+NVSHMEM configuration:
+  CUDA API                     12000
+  CUDA Runtime                 12000
+  CUDA Driver                  12070
+  Build Timestamp              Jun 18 2024 18:52:52
+callisto:2075122:2075122 [1] NVSHMEM INFO PE 1 (process) affinity to 2 CPUs:
+     1 65 
+callisto:2075111:2075111 [2] NVSHMEM INFO cudaDriverVersion 12070
+callisto:2075111:2075111 [2] NVSHMEM INFO NVSHMEM symmetric heap kind = DEVICE selected
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] nvshmemi_get_cucontext->cuCtxSynchronize->CUDA_SUCCESS) my_stream (nil)
+callisto:2075111:2075111 [2] NVSHMEM INFO in get_cucontext, queried and saved context for device: 2 context: 0x5f8d3029a200
+callisto:2075118:2075118 [3] NVSHMEM INFO PE 3 (process) affinity to 2 CPUs:
+     3 67 
+  Build Variables             
+	NVSHMEM_DEBUG=OFF NVSHMEM_DEVEL=OFF NVSHMEM_DEFAULT_PMI2=OFF
+	NVSHMEM_DEFAULT_PMIX=OFF NVSHMEM_DEFAULT_UCX=OFF NVSHMEM_DISABLE_COLL_POLL=ON
+	NVSHMEM_ENABLE_ALL_DEVICE_INLINING=OFF NVSHMEM_GPU_COLL_USE_LDST=OFF
+	NVSHMEM_IBGDA_SUPPORT=ON NVSHMEM_IBGDA_SUPPORT_GPUMEM_ONLY=OFF
+	NVSHMEM_IBDEVX_SUPPORT=ON NVSHMEM_IBRC_SUPPORT=ON NVSHMEM_LIBFABRIC_SUPPORT=ON
+	NVSHMEM_MPI_SUPPORT=ON NVSHMEM_NVTX=ON NVSHMEM_PMIX_SUPPORT=ON
+	NVSHMEM_SHMEM_SUPPORT=ON NVSHMEM_TEST_STATIC_LIB=OFF
+	NVSHMEM_TIMEOUT_DEVICE_POLLING=OFF NVSHMEM_TRACE=OFF NVSHMEM_UCX_SUPPORT=ON
+	NVSHMEM_USE_DLMALLOC=OFF NVSHMEM_USE_NCCL=ON NVSHMEM_USE_GDRCOPY=ON
+	NVSHMEM_VERBOSE=OFF
+	CUDA_HOME=/dvs/p4/build/sw/rel/gpgpu/toolkit/r12.0/build/cuda
+	GDRCOPY_HOME=/dvs/p4/build/sw/rel/gpgpu/toolkit/r12.0/gdrcopy_build
+	LIBFABRIC_HOME=/data/tmp/libfabric_install MPI_HOME=/data/tmp/openmpi_install
+	NCCL_HOME=/dvs/p4/build/sw/rel/gpgpu/toolkit/r12.0/nccl/build
+	NVSHMEM_PREFIX=/dvs/p4/build/sw/rel/gpgpu/toolkit/r12.0/main_nvshmem/install
+	PMIX_HOME=/data/tmp/pmix_install SHMEM_HOME=/data/tmp/openmpi_install
+	UCX_HOME=/dvs/p4/build/sw/gpgpu/openucx/build
+
+callisto:2075120:2075120 [0] NVSHMEM INFO PE 0 (process) affinity to 2 CPUs:
+     0 64 
+callisto:2075122:2075122 [1] NVSHMEM INFO cudaDriverVersion 12070
+callisto:2075122:2075122 [1] NVSHMEM INFO NVSHMEM symmetric heap kind = DEVICE selected
+callisto:2075118:2075118 [3] NVSHMEM INFO cudaDriverVersion 12070
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] nvshmemi_get_cucontext->cuCtxSynchronize->CUDA_SUCCESS) my_stream (nil)
+callisto:2075122:2075122 [1] NVSHMEM INFO in get_cucontext, queried and saved context for device: 1 context: 0x5a36b8ff0a60
+callisto:2075118:2075118 [3] NVSHMEM INFO NVSHMEM symmetric heap kind = DEVICE selected
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] Created stream 0x5f8d3117d620 for device 2
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] nvshmemi_get_cucontext->cuCtxSynchronize->CUDA_SUCCESS) my_stream (nil)
+callisto:2075118:2075118 [3] NVSHMEM INFO in get_cucontext, queried and saved context for device: 3 context: 0x5d10a6821a30
+callisto:2075120:2075120 [0] NVSHMEM INFO cudaDriverVersion 12070
+callisto:2075111:2075111 [2] NVSHMEM INFO NVML library found. libnvidia-ml.so.1
+callisto:2075120:2075120 [0] NVSHMEM INFO NVSHMEM symmetric heap kind = DEVICE selected
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] nvshmemi_get_cucontext->cuCtxSynchronize->CUDA_SUCCESS) my_stream (nil)
+callisto:2075120:2075120 [0] NVSHMEM INFO in get_cucontext, queried and saved context for device: 0 context: 0x582084992b90
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] Created stream 0x5a36b9ede710 for device 1
+callisto:2075122:2075122 [1] NVSHMEM INFO NVML library found. libnvidia-ml.so.1
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] Created stream 0x5d10a77004a0 for device 3
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] Created stream 0x58208589f570 for device 0
+callisto:2075118:2075118 [3] NVSHMEM INFO NVML library found. libnvidia-ml.so.1
+callisto:2075120:2075120 [0] NVSHMEM INFO NVML library found. libnvidia-ml.so.1
+callisto:2075111:2075111 [2] NVSHMEM INFO host name: callisto hash 7572233631607008
+callisto:2075122:2075122 [1] NVSHMEM INFO host name: callisto hash 7572233631607008
+callisto:2075118:2075118 [3] NVSHMEM INFO host name: callisto hash 7572233631607008
+callisto:2075120:2075120 [0] NVSHMEM INFO host name: callisto hash 7572233631607008
+callisto:2075120:2075120 [0] NVSHMEM INFO team psync mem req 501760 bytes, team mem total req 128451240 bytes, max teams 32
+
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] heap type: P42nvshmemi_symmetric_heap_vidmem_dynamic_vmm allocate_local_heap, heapextra = 413676200
+callisto:2075111:2075111 [2] NVSHMEM INFO team psync mem req 501760 bytes, team mem total req 128451240 bytes, max teams 32
+
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] heap type: P42nvshmemi_symmetric_heap_vidmem_dynamic_vmm allocate_local_heap, heapextra = 413676200
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] heap type: P42nvshmemi_symmetric_heap_vidmem_dynamic_vmm heap base: 0x10004000000 NVSHMEM_SYMMETRIC_SIZE 1073741824 total 137438953472 heapextra 413676200
+callisto:2075122:2075122 [1] NVSHMEM INFO team psync mem req 501760 bytes, team mem total req 128451240 bytes, max teams 32
+
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] heap type: P42nvshmemi_symmetric_heap_vidmem_dynamic_vmm allocate_local_heap, heapextra = 413676200
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] heap type: P42nvshmemi_symmetric_heap_vidmem_dynamic_vmm heap base: 0x10004000000 NVSHMEM_SYMMETRIC_SIZE 1073741824 total 137438953472 heapextra 413676200
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] heap type: P42nvshmemi_symmetric_heap_vidmem_dynamic_vmm heap base: 0x10004000000 NVSHMEM_SYMMETRIC_SIZE 1073741824 total 137438953472 heapextra 413676200
+callisto:2075120:2075120 [0] NVSHMEM INFO host name: callisto hash 7572233631607008
+callisto:2075111:2075111 [2] NVSHMEM INFO host name: callisto hash 7572233631607008
+callisto:2075122:2075122 [1] NVSHMEM INFO host name: callisto hash 7572233631607008
+callisto:2075118:2075118 [3] NVSHMEM INFO team psync mem req 501760 bytes, team mem total req 128451240 bytes, max teams 32
+
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] heap type: P42nvshmemi_symmetric_heap_vidmem_dynamic_vmm allocate_local_heap, heapextra = 413676200
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] heap type: P42nvshmemi_symmetric_heap_vidmem_dynamic_vmm heap base: 0x10004000000 NVSHMEM_SYMMETRIC_SIZE 1073741824 total 137438953472 heapextra 413676200
+callisto:2075118:2075118 [3] NVSHMEM INFO host name: callisto hash 7572233631607008
+callisto:2075111:2075111 [2] NVSHMEM INFO IBRC transport skipped in favor of: none
+
+callisto:2075111:2075111 [2] NVSHMEM INFO UCX transport skipped in favor of: none
+
+callisto:2075111:2075111 [2] NVSHMEM INFO IBDEVX transport skipped in favor of: none
+
+callisto:2075111:2075111 [2] NVSHMEM INFO Libfabric transport skipped in favor of: none
+
+callisto:2075111:2075111 [2] NVSHMEM INFO IBGDA Disabled by the environment.
+callisto:2075111:2075111 [2] NVSHMEM INFO [0x5f8d31d82c60] ndev 4 pcie_devid 0 cudevice 2 peer host hash 1ae6e807c4a8e0 p2p host hash 1ae6e807c4a8e0
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] reach 7 to peer 0 over transport 0
+callisto:2075111:2075111 [2] NVSHMEM INFO [0x5f8d31d82c60] ndev 4 pcie_devid 0 cudevice 2 peer host hash 1ae6e807c4a8e0 p2p host hash 1ae6e807c4a8e0
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] reach 7 to peer 1 over transport 0
+callisto:2075111:2075111 [2] NVSHMEM INFO [0x5f8d31d82c60] ndev 4 pcie_devid 0 cudevice 2 peer host hash 1ae6e807c4a8e0 p2p host hash 1ae6e807c4a8e0
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] reach 15 to peer 2 over transport 0
+callisto:2075111:2075111 [2] NVSHMEM INFO [0x5f8d31d82c60] ndev 4 pcie_devid 0 cudevice 2 peer host hash 1ae6e807c4a8e0 p2p host hash 1ae6e807c4a8e0
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] reach 7 to peer 3 over transport 0
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] transport bitmap: 1
+callisto:2075118:2075118 [3] NVSHMEM INFO IBRC transport skipped in favor of: none
+
+callisto:2075118:2075118 [3] NVSHMEM INFO UCX transport skipped in favor of: none
+
+callisto:2075118:2075118 [3] NVSHMEM INFO IBDEVX transport skipped in favor of: none
+
+callisto:2075118:2075118 [3] NVSHMEM INFO Libfabric transport skipped in favor of: none
+
+callisto:2075118:2075118 [3] NVSHMEM INFO IBGDA Disabled by the environment.
+callisto:2075118:2075118 [3] NVSHMEM INFO [0x5d10a8305930] ndev 4 pcie_devid 0 cudevice 3 peer host hash 1ae6e807c4a8e0 p2p host hash 1ae6e807c4a8e0
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] reach 7 to peer 0 over transport 0
+callisto:2075118:2075118 [3] NVSHMEM INFO [0x5d10a8305930] ndev 4 pcie_devid 0 cudevice 3 peer host hash 1ae6e807c4a8e0 p2p host hash 1ae6e807c4a8e0
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] reach 7 to peer 1 over transport 0
+callisto:2075118:2075118 [3] NVSHMEM INFO [0x5d10a8305930] ndev 4 pcie_devid 0 cudevice 3 peer host hash 1ae6e807c4a8e0 p2p host hash 1ae6e807c4a8e0
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] reach 7 to peer 2 over transport 0
+callisto:2075118:2075118 [3] NVSHMEM INFO [0x5d10a8305930] ndev 4 pcie_devid 0 cudevice 3 peer host hash 1ae6e807c4a8e0 p2p host hash 1ae6e807c4a8e0
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] reach 15 to peer 3 over transport 0
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] transport bitmap: 1
+callisto:2075120:2075120 [0] NVSHMEM INFO IBRC transport skipped in favor of: none
+
+callisto:2075120:2075120 [0] NVSHMEM INFO UCX transport skipped in favor of: none
+
+callisto:2075120:2075120 [0] NVSHMEM INFO IBDEVX transport skipped in favor of: none
+
+callisto:2075120:2075120 [0] NVSHMEM INFO Libfabric transport skipped in favor of: none
+
+callisto:2075120:2075120 [0] NVSHMEM INFO IBGDA Disabled by the environment.
+callisto:2075120:2075120 [0] NVSHMEM INFO [0x5820864a49b0] ndev 4 pcie_devid 0 cudevice 0 peer host hash 1ae6e807c4a8e0 p2p host hash 1ae6e807c4a8e0
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] reach 15 to peer 0 over transport 0
+callisto:2075120:2075120 [0] NVSHMEM INFO [0x5820864a49b0] ndev 4 pcie_devid 0 cudevice 0 peer host hash 1ae6e807c4a8e0 p2p host hash 1ae6e807c4a8e0
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] reach 7 to peer 1 over transport 0
+callisto:2075120:2075120 [0] NVSHMEM INFO [0x5820864a49b0] ndev 4 pcie_devid 0 cudevice 0 peer host hash 1ae6e807c4a8e0 p2p host hash 1ae6e807c4a8e0
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] reach 7 to peer 2 over transport 0
+callisto:2075120:2075120 [0] NVSHMEM INFO [0x5820864a49b0] ndev 4 pcie_devid 0 cudevice 0 peer host hash 1ae6e807c4a8e0 p2p host hash 1ae6e807c4a8e0
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] reach 7 to peer 3 over transport 0
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] transport bitmap: 1
+callisto:2075122:2075122 [1] NVSHMEM INFO IBRC transport skipped in favor of: none
+
+callisto:2075122:2075122 [1] NVSHMEM INFO UCX transport skipped in favor of: none
+
+callisto:2075122:2075122 [1] NVSHMEM INFO IBDEVX transport skipped in favor of: none
+
+callisto:2075122:2075122 [1] NVSHMEM INFO Libfabric transport skipped in favor of: none
+
+callisto:2075122:2075122 [1] NVSHMEM INFO IBGDA Disabled by the environment.
+callisto:2075122:2075122 [1] NVSHMEM INFO [0x5a36baae3b50] ndev 4 pcie_devid 0 cudevice 1 peer host hash 1ae6e807c4a8e0 p2p host hash 1ae6e807c4a8e0
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] reach 7 to peer 0 over transport 0
+callisto:2075122:2075122 [1] NVSHMEM INFO [0x5a36baae3b50] ndev 4 pcie_devid 0 cudevice 1 peer host hash 1ae6e807c4a8e0 p2p host hash 1ae6e807c4a8e0
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] reach 15 to peer 1 over transport 0
+callisto:2075122:2075122 [1] NVSHMEM INFO [0x5a36baae3b50] ndev 4 pcie_devid 0 cudevice 1 peer host hash 1ae6e807c4a8e0 p2p host hash 1ae6e807c4a8e0
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] reach 7 to peer 2 over transport 0
+callisto:2075122:2075122 [1] NVSHMEM INFO [0x5a36baae3b50] ndev 4 pcie_devid 0 cudevice 1 peer host hash 1ae6e807c4a8e0 p2p host hash 1ae6e807c4a8e0
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] reach 7 to peer 3 over transport 0
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] transport bitmap: 1
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] Peer Heap Base [3]: 0x12004000000
+
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] Peer Heap Base [0]: 0x14004000000
+
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] Peer Heap Base [1]: 0x16004000000
+
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] Peer Heap Base [0]: 0x12004000000
+
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] Peer Heap Base [1]: 0x14004000000
+
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] Peer Heap Base [2]: 0x12004000000
+
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] Peer Heap Base [3]: 0x14004000000
+
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] Peer Heap Base [0]: 0x16004000000
+
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] Peer Heap Base [1]: 0x12004000000
+
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] Peer Heap Base [2]: 0x14004000000
+
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] Peer Heap Base [3]: 0x16004000000
+
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] Peer Heap Base [2]: 0x16004000000
+
+callisto:2075118:2075118 [3] NVSHMEM INFO I am connected to 4 p2p processes (including myself)
+callisto:2075111:2075111 [2] NVSHMEM INFO I am connected to 4 p2p processes (including myself)
+callisto:2075120:2075120 [0] NVSHMEM INFO I am connected to 4 p2p processes (including myself)
+callisto:2075122:2075122 [1] NVSHMEM INFO I am connected to 4 p2p processes (including myself)
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] status 0 cudaErrorInvalidValue 1 cudaErrorInvalidSymbol 13 cudaErrorInvalidMemcpyDirection 21 cudaErrorNoKernelImageForDevice 209
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] status 0 cudaErrorInvalidValue 1 cudaErrorInvalidSymbol 13 cudaErrorInvalidMemcpyDirection 21 cudaErrorNoKernelImageForDevice 209
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] status 0 cudaErrorInvalidValue 1 cudaErrorInvalidSymbol 13 cudaErrorInvalidMemcpyDirection 21 cudaErrorNoKernelImageForDevice 209
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] status 0 cudaErrorInvalidValue 1 cudaErrorInvalidSymbol 13 cudaErrorInvalidMemcpyDirection 21 cudaErrorNoKernelImageForDevice 209
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] in proxy_init
+callisto:2075111:2075111 [2] NVSHMEM INFO PE 2 (proxy) affinity to 2 CPUs:
+     2 66 
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] in proxy_init
+callisto:2075118:2075118 [3] NVSHMEM INFO PE 3 (proxy) affinity to 2 CPUs:
+     3 67 
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] in proxy_init
+callisto:2075120:2075120 [0] NVSHMEM INFO PE 0 (proxy) affinity to 2 CPUs:
+     0 64 
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] in proxy_init
+callisto:2075122:2075122 [1] NVSHMEM INFO PE 1 (proxy) affinity to 2 CPUs:
+     1 65 
+callisto:2075120:2075120 [0] NVSHMEM INFO step 1 nbr calculation started, num_pes = 4
+callisto:2075120:2075120 [0] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075120:2075120 [0] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075118:2075118 [3] NVSHMEM INFO step 1 nbr calculation started, num_pes = 4
+callisto:2075118:2075118 [3] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075118:2075118 [3] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075118:2075118 [3] NVSHMEM INFO step 2, phase 0 nbr calculation completed
+callisto:2075118:2075118 [3] NVSHMEM INFO step 2, phase 1 nbr calculation completed
+callisto:2075122:2075122 [1] NVSHMEM INFO step 1 nbr calculation started, num_pes = 4
+callisto:2075122:2075122 [1] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075122:2075122 [1] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075122:2075122 [1] NVSHMEM INFO step 2, phase 0 nbr calculation completed
+callisto:2075122:2075122 [1] NVSHMEM INFO step 2, phase 1 nbr calculation completed
+callisto:2075120:2075120 [0] NVSHMEM INFO step 2, phase 0 nbr calculation completed
+callisto:2075120:2075120 [0] NVSHMEM INFO step 2, phase 1 nbr calculation completed
+callisto:2075111:2075111 [2] NVSHMEM INFO step 1 nbr calculation started, num_pes = 4
+callisto:2075111:2075111 [2] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075111:2075111 [2] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075111:2075111 [2] NVSHMEM INFO step 2, phase 0 nbr calculation completed
+callisto:2075111:2075111 [2] NVSHMEM INFO step 2, phase 1 nbr calculation completed
+callisto:2075118:2075118 [3] NVSHMEM INFO P2P list: 0 1 2 3 
+callisto:2075111:2075111 [2] NVSHMEM INFO P2P list: 0 1 2 3 
+callisto:2075122:2075122 [1] NVSHMEM INFO P2P list: 0 1 2 3 
+callisto:2075120:2075120 [0] NVSHMEM INFO P2P list: 0 1 2 3 
+callisto:2075111:2075111 [2] NVSHMEM INFO step 1 nbr calculation started, num_pes = 4
+callisto:2075111:2075111 [2] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075111:2075111 [2] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075111:2075111 [2] NVSHMEM INFO step 2, phase 0 nbr calculation completed
+callisto:2075111:2075111 [2] NVSHMEM INFO step 2, phase 1 nbr calculation completed
+callisto:2075118:2075118 [3] NVSHMEM INFO step 1 nbr calculation started, num_pes = 4
+callisto:2075118:2075118 [3] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075118:2075118 [3] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075118:2075118 [3] NVSHMEM INFO step 2, phase 0 nbr calculation completed
+callisto:2075118:2075118 [3] NVSHMEM INFO step 2, phase 1 nbr calculation completed
+callisto:2075120:2075120 [0] NVSHMEM INFO step 1 nbr calculation started, num_pes = 4
+callisto:2075120:2075120 [0] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075120:2075120 [0] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075120:2075120 [0] NVSHMEM INFO step 2, phase 0 nbr calculation completed
+callisto:2075120:2075120 [0] NVSHMEM INFO step 2, phase 1 nbr calculation completed
+callisto:2075122:2075122 [1] NVSHMEM INFO step 1 nbr calculation started, num_pes = 4
+callisto:2075122:2075122 [1] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075122:2075122 [1] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075122:2075122 [1] NVSHMEM INFO step 2, phase 0 nbr calculation completed
+callisto:2075122:2075122 [1] NVSHMEM INFO step 2, phase 1 nbr calculation completed
+callisto:2075118:2075118 [3] NVSHMEM INFO NVSHMEM_TEAM_SHARED: start=0, stride=1, size=4
+callisto:2075118:2075118 [3] NVSHMEM INFO host name: callisto hash 7572233631607008
+callisto:2075122:2075122 [1] NVSHMEM INFO NVSHMEM_TEAM_SHARED: start=0, stride=1, size=4
+callisto:2075122:2075122 [1] NVSHMEM INFO host name: callisto hash 7572233631607008
+callisto:2075118:2075118 [3] NVSHMEM INFO step 1 nbr calculation started, num_pes = 4
+callisto:2075118:2075118 [3] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075118:2075118 [3] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075118:2075118 [3] NVSHMEM INFO step 2, phase 0 nbr calculation completed
+callisto:2075111:2075111 [2] NVSHMEM INFO NVSHMEM_TEAM_SHARED: start=0, stride=1, size=4
+callisto:2075111:2075111 [2] NVSHMEM INFO host name: callisto hash 7572233631607008
+callisto:2075111:2075111 [2] NVSHMEM INFO step 1 nbr calculation started, num_pes = 4
+callisto:2075111:2075111 [2] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075111:2075111 [2] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075111:2075111 [2] NVSHMEM INFO step 2, phase 0 nbr calculation completed
+callisto:2075111:2075111 [2] NVSHMEM INFO step 2, phase 1 nbr calculation completed
+callisto:2075122:2075122 [1] NVSHMEM INFO step 1 nbr calculation started, num_pes = 4
+callisto:2075122:2075122 [1] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075122:2075122 [1] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075122:2075122 [1] NVSHMEM INFO step 2, phase 0 nbr calculation completed
+callisto:2075122:2075122 [1] NVSHMEM INFO step 2, phase 1 nbr calculation completed
+callisto:2075120:2075120 [0] NVSHMEM INFO NVSHMEM_TEAM_SHARED: start=0, stride=1, size=4
+callisto:2075120:2075120 [0] NVSHMEM INFO host name: callisto hash 7572233631607008
+callisto:2075120:2075120 [0] NVSHMEM INFO step 1 nbr calculation started, num_pes = 4
+callisto:2075120:2075120 [0] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075120:2075120 [0] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075120:2075120 [0] NVSHMEM INFO step 2, phase 0 nbr calculation completed
+callisto:2075120:2075120 [0] NVSHMEM INFO step 2, phase 1 nbr calculation completed
+callisto:2075118:2075118 [3] NVSHMEM INFO step 2, phase 1 nbr calculation completed
+callisto:2075111:2075111 [2] NVSHMEM INFO NVSHMEMX_TEAM_NODE: start=0, stride=1, size=4
+callisto:2075111:2075111 [2] NVSHMEM INFO step 1 nbr calculation started, num_pes = 1
+callisto:2075111:2075111 [2] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075111:2075111 [2] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075111:2075111 [2] NVSHMEM INFO NVSHMEMX_TEAM_SAME_MYPE_NODE: start=2, stride=4, size=1
+callisto:2075111:2075111 [2] NVSHMEM INFO step 1 nbr calculation started, num_pes = 1
+callisto:2075111:2075111 [2] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075111:2075111 [2] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075111:2075111 [2] NVSHMEM INFO NVSHMEMI_TEAM_SAME_GPU: start=2, stride=1, size=1
+callisto:2075111:2075111 [2] NVSHMEM INFO step 1 nbr calculation started, num_pes = 4
+callisto:2075111:2075111 [2] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075111:2075111 [2] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075111:2075111 [2] NVSHMEM INFO step 2, phase 0 nbr calculation completed
+callisto:2075111:2075111 [2] NVSHMEM INFO step 2, phase 1 nbr calculation completed
+callisto:2075118:2075118 [3] NVSHMEM INFO NVSHMEMX_TEAM_NODE: start=0, stride=1, size=4
+callisto:2075118:2075118 [3] NVSHMEM INFO step 1 nbr calculation started, num_pes = 1
+callisto:2075118:2075118 [3] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075118:2075118 [3] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075120:2075120 [0] NVSHMEM INFO NVSHMEMX_TEAM_NODE: start=0, stride=1, size=4
+callisto:2075120:2075120 [0] NVSHMEM INFO step 1 nbr calculation started, num_pes = 1
+callisto:2075120:2075120 [0] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075120:2075120 [0] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075122:2075122 [1] NVSHMEM INFO NVSHMEMX_TEAM_NODE: start=0, stride=1, size=4
+callisto:2075122:2075122 [1] NVSHMEM INFO step 1 nbr calculation started, num_pes = 1
+callisto:2075122:2075122 [1] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075122:2075122 [1] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075118:2075118 [3] NVSHMEM INFO NVSHMEMX_TEAM_SAME_MYPE_NODE: start=3, stride=4, size=1
+callisto:2075118:2075118 [3] NVSHMEM INFO step 1 nbr calculation started, num_pes = 1
+callisto:2075118:2075118 [3] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075118:2075118 [3] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075122:2075122 [1] NVSHMEM INFO NVSHMEMX_TEAM_SAME_MYPE_NODE: start=1, stride=4, size=1
+callisto:2075122:2075122 [1] NVSHMEM INFO step 1 nbr calculation started, num_pes = 1
+callisto:2075122:2075122 [1] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075122:2075122 [1] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075120:2075120 [0] NVSHMEM INFO NVSHMEMX_TEAM_SAME_MYPE_NODE: start=0, stride=4, size=1
+callisto:2075120:2075120 [0] NVSHMEM INFO step 1 nbr calculation started, num_pes = 1
+callisto:2075120:2075120 [0] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075120:2075120 [0] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075120:2075120 [0] NVSHMEM INFO NVSHMEMI_TEAM_SAME_GPU: start=0, stride=1, size=1
+callisto:2075120:2075120 [0] NVSHMEM INFO step 1 nbr calculation started, num_pes = 4
+callisto:2075120:2075120 [0] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075120:2075120 [0] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075118:2075118 [3] NVSHMEM INFO NVSHMEMI_TEAM_SAME_GPU: start=3, stride=1, size=1
+callisto:2075118:2075118 [3] NVSHMEM INFO step 1 nbr calculation started, num_pes = 4
+callisto:2075118:2075118 [3] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075118:2075118 [3] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075118:2075118 [3] NVSHMEM INFO step 2, phase 0 nbr calculation completed
+callisto:2075118:2075118 [3] NVSHMEM INFO step 2, phase 1 nbr calculation completed
+callisto:2075122:2075122 [1] NVSHMEM INFO NVSHMEMI_TEAM_SAME_GPU: start=1, stride=1, size=1
+callisto:2075122:2075122 [1] NVSHMEM INFO step 1 nbr calculation started, num_pes = 4
+callisto:2075122:2075122 [1] NVSHMEM INFO step 1 nbr calculation started. T is 0
+callisto:2075122:2075122 [1] NVSHMEM INFO step 1 nbr computation completed
+callisto:2075122:2075122 [1] NVSHMEM INFO step 2, phase 0 nbr calculation completed
+callisto:2075122:2075122 [1] NVSHMEM INFO step 2, phase 1 nbr calculation completed
+callisto:2075120:2075120 [0] NVSHMEM INFO step 2, phase 0 nbr calculation completed
+callisto:2075120:2075120 [0] NVSHMEM INFO step 2, phase 1 nbr calculation completed
+callisto:2075111:2075111 [2] NVSHMEM INFO NVSHMEMI_TEAM_GPU_LEADERS: start=0, stride=1, size=4
+callisto:2075120:2075120 [0] NVSHMEM INFO NVSHMEMI_TEAM_GPU_LEADERS: start=0, stride=1, size=4
+callisto:2075118:2075118 [3] NVSHMEM INFO NVSHMEMI_TEAM_GPU_LEADERS: start=0, stride=1, size=4
+callisto:2075122:2075122 [1] NVSHMEM INFO NVSHMEMI_TEAM_GPU_LEADERS: start=0, stride=1, size=4
+callisto:2075120:2075120 [0] NVSHMEM INFO mspace_malloc called with 128450560 bytes
+callisto:2075120:2075120 [0] NVSHMEM INFO type: P42nvshmemi_symmetric_heap_vidmem_dynamic_vmm adding new physical backing of size 536870912 bytes
+callisto:2075118:2075118 [3] NVSHMEM INFO mspace_malloc called with 128450560 bytes
+callisto:2075118:2075118 [3] NVSHMEM INFO type: P42nvshmemi_symmetric_heap_vidmem_dynamic_vmm adding new physical backing of size 536870912 bytes
+callisto:2075122:2075122 [1] NVSHMEM INFO mspace_malloc called with 128450560 bytes
+callisto:2075122:2075122 [1] NVSHMEM INFO type: P42nvshmemi_symmetric_heap_vidmem_dynamic_vmm adding new physical backing of size 536870912 bytes
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] heap type: P31nvshmemi_symmetric_heap_dynamic calling export_memory buf: 0x10004000000 size: 536870912
+callisto:2075122:2075122 [1] NVSHMEM INFO calling cuMemExportToShareableHandle on handle: 0x7ffcdc0ca1b0
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] heap type: P31nvshmemi_symmetric_heap_dynamic calling export_memory buf: 0x10004000000 size: 536870912
+callisto:2075120:2075120 [0] NVSHMEM INFO calling cuMemExportToShareableHandle on handle: 0x7ffff463ba30
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] heap type: P31nvshmemi_symmetric_heap_dynamic calling export_memory buf: 0x10004000000 size: 536870912
+callisto:2075118:2075118 [3] NVSHMEM INFO calling cuMemExportToShareableHandle on handle: 0x7ffd01a3b990
+callisto:2075111:2075111 [2] NVSHMEM INFO mspace_malloc called with 128450560 bytes
+callisto:2075111:2075111 [2] NVSHMEM INFO type: P42nvshmemi_symmetric_heap_vidmem_dynamic_vmm adding new physical backing of size 536870912 bytes
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] heap type: P31nvshmemi_symmetric_heap_dynamic calling export_memory buf: 0x10004000000 size: 536870912
+callisto:2075111:2075111 [2] NVSHMEM INFO calling cuMemExportToShareableHandle on handle: 0x7ffc431abda0
+callisto:2075111:2075111 [2] NVSHMEM INFO Mapping Buf: 0x10004000000 Size: 536870912 PE ID: 3, P2P Transport Idx: 0
+
+callisto:2075111:2075111 [2] NVSHMEM INFO calling import_memory on buf: 0x10004000000 size: 536870912 heap_base_: 0x10004000000 peer_heap_base_p2p_[3]: 0x12004000000
+
+callisto:2075122:2075122 [1] NVSHMEM INFO Mapping Buf: 0x10004000000 Size: 536870912 PE ID: 2, P2P Transport Idx: 0
+
+callisto:2075122:2075122 [1] NVSHMEM INFO calling import_memory on buf: 0x10004000000 size: 536870912 heap_base_: 0x10004000000 peer_heap_base_p2p_[2]: 0x12004000000
+
+callisto:2075118:2075118 [3] NVSHMEM INFO Mapping Buf: 0x10004000000 Size: 536870912 PE ID: 0, P2P Transport Idx: 0
+
+callisto:2075118:2075118 [3] NVSHMEM INFO calling import_memory on buf: 0x10004000000 size: 536870912 heap_base_: 0x10004000000 peer_heap_base_p2p_[0]: 0x12004000000
+
+callisto:2075120:2075120 [0] NVSHMEM INFO Mapping Buf: 0x10004000000 Size: 536870912 PE ID: 1, P2P Transport Idx: 0
+
+callisto:2075120:2075120 [0] NVSHMEM INFO calling import_memory on buf: 0x10004000000 size: 536870912 heap_base_: 0x10004000000 peer_heap_base_p2p_[1]: 0x12004000000
+
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] cuIpcOpenMemHandle fromhandle 0x74000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] cuIpcOpenMemHandle tobuf 0x12004000000
+callisto:2075118:2075118 [3] NVSHMEM INFO Mapping Buf: 0x10004000000 Size: 536870912 PE ID: 1, P2P Transport Idx: 0
+
+callisto:2075118:2075118 [3] NVSHMEM INFO calling import_memory on buf: 0x10004000000 size: 536870912 heap_base_: 0x10004000000 peer_heap_base_p2p_[1]: 0x14004000000
+
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] cuIpcOpenMemHandle fromhandle 0x73000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] cuIpcOpenMemHandle tobuf 0x12004000000
+callisto:2075122:2075122 [1] NVSHMEM INFO Mapping Buf: 0x10004000000 Size: 536870912 PE ID: 3, P2P Transport Idx: 0
+
+callisto:2075122:2075122 [1] NVSHMEM INFO calling import_memory on buf: 0x10004000000 size: 536870912 heap_base_: 0x10004000000 peer_heap_base_p2p_[3]: 0x14004000000
+
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] cuIpcOpenMemHandle fromhandle 0x73000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] cuIpcOpenMemHandle tobuf 0x12004000000
+callisto:2075111:2075111 [2] NVSHMEM INFO Mapping Buf: 0x10004000000 Size: 536870912 PE ID: 0, P2P Transport Idx: 0
+
+callisto:2075111:2075111 [2] NVSHMEM INFO calling import_memory on buf: 0x10004000000 size: 536870912 heap_base_: 0x10004000000 peer_heap_base_p2p_[0]: 0x14004000000
+
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] cuIpcOpenMemHandle fromhandle 0x75000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] cuIpcOpenMemHandle tobuf 0x12004000000
+callisto:2075120:2075120 [0] NVSHMEM INFO Mapping Buf: 0x10004000000 Size: 536870912 PE ID: 2, P2P Transport Idx: 0
+
+callisto:2075120:2075120 [0] NVSHMEM INFO calling import_memory on buf: 0x10004000000 size: 536870912 heap_base_: 0x10004000000 peer_heap_base_p2p_[2]: 0x14004000000
+
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] cuIpcOpenMemHandle fromhandle 0x74000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] cuIpcOpenMemHandle tobuf 0x14004000000
+callisto:2075122:2075122 [1] NVSHMEM INFO Mapping Buf: 0x10004000000 Size: 536870912 PE ID: 0, P2P Transport Idx: 0
+
+callisto:2075122:2075122 [1] NVSHMEM INFO calling import_memory on buf: 0x10004000000 size: 536870912 heap_base_: 0x10004000000 peer_heap_base_p2p_[0]: 0x16004000000
+
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] cuIpcOpenMemHandle fromhandle 0x75000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] cuIpcOpenMemHandle tobuf 0x14004000000
+callisto:2075118:2075118 [3] NVSHMEM INFO Mapping Buf: 0x10004000000 Size: 536870912 PE ID: 2, P2P Transport Idx: 0
+
+callisto:2075118:2075118 [3] NVSHMEM INFO calling import_memory on buf: 0x10004000000 size: 536870912 heap_base_: 0x10004000000 peer_heap_base_p2p_[2]: 0x16004000000
+
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] cuIpcOpenMemHandle fromhandle 0x73000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] cuIpcOpenMemHandle tobuf 0x14004000000
+callisto:2075120:2075120 [0] NVSHMEM INFO Mapping Buf: 0x10004000000 Size: 536870912 PE ID: 3, P2P Transport Idx: 0
+
+callisto:2075120:2075120 [0] NVSHMEM INFO calling import_memory on buf: 0x10004000000 size: 536870912 heap_base_: 0x10004000000 peer_heap_base_p2p_[3]: 0x16004000000
+
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] cuIpcOpenMemHandle fromhandle 0x75000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] cuIpcOpenMemHandle tobuf 0x16004000000
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] cuIpcOpenMemHandle fromhandle 0x73000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] cuIpcOpenMemHandle tobuf 0x16004000000
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] cuIpcOpenMemHandle fromhandle 0x74000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] cuIpcOpenMemHandle tobuf 0x14004000000
+callisto:2075111:2075111 [2] NVSHMEM INFO Mapping Buf: 0x10004000000 Size: 536870912 PE ID: 1, P2P Transport Idx: 0
+
+callisto:2075111:2075111 [2] NVSHMEM INFO calling import_memory on buf: 0x10004000000 size: 536870912 heap_base_: 0x10004000000 peer_heap_base_p2p_[1]: 0x16004000000
+
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] cuIpcOpenMemHandle fromhandle 0x74000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] cuIpcOpenMemHandle tobuf 0x16004000000
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] cuIpcOpenMemHandle fromhandle 0x75000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] cuIpcOpenMemHandle tobuf 0x16004000000
+callisto:2075111:2075111 [2] NVSHMEM INFO mspace_malloc called with 128450560 bytes
+callisto:2075111:2075111 [2] NVSHMEM INFO free chunk with size = 536870912 bytes found
+callisto:2075120:2075120 [0] NVSHMEM INFO mspace_malloc called with 128450560 bytes
+callisto:2075120:2075120 [0] NVSHMEM INFO free chunk with size = 536870912 bytes found
+callisto:2075118:2075118 [3] NVSHMEM INFO mspace_malloc called with 128450560 bytes
+callisto:2075118:2075118 [3] NVSHMEM INFO free chunk with size = 536870912 bytes found
+callisto:2075122:2075122 [1] NVSHMEM INFO mspace_malloc called with 128450560 bytes
+callisto:2075122:2075122 [1] NVSHMEM INFO free chunk with size = 536870912 bytes found
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] type: 23nvshmemi_symmetric_heap allocated 128450560 bytes, 0 count, 0 alignment ptr: 0x10004000000
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] type: 23nvshmemi_symmetric_heap allocated 128450560 bytes, 0 count, 0 alignment ptr: 0x10004000000
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] type: 23nvshmemi_symmetric_heap allocated 128450560 bytes, 0 count, 0 alignment ptr: 0x10004000000
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] type: 23nvshmemi_symmetric_heap allocated 128450560 bytes, 0 count, 0 alignment ptr: 0x10004000000
