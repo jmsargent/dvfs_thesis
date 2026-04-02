@@ -1,0 +1,13 @@
+{
+  "git_sha": "0d0396b65551864b27c02d7acefd23ca639d0dbd",
+  "id": "065-run-multigpu-cholesky-debug",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/065-run-multigpu-cholesky-debug",
+  "last_update_at": "2026-04-02T22:43:01+02:00",
+  "log_err": "/data/users/chjing/dvfs_thesis/jobs/065-run-multigpu-cholesky-debug/slurm-167927.err",
+  "log_out": "/data/users/chjing/dvfs_thesis/jobs/065-run-multigpu-cholesky-debug/slurm-167927.out",
+  "queued_at": "2026-04-02T22:42:59+02:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/065-run-multigpu-cholesky-debug/run.sbatch",
+  "slurm_job_id": 167927,
+  "state": "SUBMITTED",
+  "submitted_at": "2026-04-02T22:42:59+02:00"
+}
