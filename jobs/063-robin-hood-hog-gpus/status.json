@@ -1,20 +1,26 @@
 {
+  "cancel_acknowledged_at": "2026-04-02T22:20:13+02:00",
   "cancel_kill_mtime_ns": 1775161205351511905,
-  "cancel_request_state": "queued",
-  "cancel_requested_at": "2026-04-02T22:20:06+02:00",
+  "cancel_request_state": "accepted",
+  "cancel_requested_at": "2026-04-02T22:20:13+02:00",
   "git_sha": "60a3458b42ccd8b48d28b6adbe2f241ddf10e8d3",
   "id": "063-robin-hood-hog-gpus",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/063-robin-hood-hog-gpus",
-  "last_update_at": "2026-04-02T22:20:06+02:00",
+  "last_update_at": "2026-04-02T22:20:14+02:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/063-robin-hood-hog-gpus/slurm-167614.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/063-robin-hood-hog-gpus/slurm-167614.out",
   "queued_at": "2026-04-02T13:20:03+02:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/063-robin-hood-hog-gpus/run.sbatch",
   "slurm_info": {
-    "raw_state": "PENDING",
-    "source": "squeue"
+    "ElapsedRaw": "0",
+    "ExitCode": "0:0",
+    "JobIDRaw": "167614",
+    "MaxRSS": "",
+    "State": "CANCELLED by 0",
+    "raw_state": "CANCELLED by 0",
+    "source": "sacct"
   },
   "slurm_job_id": 167614,
-  "state": "PENDING",
+  "state": "CANCELLED",
   "submitted_at": "2026-04-02T13:20:06+02:00"
 }
