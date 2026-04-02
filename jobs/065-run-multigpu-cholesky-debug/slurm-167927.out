@@ -467,3 +467,39 @@ callisto:2075118:2075118 [3] NVSHMEM INFO [3] type: 23nvshmemi_symmetric_heap al
 callisto:2075111:2075111 [2] NVSHMEM INFO [2] type: 23nvshmemi_symmetric_heap allocated 128450560 bytes, 0 count, 0 alignment ptr: 0x10004000000
 callisto:2075120:2075120 [0] NVSHMEM INFO [0] type: 23nvshmemi_symmetric_heap allocated 128450560 bytes, 0 count, 0 alignment ptr: 0x10004000000
 callisto:2075122:2075122 [1] NVSHMEM INFO [1] type: 23nvshmemi_symmetric_heap allocated 128450560 bytes, 0 count, 0 alignment ptr: 0x10004000000
+callisto:2075120:2075120 [0] NVSHMEM INFO mspace_malloc called with 512 bytes
+callisto:2075120:2075120 [0] NVSHMEM INFO free chunk with size = 408420352 bytes found
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] type: 23nvshmemi_symmetric_heap allocated 512 bytes, 0 count, 0 alignment ptr: 0x1000ba80000
+callisto:2075118:2075118 [3] NVSHMEM INFO mspace_malloc called with 512 bytes
+callisto:2075118:2075118 [3] NVSHMEM INFO free chunk with size = 408420352 bytes found
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] type: 23nvshmemi_symmetric_heap allocated 512 bytes, 0 count, 0 alignment ptr: 0x1000ba80000
+callisto:2075118:2075118 [3] NVSHMEM INFO mspace_malloc called with 32 bytes
+callisto:2075118:2075118 [3] NVSHMEM INFO free chunk with size = 408419840 bytes found
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] type: 23nvshmemi_symmetric_heap allocated 32 bytes, 0 count, 0 alignment ptr: 0x1000ba80200
+callisto:2075118:2075118 [3] NVSHMEM INFO mspace_malloc called with 8 bytes
+callisto:2075118:2075118 [3] NVSHMEM INFO free chunk with size = 408419328 bytes found
+callisto:2075118:2075118 [3] NVSHMEM INFO [3] type: 23nvshmemi_symmetric_heap allocated 8 bytes, 0 count, 0 alignment ptr: 0x1000ba80400
+callisto:2075122:2075122 [1] NVSHMEM INFO mspace_malloc called with 512 bytes
+callisto:2075122:2075122 [1] NVSHMEM INFO free chunk with size = 408420352 bytes found
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] type: 23nvshmemi_symmetric_heap allocated 512 bytes, 0 count, 0 alignment ptr: 0x1000ba80000
+callisto:2075122:2075122 [1] NVSHMEM INFO mspace_malloc called with 32 bytes
+callisto:2075122:2075122 [1] NVSHMEM INFO free chunk with size = 408419840 bytes found
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] type: 23nvshmemi_symmetric_heap allocated 32 bytes, 0 count, 0 alignment ptr: 0x1000ba80200
+callisto:2075122:2075122 [1] NVSHMEM INFO mspace_malloc called with 8 bytes
+callisto:2075122:2075122 [1] NVSHMEM INFO free chunk with size = 408419328 bytes found
+callisto:2075122:2075122 [1] NVSHMEM INFO [1] type: 23nvshmemi_symmetric_heap allocated 8 bytes, 0 count, 0 alignment ptr: 0x1000ba80400
+callisto:2075120:2075120 [0] NVSHMEM INFO mspace_malloc called with 32 bytes
+callisto:2075120:2075120 [0] NVSHMEM INFO free chunk with size = 408419840 bytes found
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] type: 23nvshmemi_symmetric_heap allocated 32 bytes, 0 count, 0 alignment ptr: 0x1000ba80200
+callisto:2075120:2075120 [0] NVSHMEM INFO mspace_malloc called with 8 bytes
+callisto:2075120:2075120 [0] NVSHMEM INFO free chunk with size = 408419328 bytes found
+callisto:2075120:2075120 [0] NVSHMEM INFO [0] type: 23nvshmemi_symmetric_heap allocated 8 bytes, 0 count, 0 alignment ptr: 0x1000ba80400
+callisto:2075111:2075111 [2] NVSHMEM INFO mspace_malloc called with 512 bytes
+callisto:2075111:2075111 [2] NVSHMEM INFO free chunk with size = 408420352 bytes found
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] type: 23nvshmemi_symmetric_heap allocated 512 bytes, 0 count, 0 alignment ptr: 0x1000ba80000
+callisto:2075111:2075111 [2] NVSHMEM INFO mspace_malloc called with 32 bytes
+callisto:2075111:2075111 [2] NVSHMEM INFO free chunk with size = 408419840 bytes found
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] type: 23nvshmemi_symmetric_heap allocated 32 bytes, 0 count, 0 alignment ptr: 0x1000ba80200
+callisto:2075111:2075111 [2] NVSHMEM INFO mspace_malloc called with 8 bytes
+callisto:2075111:2075111 [2] NVSHMEM INFO free chunk with size = 408419328 bytes found
+callisto:2075111:2075111 [2] NVSHMEM INFO [2] type: 23nvshmemi_symmetric_heap allocated 8 bytes, 0 count, 0 alignment ptr: 0x1000ba80400
