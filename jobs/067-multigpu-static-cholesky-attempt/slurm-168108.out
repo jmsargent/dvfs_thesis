@@ -6,3 +6,4 @@ Rank: 2 | Device count: 4 | Using device: 2
 Rank: 1 | Device count: 4 | Using device: 1 
 Rank: 0 | Device count: 4 | Using device: 0 
 Rank: 3 | Device count: 4 | Using device: 3 
+Failed, NCCL error /dvs/p4/build/sw/rel/gpgpu/toolkit/r12.0/main_nvshmem/src/host/team/team_internal.cpp:421 'internal error - please report this issue to the NCCL developers'
