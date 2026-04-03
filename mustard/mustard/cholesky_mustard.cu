@@ -889,7 +889,7 @@ void tiledCholeskyStatic(bool verify, bool dot)
         auto& deps = tiledCholeskyGraphCreator->subgraphDependencies[task];
 
         // Prepend wait kernel (only if task has dependencies)
-        int debug = 1;
+        int debug = cfg.debugKernels;
         if (!deps.empty()) {
             size_t numRoots;
             cudaGraphGetRootNodes(sg, nullptr, &numRoots);

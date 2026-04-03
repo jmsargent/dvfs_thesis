@@ -16,6 +16,7 @@ struct MustardConfig {
     int    smLimit = 20;
     int    runs = 1;
     bool   staticMultiGPU = false;
+    int    debugKernels = 0;
     std::string invocationPath = "";
 };
 
@@ -135,6 +136,7 @@ inline bool initNvshmemDevice(argh::parser& cmdl, MustardConfig& cfg)
     // checkCudaErrors(cudaSetDevice(cfg.myPE));
 
     cfg.verbose = cmdl[{"v", "verbose"}] && cfg.myPE == 0;
+    cfg.debugKernels = cmdl[{"v", "verbose"}];
 
 
     if (cfg.verbose) {
