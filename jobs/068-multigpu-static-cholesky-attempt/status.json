@@ -1,0 +1,13 @@
+{
+  "git_sha": "12358349b3327086838b49f023450e8f6ecf32fd",
+  "id": "068-multigpu-static-cholesky-attempt",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/068-multigpu-static-cholesky-attempt",
+  "last_update_at": "2026-04-03T09:27:46+02:00",
+  "log_err": "/data/users/chjing/dvfs_thesis/jobs/068-multigpu-static-cholesky-attempt/slurm-168109.err",
+  "log_out": "/data/users/chjing/dvfs_thesis/jobs/068-multigpu-static-cholesky-attempt/slurm-168109.out",
+  "queued_at": "2026-04-03T09:27:44+02:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/068-multigpu-static-cholesky-attempt/run.sbatch",
+  "slurm_job_id": 168109,
+  "state": "SUBMITTED",
+  "submitted_at": "2026-04-03T09:27:44+02:00"
+}
