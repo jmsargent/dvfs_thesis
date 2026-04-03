@@ -889,6 +889,7 @@ void tiledCholeskyStatic(bool verify, bool dot)
         auto& deps = tiledCholeskyGraphCreator->subgraphDependencies[task];
 
         // Prepend wait kernel (only if task has dependencies)
+        int debug = 1;
         if (!deps.empty()) {
             size_t numRoots;
             cudaGraphGetRootNodes(sg, nullptr, &numRoots);
@@ -901,7 +902,7 @@ void tiledCholeskyStatic(bool verify, bool dot)
             waitParams.blockDim = dim3(1);
             waitParams.func = (void *)mustard::kernel_wait_static;
             int n_deps = (int)deps.size();
-            void *waitArgs[4] = {&d_task_deps[task], &n_deps, &d_completion_flags, &verbose};
+            void *waitArgs[4] = {&d_task_deps[task], &n_deps, &d_completion_flags, &debug};
             waitParams.kernelParams = waitArgs;
             checkCudaErrors(cudaGraphAddKernelNode(&waitNode, sg, nullptr, 0, &waitParams));
 
@@ -923,7 +924,7 @@ void tiledCholeskyStatic(bool verify, bool dot)
         signalParams.func = (void *)mustard::kernel_signal_static;
         int task_id_val = task;
         void *signalArgs[5] = {&task_id_val, &d_completion_flags,
-                               &d_task_notify_pes[task], &n_notify, &verbose};
+                               &d_task_notify_pes[task], &n_notify, &debug};
         signalParams.kernelParams = signalArgs;
         checkCudaErrors(cudaGraphAddKernelNode(&signalNode, sg, &tail, 1, &signalParams));
     }
@@ -1051,6 +1052,7 @@ int main(int argc, char **argv)
     }
     double init_time = std::chrono::duration<double>(init_end - init_start).count();
     printf("device %d | NVSHMEM init time (s): %4.4f\n", myPE, init_time);
+    fflush(stdout);
 
     if (!(cmdl["tiled"] || cmdl["subgraph"] || cmdl["static-multigpu"]))
         T = 1;
