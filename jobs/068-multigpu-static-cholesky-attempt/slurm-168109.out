@@ -1,0 +1,25 @@
+Hello from rank: 2
+Hello from rank: 0
+Hello from rank: 3
+Hello from rank: 1
+Rank: 1 | Device count: 4 | Using device: 1 
+Rank: 3 | Device count: 4 | Using device: 3 
+Rank: 2 | Device count: 4 | Using device: 2 
+Rank: 0 | Device count: 4 | Using device: 0 
+device 1 | NVSHMEM init time (s): 5.3605
+device 3 | NVSHMEM init time (s): 5.3605
+Hello from NVSHMEM_PE=0/4
+4 GPUs detected, asked to use 4 GPUs
+Program start timestamp: 1775285851.180385
+device 0 | NVSHMEM init time (s): 5.3605
+device 2 | NVSHMEM init time (s): 5.3605
+STATIC-MULTIGPU with N=2400 (8 of 300x300 tiles)
+SM Limit per kernel = 20
+cuBLAS workspace = 256 kB
+device 2 | tiledCholeskyStatic: building 120 graphs
+device 3 | tiledCholeskyStatic: building 120 graphs
+device 1 | tiledCholeskyStatic: building 120 graphs
+totalNodes=120
+bufferSize=544
+tileSize=262144
+device 0 | tiledCholeskyStatic: building 120 graphs
