@@ -2,16 +2,21 @@
   "git_sha": "e864d73ae3bfc44358285f24f06435f50f3a0030",
   "id": "070-static-cholesky-actually",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/070-static-cholesky-actually",
-  "last_update_at": "2026-04-04T10:42:45+02:00",
+  "last_update_at": "2026-04-04T10:43:45+02:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/070-static-cholesky-actually/slurm-168399.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/070-static-cholesky-actually/slurm-168399.out",
   "queued_at": "2026-04-04T10:42:37+02:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/070-static-cholesky-actually/run.sbatch",
   "slurm_info": {
-    "raw_state": "RUNNING",
-    "source": "squeue"
+    "ElapsedRaw": "62",
+    "ExitCode": "124:0",
+    "JobIDRaw": "168399",
+    "MaxRSS": "",
+    "State": "FAILED",
+    "raw_state": "FAILED",
+    "source": "sacct"
   },
   "slurm_job_id": 168399,
-  "state": "RUNNING",
+  "state": "FAILED",
   "submitted_at": "2026-04-04T10:42:38+02:00"
 }
