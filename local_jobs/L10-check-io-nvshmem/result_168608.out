@@ -1,0 +1,9 @@
+=== find libnvshmem ===
+/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/REDIST/comm_libs/12.6/nvshmem/lib/libnvshmem_host.so
+/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/REDIST/comm_libs/12.6/nvshmem/lib/libnvshmem_host.so.3
+/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/REDIST/comm_libs/12.6/nvshmem/lib/libnvshmem_host.so.3.0.6
+/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib/libnvshmem.a
+/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib/libnvshmem_device.a
+/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib/libnvshmem_host.so
+/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib/libnvshmem_host.so.3
+/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib/libnvshmem_host.so.3.0.6
