@@ -2,16 +2,21 @@
   "git_sha": "e22be771f879b8f4230c2c3fb3909940d21fbb0c",
   "id": "073-static-cholesky-5min-timeout-any-node-but-callisto",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/073-static-cholesky-5min-timeout-any-node-but-callisto",
-  "last_update_at": "2026-04-04T14:54:55+02:00",
+  "last_update_at": "2026-04-04T14:59:56+02:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/073-static-cholesky-5min-timeout-any-node-but-callisto/slurm-168531.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/073-static-cholesky-5min-timeout-any-node-but-callisto/slurm-168531.out",
   "queued_at": "2026-04-04T11:56:43+02:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/073-static-cholesky-5min-timeout-any-node-but-callisto/run.sbatch",
   "slurm_info": {
-    "raw_state": "RUNNING",
-    "source": "squeue"
+    "ElapsedRaw": "303",
+    "ExitCode": "124:0",
+    "JobIDRaw": "168531",
+    "MaxRSS": "",
+    "State": "FAILED",
+    "raw_state": "FAILED",
+    "source": "sacct"
   },
   "slurm_job_id": 168531,
-  "state": "RUNNING",
+  "state": "FAILED",
   "submitted_at": "2026-04-04T11:56:45+02:00"
 }
