@@ -1,0 +1,17 @@
+{
+  "git_sha": "943e4f2a7ce3cbcf3a4a827dd1c6b5655232d570",
+  "id": "072-static-cholesky-5min-timeout-any-node",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/072-static-cholesky-5min-timeout-any-node",
+  "last_update_at": "2026-04-04T11:42:46+02:00",
+  "log_err": "/data/users/chjing/dvfs_thesis/jobs/072-static-cholesky-5min-timeout-any-node/slurm-168527.err",
+  "log_out": "/data/users/chjing/dvfs_thesis/jobs/072-static-cholesky-5min-timeout-any-node/slurm-168527.out",
+  "queued_at": "2026-04-04T11:42:44+02:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/072-static-cholesky-5min-timeout-any-node/run.sbatch",
+  "slurm_info": {
+    "raw_state": "PENDING",
+    "source": "squeue"
+  },
+  "slurm_job_id": 168527,
+  "state": "PENDING",
+  "submitted_at": "2026-04-04T11:42:45+02:00"
+}
