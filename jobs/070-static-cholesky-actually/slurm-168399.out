@@ -1,0 +1,1359 @@
+Hello from rank: 1
+Hello from rank: 3
+Hello from rank: 0
+Hello from rank: 2
+Rank: 0 | Device count: 4 | Using device: 0 
+Rank: 3 | Device count: 4 | Using device: 3 
+Rank: 1 | Device count: 4 | Using device: 1 
+Rank: 2 | Device count: 4 | Using device: 2 
+device 3 | NVSHMEM init time (s): 4.1242
+Hello from NVSHMEM_PE=0/4
+4 GPUs detected, asked to use 4 GPUs
+Program start timestamp: 1775292162.469196
+device 0 | NVSHMEM init time (s): 4.1242
+STATIC-MULTIGPU with N=2400 (8 of 300x300 tiles)
+SM Limit per kernel = 20
+cuBLAS workspace = 256 kB
+device 2 | NVSHMEM init time (s): 4.1242
+device 1 | NVSHMEM init time (s): 4.1242
+device 3 | tiledCholeskyStatic: building 120 graphs
+device 1 | tiledCholeskyStatic: building 120 graphs
+device 2 | tiledCholeskyStatic: building 120 graphs
+totalNodes=120
+bufferSize=544
+tileSize=262144
+device 0 | tiledCholeskyStatic: building 120 graphs
+device 0 | tiledCholeskyStatic: graph construction done
+device 2 | tiledCholeskyStatic: graph construction done
+device 1 | tiledCholeskyStatic: graph construction done
+device 3 | tiledCholeskyStatic: graph construction done
+device 0 | tiledCholeskyStatic: graphs instantiated, entering timing loop
+device 0 | Setup time (s): 0.4150
+device 1 | tiledCholeskyStatic: graphs instantiated, entering timing loop
+device 1 | Setup time (s): 0.4175
+device 3 | tiledCholeskyStatic: graphs instantiated, entering timing loop
+device 3 | Setup time (s): 0.4175
+device 2 | tiledCholeskyStatic: graphs instantiated, entering timing loop
+device 2 | Setup time (s): 0.4176
+device 3 | run 0: launching 30 tasks
+device 3 | launching task 3
+device 3 | launching task 7
+device 3 | launching task 11
+device 3 | launching task 15
+device 2 | run 0: launching 30 tasks
+device 2 | launching task 2
+device 2 | launching task 6
+device 2 | launching task 10
+device 2 | launching task 14
+device 2 | launching task 18
+device 1 | run 0: launching 30 tasks
+device 1 | launching task 1
+device 1 | launching task 5
+device 1 | launching task 9
+device 0 | run 0: launching 30 tasks
+device 0 | launching task 0
+device 0 | launching task 4
+device 0 | launching task 8
+device 0 | launching task 12
+device 0 | launching task 16
+device 0 | launching task 20
+device 0 | launching task 24
+device 0 | launching task 28
+device 0 | launching task 32
+device 0 | launching task 36
+device 0 | launching task 40
+device 0 | launching task 44
+device 0 | launching task 48
+device 0 | launching task 52
+device 0 | launching task 56
+device 0 | launching task 60
+device 0 | launching task 64
+device 3 | launching task 19
+device 2 | launching task 22
+device 2 | launching task 26
+device 2 | launching task 30
+device 0 | launching task 68
+device 0 | launching task 72
+device 0 | launching task 76
+device 0 | launching task 80
+device 0 | launching task 84
+device 0 | launching task 88
+device 0 | launching task 92
+device 3 | launching task 23
+device 3 | launching task 27
+device 3 | launching task 31
+device 1 | launching task 13
+device 2 | launching task 34
+device 2 | launching task 38
+device 0 | launching task 96
+device 0 | launching task 100
+device 0 | launching task 104
+device 0 | launching task 108
+device 0 | launching task 112
+device 3 | launching task 35
+device 3 | launching task 39
+device 2 | launching task 42
+device 0 | launching task 116
+device 0 | run 0: all tasks launched, waiting for stream
+device 2 | launching task 46
+device 2 | launching task 50
+device 3 | launching task 43
+device 3 | launching task 47
+device 2 | launching task 54
+device 3 | launching task 51
+device 3 | launching task 55
+device 1 | launching task 17
+device 2 | launching task 58
+device 2 | launching task 62
+device 3 | launching task 59
+device 3 | launching task 63
+device 2 | launching task 66
+device 2 | launching task 70
+device 2 | launching task 74
+device 3 | launching task 67
+device 3 | launching task 71
+device 3 | launching task 75
+device 1 | launching task 21
+device 1 | launching task 25
+device 2 | launching task 78
+device 2 | launching task 82
+device 3 | launching task 79
+device 2 | launching task 86
+device 3 | launching task 83
+device 2 | launching task 90
+device 3 | launching task 87
+device 2 | launching task 94
+device 3 | launching task 91
+device 2 | launching task 98
+device 1 | launching task 29
+device 3 | launching task 95
+device 3 | launching task 99
+device 2 | launching task 102
+device 2 | launching task 106
+device 3 | launching task 103
+device 3 | launching task 107
+device 2 | launching task 110
+device 1 | launching task 33
+device 2 | launching task 114
+device 3 | launching task 111
+device 2 | launching task 118
+device 2 | run 0: all tasks launched, waiting for stream
+device 3 | launching task 115
+device 3 | launching task 119
+device 1 | launching task 37
+device 1 | launching task 41
+device 3 | run 0: all tasks launched, waiting for stream
+device 1 | launching task 45
+device 1 | launching task 49
+device 1 | launching task 53
+device 1 | launching task 57
+device 1 | launching task 61
+device 1 | launching task 65
+device 1 | launching task 69
+device 1 | launching task 73
+device 1 | launching task 77
+device 1 | launching task 81
+device 1 | launching task 85
+device 1 | launching task 89
+device 1 | launching task 93
+device 1 | launching task 97
+device 1 | launching task 101
+device 1 | launching task 105
+device 1 | launching task 109
+device 1 | launching task 113
+device 1 | launching task 117
+device 1 | run 0: all tasks launched, waiting for stream
+[wait] waiting on 1 deps
+[wait] polling flag[0] (currently 0)
+[wait] flag[0] set
+[wait] all deps satisfied
+[signal] task 1: signaling 4 PEs
+[signal] task 1 -> PE 0 flag[1]
+[signal] task 1 -> PE 1 flag[1]
+[signal] task 1 -> PE 2 flag[1]
+[signal] task 1 -> PE 3 flag[1]
+[signal] task 1: done
+[wait] waiting on 1 deps
+[wait] polling flag[0] (currently 1)
+[wait] flag[0] set
+[wait] all deps satisfied
+[signal] task 5: signaling 3 PEs
+[signal] task 5 -> PE 0 flag[5]
+[signal] task 5 -> PE 2 flag[5]
+[signal] task 5 -> PE 3 flag[5]
+[signal] task 5: done
+[wait] waiting on 2 deps
+[wait] polling flag[1] (currently 1)
+[wait] flag[1] set
+[wait] polling flag[2] (currently 1)
+[wait] flag[2] set
+[wait] all deps satisfied
+[signal] task 9: signaling 1 PEs
+[signal] task 9 -> PE 1 flag[9]
+[signal] task 9: done
+[wait] waiting on 2 deps
+[wait] polling flag[1] (currently 1)
+[wait] flag[1] set
+[wait] polling flag[6] (currently 1)
+[wait] flag[6] set
+[wait] all deps satisfied
+[signal] task 13: signaling 1 PEs
+[signal] task 13 -> PE 1 flag[13]
+[signal] task 13: done
+[wait] waiting on 2 deps
+[wait] polling flag[2] (currently 1)
+[wait] flag[2] set
+[wait] polling flag[4] (currently 1)
+[wait] flag[4] set
+[wait] all deps satisfied
+[signal] task 17: signaling 1 PEs
+[signal] task 17 -> PE 1 flag[17]
+[signal] task 17: done
+[wait] waiting on 1 deps
+[wait] polling flag[3] (currently 1)
+[wait] flag[3] set
+[wait] all deps satisfied
+[signal] task 21: signaling 1 PEs
+[signal] task 21 -> PE 1 flag[21]
+[signal] task 21: done
+[wait] waiting on 2 deps
+[wait] polling flag[3] (currently 1)
+[wait] flag[3] set
+[wait] polling flag[7] (currently 1)
+[wait] flag[7] set
+[wait] all deps satisfied
+[wait] waiting on 1 deps
+[wait] polling flag[0] (currently 0)
+[wait] flag[0] set
+[wait] all deps satisfied
+[signal] task 3: signaling 4 PEs
+[signal] task 3 -> PE 0 flag[3]
+[signal] task 3 -> PE 1 flag[3]
+[signal] task 3 -> PE 2 flag[3]
+[signal] task 3 -> PE 3 flag[3]
+[signal] task 3: done
+[wait] waiting on 1 deps
+[wait] polling flag[0] (currently 1)
+[wait] flag[0] set
+[wait] all deps satisfied
+[signal] task 7: signaling 4 PEs
+[signal] task 7 -> PE 0 flag[7]
+[signal] task 7 -> PE 1 flag[7]
+[signal] task 7 -> PE 2 flag[7]
+[signal] task 7 -> PE 3 flag[7]
+[signal] task 7: done
+[wait] waiting on 2 deps
+[wait] polling flag[1] (currently 1)
+[wait] flag[1] set
+[wait] polling flag[4] (currently 1)
+[wait] flag[4] set
+[wait] all deps satisfied
+[signal] task 11: signaling 1 PEs
+[signal] task 11 -> PE 3 flag[11]
+[signal] task 11: done
+[wait] waiting on 1 deps
+[wait] polling flag[2] (currently 1)
+[wait] flag[2] set
+[wait] all deps satisfied
+[signal] task 15: signaling 1 PEs
+[signal] task 15 -> PE 3 flag[15]
+[signal] task 15: done
+[wait] waiting on 2 deps
+[wait] polling flag[2] (currently 1)
+[wait] flag[2] set
+[wait] polling flag[6] (currently 1)
+[wait] flag[6] set
+[wait] all deps satisfied
+[signal] task 19: signaling 1 PEs
+[signal] task 19 -> PE 3 flag[19]
+[signal] task 19: done
+[wait] waiting on 2 deps
+[wait] polling flag[3] (currently 1)
+[wait] flag[3] set
+[wait] polling flag[5] (currently 1)
+[wait] flag[5] set
+[wait] all deps satisfied
+[signal] task 23: signaling 1 PEs
+[signal] task 23 -> PE 3 flag[23]
+[signal] task 23: done
+[wait] waiting on 2 deps
+[wait] polling flag[4] (currently 1)
+[wait] flag[4] set
+[wait] polling flag[5] (currently 1)
+[wait] flag[5] set
+[wait] all deps satisfied
+[signal] task 27: signaling 1 PEs
+[signal] task 27 -> PE 3 flag[27]
+[signal] task 27: done
+[wait] waiting on 2 deps
+[wait] polling flag[5] (currently 1)
+[wait] flag[5] set
+[wait] polling flag[6] (currently 1)
+[wait] flag[6] set
+[wait] all deps satisfied
+[signal] task 31: signaling 1 PEs
+[signal] task 31 -> PE 3 flag[31]
+[signal] task 31: done
+[wait] waiting on 1 deps
+[wait] polling flag[7] (currently 1)
+[wait] flag[7] set
+[wait] all deps satisfied
+[signal] task 35: signaling 1 PEs
+[signal] task 35 -> PE 3 flag[35]
+[signal] task 35: done
+[wait] waiting on 2 deps
+[wait] polling flag[11] (currently 1)
+[wait] flag[11] set
+[wait] polling flag[36] (currently 1)
+[wait] flag[36] set
+[wait] all deps satisfied
+[signal] task 39: signaling 4 PEs
+[signal] task 39 -> PE 0 flag[39]
+[signal] task 39 -> PE 1 flag[39]
+[signal] task 39 -> PE 2 flag[39]
+[signal] task 39 -> PE 3 flag[39]
+[signal] task 39: done
+[wait] waiting on 2 deps
+[wait] polling flag[15] (currently 1)
+[wait] flag[15] set
+[wait] polling flag[37] (currently 1)
+[wait] flag[37] set
+[wait] all deps satisfied
+[signal] task 43: signaling 1 PEs
+[signal] task 43 -> PE 0 flag[43]
+[signal] task 43: done
+[wait] waiting on 3 deps
+[wait] polling flag[19] (currently 1)
+[wait] flag[19] set
+[wait] polling flag[37] (currently 1)
+[wait] flag[37] set
+[wait] polling flag[41] (currently 1)
+[wait] flag[41] set
+[wait] all deps satisfied
+[signal] task 47: signaling 1 PEs
+[signal] task 47 -> PE 0 flag[47]
+[signal] task 47: done
+[wait] waiting on 3 deps
+[wait] polling flag[23] (currently 1)
+[wait] flag[23] set
+[wait] polling flag[38] (currently 1)
+[wait] flag[38] set
+[wait] polling flag[40] (currently 1)
+[wait] flag[40] set
+[wait] all deps satisfied
+[signal] task 51: signaling 1 PEs
+[signal] task 51 -> PE 0 flag[51]
+[signal] task 51: done
+[wait] waiting on 3 deps
+[wait] polling flag[27] (currently 1)
+[wait] flag[27] set
+[wait] polling flag[39] (currently 1)
+[wait] flag[39] set
+[wait] polling flag[40] (currently 1)
+[wait] flag[40] set
+[wait] all deps satisfied
+[signal] task 55: signaling 1 PEs
+[signal] task 55 -> PE 0 flag[55]
+[signal] task 55: done
+[wait] waiting on 3 deps
+[wait] polling flag[31] (currently 1)
+[wait] flag[31] set
+[wait] polling flag[40] (currently 1)
+[wait] flag[40] set
+[wait] polling flag[41] (currently 1)
+[wait] flag[41] set
+[wait] all deps satisfied
+[signal] task 0: signaling 4 PEs
+[signal] task 0 -> PE 0 flag[0]
+[signal] task 0 -> PE 1 flag[0]
+[signal] task 0 -> PE 2 flag[0]
+[signal] task 0 -> PE 3 flag[0]
+[signal] task 0: done
+[wait] waiting on 1 deps
+[wait] polling flag[0] (currently 1)
+[wait] flag[0] set
+[wait] all deps satisfied
+[signal] task 4: signaling 4 PEs
+[signal] task 4 -> PE 0 flag[4]
+[signal] task 4 -> PE 1 flag[4]
+[signal] task 4 -> PE 2 flag[4]
+[signal] task 4 -> PE 3 flag[4]
+[signal] task 4: done
+[wait] waiting on 1 deps
+[wait] polling flag[1] (currently 1)
+[wait] flag[1] set
+[wait] all deps satisfied
+[signal] task 8: signaling 1 PEs
+[signal] task 8 -> PE 0 flag[8]
+[signal] task 8: done
+[wait] waiting on 2 deps
+[wait] polling flag[1] (currently 1)
+[wait] flag[1] set
+[wait] polling flag[5] (currently 0)
+[wait] flag[5] set
+[wait] all deps satisfied
+[signal] task 12: signaling 1 PEs
+[signal] task 12 -> PE 0 flag[12]
+[signal] task 12: done
+[wait] waiting on 2 deps
+[wait] polling flag[2] (currently 1)
+[wait] flag[2] set
+[wait] polling flag[3] (currently 1)
+[wait] flag[3] set
+[wait] all deps satisfied
+[signal] task 16: signaling 1 PEs
+[signal] task 16 -> PE 0 flag[16]
+[signal] task 16: done
+[wait] waiting on 2 deps
+[wait] polling flag[2] (currently 1)
+[wait] flag[2] set
+[wait] polling flag[7] (currently 1)
+[wait] flag[7] set
+[wait] all deps satisfied
+[signal] task 20: signaling 1 PEs
+[signal] task 20 -> PE 0 flag[20]
+[signal] task 20: done
+[wait] waiting on 2 deps
+[wait] polling flag[3] (currently 1)
+[wait] flag[3] set
+[wait] polling flag[6] (currently 1)
+[wait] flag[6] set
+[wait] all deps satisfied
+[signal] task 24: signaling 1 PEs
+[signal] task 24 -> PE 0 flag[24]
+[signal] task 24: done
+[wait] waiting on 2 deps
+[wait] polling flag[4] (currently 1)
+[wait] flag[4] set
+[wait] polling flag[6] (currently 1)
+[wait] flag[6] set
+[wait] all deps satisfied
+[signal] task 28: signaling 1 PEs
+[signal] task 28 -> PE 0 flag[28]
+[signal] task 28: done
+[wait] waiting on 2 deps
+[wait] polling flag[5] (currently 1)
+[wait] flag[5] set
+[wait] polling flag[7] (currently 1)
+[wait] flag[7] set
+[wait] all deps satisfied
+[signal] task 32: signaling 1 PEs
+[signal] task 32 -> PE 0 flag[32]
+[signal] task 32: done
+[wait] waiting on 1 deps
+[wait] polling flag[8] (currently 1)
+[wait] flag[8] set
+[wait] all deps satisfied
+[signal] task 36: signaling 4 PEs
+[signal] task 36 -> PE 0 flag[36]
+[signal] task 36 -> PE 1 flag[36]
+[signal] task 36 -> PE 2 flag[36]
+[signal] task 36 -> PE 3 flag[36]
+[signal] task 36: done
+[wait] waiting on 2 deps
+[wait] polling flag[12] (currently 1)
+[wait] flag[12] set
+[wait] polling flag[36] (currently 1)
+[wait] flag[36] set
+[wait] all deps satisfied
+[signal] task 40: signaling 3 PEs
+[signal] task 40 -> PE 0 flag[40]
+[signal] task 40 -> PE 2 flag[40]
+[signal] task 40 -> PE 3 flag[40]
+[signal] task 40: done
+[wait] waiting on 3 deps
+[wait] polling flag[16] (currently 1)
+[wait] flag[16] set
+[wait] polling flag[37] (currently 0)
+[wait] flag[37] set
+[wait] polling flag[38] (currently 0)
+[wait] flag[38] set
+[wait] all deps satisfied
+[signal] task 44: signaling 1 PEs
+[signal] task 44 -> PE 1 flag[44]
+[signal] task 44: done
+[wait] waiting on 3 deps
+[wait] polling flag[20] (currently 1)
+[wait] flag[20] set
+[wait] polling flag[37] (currently 1)
+[wait] flag[37] set
+[wait] polling flag[42] (currently 1)
+[wait] flag[42] set
+[wait] all deps satisfied
+[signal] task 48: signaling 1 PEs
+[signal] task 48 -> PE 1 flag[48]
+[signal] task 48: done
+[wait] waiting on 3 deps
+[wait] polling flag[24] (currently 1)
+[wait] flag[24] set
+[wait] polling flag[38] (currently 1)
+[wait] flag[38] set
+[wait] polling flag[41] (currently 1)
+[wait] flag[41] set
+[wait] all deps satisfied
+[signal] task 52: signaling 1 PEs
+[signal] task 52 -> PE 1 flag[52]
+[signal] task 52: done
+[wait] waiting on 3 deps
+[wait] polling flag[28] (currently 1)
+[wait] flag[28] set
+[wait] polling flag[39] (currently 1)
+[wait] flag[39] set
+[wait] polling flag[41] (currently 1)
+[wait] flag[41] set
+[wait] all deps satisfied
+[signal] task 56: signaling 1 PEs
+[signal] task 56 -> PE 1 flag[56]
+[signal] task 56: done
+[wait] waiting on 3 deps
+[wait] polling flag[32] (currently 1)
+[wait] flag[32] set
+[wait] polling flag[40] (currently 1)
+[wait] flag[40] set
+[wait] polling flag[42] (currently 1)
+[wait] flag[42] set
+[wait] all deps satisfied
+[signal] task 60: signaling 1 PEs
+[signal] task 60 -> PE 1 flag[60]
+[signal] task 60: done
+[wait] waiting on 1 deps
+[wait] polling flag[43] (currently 1)
+[wait] flag[43] set
+[wait] all deps satisfied
+[signal] task 64: signaling 4 PEs
+[signal] task 64 -> PE 0 flag[64]
+[signal] task 64 -> PE 1 flag[64]
+[signal] task 64 -> PE 2 flag[64]
+[signal] task 64 -> PE 3 flag[64]
+[signal] task 64: done
+[wait] waiting on 2 deps
+[wait] polling flag[47] (currently 1)
+[wait] flag[47] set
+[wait] polling flag[64] (currently 1)
+[wait] flag[64] set
+[wait] all deps satisfied
+[signal] task 68: signaling 4 PEs
+[signal] task 68 -> PE 0 flag[68]
+[signal] task 68 -> PE 1 flag[68]
+[signal] task 68 -> PE 2 flag[68]
+[signal] task 68 -> PE 3 flag[68]
+[signal] task 68: done
+[wait] waiting on 3 deps
+[wait] polling flag[51] (currently 1)
+[wait] flag[51] set
+[wait] polling flag[65] (currently 0)
+[wait] flag[65] set
+[wait] polling flag[67] (currently 0)
+[wait] flag[67] set
+[wait] all deps satisfied
+[signal] task 72: signaling 1 PEs
+[signal] task 72 -> PE 3 flag[72]
+[signal] task 72: done
+[wait] waiting on 3 deps
+[wait] polling flag[55] (currently 1)
+[wait] flag[55] set
+[wait] polling flag[66] (currently 1)
+[wait] flag[66] set
+[wait] polling flag[67] (currently 1)
+[wait] flag[67] set
+[wait] all deps satisfied
+[signal] task 76: signaling 1 PEs
+[signal] task 76 -> PE 3 flag[76]
+[signal] task 76: done
+[wait] waiting on 3 deps
+[wait] polling flag[59] (currently 1)
+[wait] flag[59] set
+[wait] polling flag[67] (currently 1)
+[wait] flag[67] set
+[wait] polling flag[68] (currently 1)
+[wait] flag[68] set
+[wait] all deps satisfied
+[signal] task 80: signaling 1 PEs
+[signal] task 80 -> PE 3 flag[80]
+[signal] task 80: done
+[wait] waiting on 2 deps
+[wait] polling flag[63] (currently 1)
+[wait] flag[63] set
+[wait] polling flag[69] (currently 1)
+[wait] flag[69] set
+[wait] all deps satisfied
+[signal] task 84: signaling 1 PEs
+[signal] task 84 -> PE 3 flag[84]
+[signal] task 84: done
+[wait] waiting on 2 deps
+[wait] polling flag[73] (currently 1)
+[wait] flag[73] set
+[wait] polling flag[85] (currently 0)
+[wait] flag[85] set
+[wait] all deps satisfied
+[signal] task 88: signaling 4 PEs
+[signal] task 88 -> PE 0 flag[88]
+[signal] task 88 -> PE 1 flag[88]
+[signal] task 88 -> PE 2 flag[88]
+[signal] task 88 -> PE 3 flag[88]
+[signal] task 88: done
+[wait] waiting on 3 deps
+[wait] polling flag[77] (currently 1)
+[wait] flag[77] set
+[wait] polling flag[86] (currently 0)
+[wait] flag[86] set
+[wait] polling flag[88] (currently 1)
+[wait] flag[88] set
+[wait] all deps satisfied
+[signal] task 92: signaling 1 PEs
+[signal] task 92 -> PE 2 flag[92]
+[signal] task 92: done
+[wait] waiting on 3 deps
+[wait] polling flag[81] (currently 1)
+[wait] flag[81] set
+[wait] polling flag[87] (currently 1)
+[wait] flag[87] set
+[wait] polling flag[89] (currently 1)
+[wait] flag[89] set
+[wait] all deps satisfied
+[signal] task 96: signaling 1 PEs
+[signal] task 96 -> PE 2 flag[96]
+[signal] task 96: done
+[wait] waiting on 1 deps
+[wait] polling flag[90] (currently 1)
+[wait] flag[90] set
+[wait] all deps satisfied
+[signal] task 100: signaling 3 PEs
+[signal] task 100 -> PE 1 flag[100]
+[signal] task 100 -> PE 2 flag[100]
+[signal] task 100 -> PE 3 flag[100]
+[signal] task 100: done
+[wait] waiting on 2 deps
+[wait] polling flag[94] (currently 1)
+[wait] flag[94] set
+[wait] polling flag[101] (currently 0)
+[wait] flag[101] set
+[wait] all deps satisfied
+[signal] task 104: signaling 1 PEs
+[signal] task 104 -> PE 2 flag[104]
+[signal] task 104: done
+[wait] waiting on 3 deps
+[wait] polling flag[98] (currently 1)
+[wait] flag[98] set
+[wait] polling flag[102] (currently 1)
+[wait] flag[102] set
+[wait] polling flag[103] (currently 0)
+[wait] flag[103] set
+[wait] all deps satisfied
+[signal] task 108: signaling 1 PEs
+[signal] task 108 -> PE 2 flag[108]
+[signal] task 108: done
+[wait] waiting on 2 deps
+[wait] polling flag[106] (currently 0)
+[wait] flag[106] set
+[wait] polling flag[110] (currently 0)
+[wait] flag[110] set
+[wait] all deps satisfied
+[signal] task 112: signaling 2 PEs
+[signal] task 112 -> PE 2 flag[112]
+[signal] task 112 -> PE 3 flag[112]
+[signal] task 112: done
+[wait] waiting on 1 deps
+[wait] polling flag[113] (currently 0)
+[wait] flag[113] set
+[wait] all deps satisfied
+[signal] task 116: signaling 1 PEs
+[signal] task 116 -> PE 1 flag[116]
+[signal] task 116: done
+[signal] task 25: signaling 1 PEs
+[signal] task 25 -> PE 1 flag[25]
+[signal] task 25: done
+[wait] waiting on 2 deps
+[wait] polling flag[4] (currently 1)
+[wait] flag[4] set
+[wait] polling flag[7] (currently 1)
+[wait] flag[7] set
+[wait] all deps satisfied
+[signal] task 29: signaling 1 PEs
+[signal] task 29 -> PE 1 flag[29]
+[signal] task 29: done
+[wait] waiting on 1 deps
+[wait] polling flag[6] (currently 1)
+[wait] flag[6] set
+[wait] all deps satisfied
+[signal] task 33: signaling 1 PEs
+[signal] task 33 -> PE 1 flag[33]
+[signal] task 33: done
+[wait] waiting on 2 deps
+[wait] polling flag[9] (currently 1)
+[wait] flag[9] set
+[wait] polling flag[36] (currently 1)
+[wait] flag[36] set
+[wait] all deps satisfied
+[signal] task 37: signaling 4 PEs
+[signal] task 37 -> PE 0 flag[37]
+[signal] task 37 -> PE 1 flag[37]
+[signal] task 37 -> PE 2 flag[37]
+[signal] task 37 -> PE 3 flag[37]
+[signal] task 37: done
+[wait] waiting on 2 deps
+[wait] polling flag[13] (currently 1)
+[wait] flag[13] set
+[wait] polling flag[36] (currently 1)
+[wait] flag[36] set
+[wait] all deps satisfied
+[signal] task 41: signaling 4 PEs
+[signal] task 41 -> PE 0 flag[41]
+[signal] task 41 -> PE 1 flag[41]
+[signal] task 41 -> PE 2 flag[41]
+[signal] task 41 -> PE 3 flag[41]
+[signal] task 41: done
+[wait] waiting on 3 deps
+[wait] polling flag[17] (currently 1)
+[wait] flag[17] set
+[wait] polling flag[37] (currently 1)
+[wait] flag[37] set
+[wait] polling flag[39] (currently 0)
+[wait] flag[39] set
+[wait] all deps satisfied
+[signal] task 45: signaling 1 PEs
+[signal] task 45 -> PE 2 flag[45]
+[signal] task 45: done
+[wait] waiting on 2 deps
+[wait] polling flag[21] (currently 1)
+[wait] flag[21] set
+[wait] polling flag[38] (currently 1)
+[wait] flag[38] set
+[wait] all deps satisfied
+[signal] task 49: signaling 1 PEs
+[signal] task 49 -> PE 2 flag[49]
+[signal] task 49: done
+[wait] waiting on 3 deps
+[wait] polling flag[25] (currently 1)
+[wait] flag[25] set
+[wait] polling flag[38] (currently 1)
+[wait] flag[38] set
+[wait] polling flag[42] (currently 1)
+[wait] flag[42] set
+[wait] all deps satisfied
+[signal] task 53: signaling 1 PEs
+[signal] task 53 -> PE 2 flag[53]
+[signal] task 53: done
+[wait] waiting on 3 deps
+[wait] polling flag[29] (currently 1)
+[wait] flag[29] set
+[wait] polling flag[39] (currently 1)
+[wait] flag[39] set
+[wait] polling flag[42] (currently 1)
+[wait] flag[42] set
+[wait] all deps satisfied
+[signal] task 57: signaling 1 PEs
+[signal] task 57 -> PE 2 flag[57]
+[signal] task 57: done
+[wait] waiting on 2 deps
+[wait] polling flag[33] (currently 1)
+[wait] flag[33] set
+[wait] polling flag[41] (currently 1)
+[wait] flag[41] set
+[wait] all deps satisfied
+[signal] task 61: signaling 1 PEs
+[signal] task 61 -> PE 2 flag[61]
+[signal] task 61: done
+[wait] waiting on 2 deps
+[wait] polling flag[44] (currently 1)
+[wait] flag[44] set
+[wait] polling flag[64] (currently 1)
+[wait] flag[64] set
+[wait] all deps satisfied
+[signal] task 65: signaling 4 PEs
+[signal] task 65 -> PE 0 flag[65]
+[signal] task 65 -> PE 1 flag[65]
+[signal] task 65 -> PE 2 flag[65]
+[signal] task 65 -> PE 3 flag[65]
+[signal] task 65: done
+[wait] waiting on 2 deps
+[wait] polling flag[48] (currently 1)
+[wait] flag[48] set
+[wait] polling flag[64] (currently 1)
+[wait] flag[64] set
+[wait] all deps satisfied
+[signal] task 69: signaling 4 PEs
+[signal] task 69 -> PE 0 flag[69]
+[signal] task 69 -> PE 1 flag[69]
+[signal] task 69 -> PE 2 flag[69]
+[signal] task 69 -> PE 3 flag[69]
+[signal] task 69: done
+[wait] waiting on 3 deps
+[wait] polling flag[52] (currently 1)
+[wait] flag[52] set
+[wait] polling flag[65] (currently 1)
+[wait] flag[65] set
+[wait] polling flag[68] (currently 1)
+[wait] flag[68] set
+[wait] all deps satisfied
+[signal] task 73: signaling 1 PEs
+[signal] task 73 -> PE 0 flag[73]
+[signal] task 73: done
+[wait] waiting on 3 deps
+[wait] polling flag[56] (currently 1)
+[wait] flag[56] set
+[wait] polling flag[66] (currently 1)
+[wait] flag[66] set
+[wait] polling flag[68] (currently 1)
+[wait] flag[68] set
+[wait] all deps satisfied
+[signal] task 77: signaling 1 PEs
+[signal] task 77 -> PE 0 flag[77]
+[signal] task 77: done
+[wait] waiting on 3 deps
+[wait] polling flag[60] (currently 1)
+[wait] flag[60] set
+[wait] polling flag[67] (currently 1)
+[wait] flag[67] set
+[wait] polling flag[69] (currently 1)
+[wait] flag[69] set
+[wait] all deps satisfied
+[signal] task 81: signaling 1 PEs
+[signal] task 81 -> PE 0 flag[81]
+[signal] task 81: done
+[wait] waiting on 1 deps
+[wait] polling flag[70] (currently 1)
+[wait] flag[70] set
+[wait] all deps satisfied
+[signal] task 85: signaling 4 PEs
+[signal] task 85 -> PE 0 flag[85]
+[signal] task 85 -> PE 1 flag[85]
+[signal] task 85 -> PE 2 flag[85]
+[signal] task 85 -> PE 3 flag[85]
+[signal] task 85: done
+[wait] waiting on 2 deps
+[wait] polling flag[74] (currently 1)
+[wait] flag[74] set
+[wait] polling flag[85] (currently 1)
+[wait] flag[85] set
+[wait] all deps satisfied
+[signal] task 89: signaling 4 PEs
+[signal] task 89 -> PE 0 flag[89]
+[signal] task 89 -> PE 1 flag[89]
+[signal] task 89 -> PE 2 flag[89]
+[signal] task 89 -> PE 3 flag[89]
+[signal] task 89: done
+[wait] waiting on 3 deps
+[wait] polling flag[78] (currently 1)
+[wait] flag[78] set
+[wait] polling flag[86] (currently 1)
+[wait] flag[86] set
+[wait] polling flag[89] (currently 1)
+[wait] flag[89] set
+[wait] all deps satisfied
+[signal] task 93: signaling 1 PEs
+[signal] task 93 -> PE 3 flag[93]
+[signal] task 93: done
+[wait] waiting on 2 deps
+[wait] polling flag[82] (currently 1)
+[wait] flag[82] set
+[wait] polling flag[88] (currently 1)
+[wait] flag[88] set
+[wait] all deps satisfied
+[signal] task 97: signaling 1 PEs
+[signal] task 97 -> PE 3 flag[97]
+[signal] task 97: done
+[wait] waiting on 2 deps
+[wait] polling flag[91] (currently 1)
+[wait] flag[91] set
+[wait] polling flag[100] (currently 0)
+[wait] flag[100] set
+[wait] all deps satisfied
+[signal] task 101: signaling 3 PEs
+[signal] task 101 -> PE 0 flag[101]
+[signal] task 101 -> PE 1 flag[101]
+[signal] task 101 -> PE 2 flag[101]
+[signal] task 101: done
+[wait] waiting on 3 deps
+[wait] polling flag[95] (currently 1)
+[wait] flag[95] set
+[wait] polling flag[101] (currently 1)
+[wait] flag[101] set
+[wait] polling flag[102] (currently 1)
+[wait] flag[102] set
+[wait] all deps satisfied
+[signal] task 105: signaling 1 PEs
+[signal] task 105 -> PE 3 flag[105]
+[signal] task 105: done
+[wait] waiting on 2 deps
+[wait] polling flag[99] (currently 1)
+[wait] flag[99] set
+[wait] polling flag[103] (currently 1)
+[wait] flag[103] set
+[wait] all deps satisfied
+[signal] task 109: signaling 1 PEs
+[signal] task 109 -> PE 3 flag[109]
+[signal] task 109: done
+[wait] waiting on 2 deps
+[wait] polling flag[107] (currently 0)
+[wait] flag[107] set
+[wait] polling flag[111] (currently 0)
+[wait] flag[111] set
+[wait] all deps satisfied
+[signal] task 113: signaling 1 PEs
+[signal] task 113 -> PE 0 flag[113]
+[signal] task 113: done
+[wait] waiting on 2 deps
+[wait] polling flag[114] (currently 0)
+[wait] flag[114] set
+[wait] polling flag[116] (currently 0)
+[wait] flag[116] set
+[wait] all deps satisfied
+[signal] task 117: signaling 1 PEs
+[signal] task 117 -> PE 2 flag[117]
+[signal] task 117: done
+[wait] waiting on 1 deps
+[wait] polling flag[0] (currently 0)
+[wait] flag[0] set
+[wait] all deps satisfied
+[signal] task 2: signaling 4 PEs
+[signal] task 2 -> PE 0 flag[2]
+[signal] task 2 -> PE 1 flag[2]
+[signal] task 2 -> PE 2 flag[2]
+[signal] task 2 -> PE 3 flag[2]
+[signal] task 2: done
+[wait] waiting on 1 deps
+[wait] polling flag[0] (currently 1)
+[wait] flag[0] set
+[wait] all deps satisfied
+[signal] task 6: signaling 4 PEs
+[signal] task 6 -> PE 0 flag[6]
+[signal] task 6 -> PE 1 flag[6]
+[signal] task 6 -> PE 2 flag[6]
+[signal] task 6 -> PE 3 flag[6]
+[signal] task 6: done
+[wait] waiting on 2 deps
+[wait] polling flag[1] (currently 1)
+[wait] flag[1] set
+[wait] polling flag[3] (currently 1)
+[wait] flag[3] set
+[wait] all deps satisfied
+[signal] task 10: signaling 1 PEs
+[signal] task 10 -> PE 2 flag[10]
+[signal] task 10: done
+[wait] waiting on 2 deps
+[wait] polling flag[1] (currently 1)
+[wait] flag[1] set
+[wait] polling flag[7] (currently 1)
+[wait] flag[7] set
+[wait] all deps satisfied
+[signal] task 14: signaling 1 PEs
+[signal] task 14 -> PE 2 flag[14]
+[signal] task 14: done
+[wait] waiting on 2 deps
+[wait] polling flag[2] (currently 1)
+[wait] flag[2] set
+[wait] polling flag[5] (currently 1)
+[wait] flag[5] set
+[wait] all deps satisfied
+[signal] task 18: signaling 1 PEs
+[signal] task 18 -> PE 2 flag[18]
+[signal] task 18: done
+[wait] waiting on 2 deps
+[wait] polling flag[3] (currently 1)
+[wait] flag[3] set
+[wait] polling flag[4] (currently 1)
+[wait] flag[4] set
+[wait] all deps satisfied
+[signal] task 22: signaling 1 PEs
+[signal] task 22 -> PE 2 flag[22]
+[signal] task 22: done
+[wait] waiting on 1 deps
+[wait] polling flag[4] (currently 1)
+[wait] flag[4] set
+[wait] all deps satisfied
+[signal] task 26: signaling 1 PEs
+[signal] task 26 -> PE 2 flag[26]
+[signal] task 26: done
+[wait] waiting on 1 deps
+[wait] polling flag[5] (currently 1)
+[wait] flag[5] set
+[wait] all deps satisfied
+[signal] task 30: signaling 1 PEs
+[signal] task 30 -> PE 2 flag[30]
+[signal] task 30: done
+[wait] waiting on 2 deps
+[wait] polling flag[6] (currently 1)
+[wait] flag[6] set
+[wait] polling flag[7] (currently 1)
+[wait] flag[7] set
+[wait] all deps satisfied
+[signal] task 34: signaling 1 PEs
+[signal] task 34 -> PE 2 flag[34]
+[signal] task 34: done
+[wait] waiting on 2 deps
+[wait] polling flag[10] (currently 1)
+[wait] flag[10] set
+[wait] polling flag[36] (currently 1)
+[wait] flag[36] set
+[wait] all deps satisfied
+[signal] task 38: signaling 4 PEs
+[signal] task 38 -> PE 0 flag[38]
+[signal] task 38 -> PE 1 flag[38]
+[signal] task 38 -> PE 2 flag[38]
+[signal] task 38 -> PE 3 flag[38]
+[signal] task 38: done
+[wait] waiting on 2 deps
+[wait] polling flag[14] (currently 1)
+[wait] flag[14] set
+[wait] polling flag[36] (currently 1)
+[wait] flag[36] set
+[wait] all deps satisfied
+[signal] task 42: signaling 4 PEs
+[signal] task 42 -> PE 0 flag[42]
+[signal] task 42 -> PE 1 flag[42]
+[signal] task 42 -> PE 2 flag[42]
+[signal] task 42 -> PE 3 flag[42]
+[signal] task 42: done
+[wait] waiting on 3 deps
+[wait] polling flag[18] (currently 1)
+[wait] flag[18] set
+[wait] polling flag[37] (currently 1)
+[wait] flag[37] set
+[wait] polling flag[40] (currently 1)
+[wait] flag[40] set
+[wait] all deps satisfied
+[signal] task 46: signaling 1 PEs
+[signal] task 46 -> PE 3 flag[46]
+[signal] task 46: done
+[wait] waiting on 3 deps
+[wait] polling flag[22] (currently 1)
+[wait] flag[22] set
+[wait] polling flag[38] (currently 1)
+[wait] flag[38] set
+[wait] polling flag[39] (currently 1)
+[wait] flag[39] set
+[wait] all deps satisfied
+[signal] task 50: signaling 1 PEs
+[signal] task 50 -> PE 3 flag[50]
+[signal] task 50: done
+[wait] waiting on 2 deps
+[wait] polling flag[26] (currently 1)
+[wait] flag[26] set
+[wait] polling flag[39] (currently 1)
+[wait] flag[39] set
+[wait] all deps satisfied
+[signal] task 54: signaling 1 PEs
+[signal] task 54 -> PE 3 flag[54]
+[signal] task 54: done
+[wait] waiting on 2 deps
+[wait] polling flag[30] (currently 1)
+[wait] flag[30] set
+[wait] polling flag[40] (currently 1)
+[wait] flag[40] set
+[wait] all deps satisfied
+[signal] task 58: signaling 1 PEs
+[signal] task 58 -> PE 3 flag[58]
+[signal] task 58: done
+[wait] waiting on 3 deps
+[wait] polling flag[34] (currently 1)
+[wait] flag[34] set
+[wait] polling flag[41] (currently 1)
+[wait] flag[41] set
+[wait] polling flag[42] (currently 1)
+[wait] flag[42] set
+[wait] all deps satisfied
+[signal] task 62: signaling 1 PEs
+[signal] task 62 -> PE 3 flag[62]
+[signal] task 62: done
+[wait] waiting on 2 deps
+[wait] polling flag[45] (currently 1)
+[wait] flag[45] set
+[wait] polling flag[64] (currently 1)
+[wait] flag[64] set
+[wait] all deps satisfied
+[signal] task 66: signaling 4 PEs
+[signal] task 66 -> PE 0 flag[66]
+[signal] task 66 -> PE 1 flag[66]
+[signal] task 66 -> PE 2 flag[66]
+[signal] task 66 -> PE 3 flag[66]
+[signal] task 66: done
+[wait] waiting on 2 deps
+[wait] polling flag[49] (currently 1)
+[wait] flag[49] set
+[wait] polling flag[65] (currently 1)
+[wait] flag[65] set
+[wait] all deps satisfied
+[signal] task 70: signaling 1 PEs
+[signal] task 70 -> PE 1 flag[70]
+[signal] task 70: done
+[wait] waiting on 3 deps
+[wait] polling flag[53] (currently 1)
+[wait] flag[53] set
+[wait] polling flag[65] (currently 1)
+[wait] flag[65] set
+[wait] polling flag[69] (currently 1)
+[wait] flag[69] set
+[wait] all deps satisfied
+[signal] task 74: signaling 1 PEs
+[signal] task 74 -> PE 1 flag[74]
+[signal] task 74: done
+[wait] waiting on 3 deps
+[wait] polling flag[57] (currently 1)
+[wait] flag[57] set
+[wait] polling flag[66] (currently 1)
+[wait] flag[66] set
+[wait] polling flag[69] (currently 1)
+[wait] flag[69] set
+[wait] all deps satisfied
+[signal] task 78: signaling 1 PEs
+[signal] task 78 -> PE 1 flag[78]
+[signal] task 78: done
+[wait] waiting on 2 deps
+[wait] polling flag[61] (currently 1)
+[wait] flag[61] set
+[wait] polling flag[68] (currently 1)
+[wait] flag[68] set
+[wait] all deps satisfied
+[signal] task 82: signaling 1 PEs
+[signal] task 82 -> PE 1 flag[82]
+[signal] task 82: done
+[wait] waiting on 2 deps
+[wait] polling flag[71] (currently 1)
+[wait] flag[71] set
+[wait] polling flag[85] (currently 0)
+[wait] flag[85] set
+[wait] all deps satisfied
+[signal] task 86: signaling 4 PEs
+[signal] task 86 -> PE 0 flag[86]
+[signal] task 86 -> PE 1 flag[86]
+[signal] task 86 -> PE 2 flag[86]
+[signal] task 86 -> PE 3 flag[86]
+[signal] task 86: done
+[wait] waiting on 2 deps
+[wait] polling flag[75] (currently 1)
+[wait] flag[75] set
+[wait] polling flag[86] (currently 1)
+[wait] flag[86] set
+[wait] all deps satisfied
+[signal] task 90: signaling 1 PEs
+[signal] task 90 -> PE 0 flag[90]
+[signal] task 90: done
+[wait] waiting on 2 deps
+[wait] polling flag[79] (currently 1)
+[wait] flag[79] set
+[wait] polling flag[87] (currently 1)
+[wait] flag[87] set
+[wait] all deps satisfied
+[signal] task 94: signaling 1 PEs
+[signal] task 94 -> PE 0 flag[94]
+[signal] task 94: done
+[wait] waiting on 3 deps
+[wait] polling flag[83] (currently 1)
+[wait] flag[83] set
+[wait] polling flag[88] (currently 1)
+[wait] flag[88] set
+[wait] polling flag[89] (currently 1)
+[wait] flag[89] set
+[wait] all deps satisfied
+[signal] task 98: signaling 1 PEs
+[signal] task 98 -> PE 0 flag[98]
+[signal] task 98: done
+[wait] waiting on 2 deps
+[wait] polling flag[92] (currently 1)
+[wait] flag[92] set
+[wait] polling flag[100] (currently 0)
+[wait] flag[100] set
+[wait] all deps satisfied
+[signal] task 102: signaling 3 PEs
+[signal] task 102 -> PE 0 flag[102]
+[signal] task 102 -> PE 1 flag[102]
+[signal] task 102 -> PE 3 flag[102]
+[signal] task 102: done
+[wait] waiting on 3 deps
+[wait] polling flag[96] (currently 1)
+[wait] flag[96] set
+[wait] polling flag[101] (currently 1)
+[wait] flag[101] set
+[wait] polling flag[103] (currently 0)
+[wait] flag[103] set
+[wait] all deps satisfied
+[signal] task 106: signaling 1 PEs
+[signal] task 106 -> PE 0 flag[106]
+[signal] task 106: done
+[wait] waiting on 1 deps
+[wait] polling flag[104] (currently 1)
+[wait] flag[104] set
+[wait] all deps satisfied
+[signal] task 110: signaling 2 PEs
+[signal] task 110 -> PE 0 flag[110]
+[signal] task 110 -> PE 3 flag[110]
+[signal] task 110: done
+[wait] waiting on 3 deps
+[wait] polling flag[108] (currently 1)
+[wait] flag[108] set
+[wait] polling flag[111] (currently 0)
+[wait] flag[111] set
+[wait] polling flag[112] (currently 1)
+[wait] flag[112] set
+[wait] all deps satisfied
+[signal] task 114: signaling 1 PEs
+[signal] task 114 -> PE 1 flag[114]
+[signal] task 114: done
+[wait] waiting on 2 deps
+[wait] polling flag[115] (currently 1)
+[wait] flag[115] set
+[wait] polling flag[117] (currently 0)
+[wait] flag[117] set
+[wait] all deps satisfied
+[signal] task 118: signaling 1 PEs
+[signal] task 118 -> PE 3 flag[118]
+[signal] task 118: done
+[signal] task 59: signaling 1 PEs
+[signal] task 59 -> PE 0 flag[59]
+[signal] task 59: done
+[wait] waiting on 2 deps
+[wait] polling flag[35] (currently 1)
+[wait] flag[35] set
+[wait] polling flag[42] (currently 1)
+[wait] flag[42] set
+[wait] all deps satisfied
+[signal] task 63: signaling 1 PEs
+[signal] task 63 -> PE 0 flag[63]
+[signal] task 63: done
+[wait] waiting on 2 deps
+[wait] polling flag[46] (currently 1)
+[wait] flag[46] set
+[wait] polling flag[64] (currently 1)
+[wait] flag[64] set
+[wait] all deps satisfied
+[signal] task 67: signaling 3 PEs
+[signal] task 67 -> PE 0 flag[67]
+[signal] task 67 -> PE 1 flag[67]
+[signal] task 67 -> PE 3 flag[67]
+[signal] task 67: done
+[wait] waiting on 3 deps
+[wait] polling flag[50] (currently 1)
+[wait] flag[50] set
+[wait] polling flag[65] (currently 1)
+[wait] flag[65] set
+[wait] polling flag[66] (currently 1)
+[wait] flag[66] set
+[wait] all deps satisfied
+[signal] task 71: signaling 1 PEs
+[signal] task 71 -> PE 2 flag[71]
+[signal] task 71: done
+[wait] waiting on 2 deps
+[wait] polling flag[54] (currently 1)
+[wait] flag[54] set
+[wait] polling flag[66] (currently 1)
+[wait] flag[66] set
+[wait] all deps satisfied
+[signal] task 75: signaling 1 PEs
+[signal] task 75 -> PE 2 flag[75]
+[signal] task 75: done
+[wait] waiting on 2 deps
+[wait] polling flag[58] (currently 1)
+[wait] flag[58] set
+[wait] polling flag[67] (currently 1)
+[wait] flag[67] set
+[wait] all deps satisfied
+[signal] task 79: signaling 1 PEs
+[signal] task 79 -> PE 2 flag[79]
+[signal] task 79: done
+[wait] waiting on 3 deps
+[wait] polling flag[62] (currently 1)
+[wait] flag[62] set
+[wait] polling flag[68] (currently 1)
+[wait] flag[68] set
+[wait] polling flag[69] (currently 1)
+[wait] flag[69] set
+[wait] all deps satisfied
+[signal] task 83: signaling 1 PEs
+[signal] task 83 -> PE 2 flag[83]
+[signal] task 83: done
+[wait] waiting on 2 deps
+[wait] polling flag[72] (currently 1)
+[wait] flag[72] set
+[wait] polling flag[85] (currently 0)
+[wait] flag[85] set
+[wait] all deps satisfied
+[signal] task 87: signaling 3 PEs
+[signal] task 87 -> PE 0 flag[87]
+[signal] task 87 -> PE 2 flag[87]
+[signal] task 87 -> PE 3 flag[87]
+[signal] task 87: done
+[wait] waiting on 3 deps
+[wait] polling flag[76] (currently 1)
+[wait] flag[76] set
+[wait] polling flag[86] (currently 1)
+[wait] flag[86] set
+[wait] polling flag[87] (currently 1)
+[wait] flag[87] set
+[wait] all deps satisfied
+[signal] task 91: signaling 1 PEs
+[signal] task 91 -> PE 1 flag[91]
+[signal] task 91: done
+[wait] waiting on 3 deps
+[wait] polling flag[80] (currently 1)
+[wait] flag[80] set
+[wait] polling flag[87] (currently 1)
+[wait] flag[87] set
+[wait] polling flag[88] (currently 1)
+[wait] flag[88] set
+[wait] all deps satisfied
+[signal] task 95: signaling 1 PEs
+[signal] task 95 -> PE 1 flag[95]
+[signal] task 95: done
+[wait] waiting on 2 deps
+[wait] polling flag[84] (currently 1)
+[wait] flag[84] set
+[wait] polling flag[89] (currently 1)
+[wait] flag[89] set
+[wait] all deps satisfied
+[signal] task 99: signaling 1 PEs
+[signal] task 99 -> PE 1 flag[99]
+[signal] task 99: done
+[wait] waiting on 2 deps
+[wait] polling flag[93] (currently 1)
+[wait] flag[93] set
+[wait] polling flag[100] (currently 1)
+[wait] flag[100] set
+[wait] all deps satisfied
+[signal] task 103: signaling 3 PEs
+[signal] task 103 -> PE 0 flag[103]
+[signal] task 103 -> PE 1 flag[103]
+[signal] task 103 -> PE 2 flag[103]
+[signal] task 103: done
+[wait] waiting on 2 deps
+[wait] polling flag[97] (currently 1)
+[wait] flag[97] set
+[wait] polling flag[102] (currently 1)
+[wait] flag[102] set
+[wait] all deps satisfied
+[signal] task 107: signaling 1 PEs
+[signal] task 107 -> PE 1 flag[107]
+[signal] task 107: done
+[wait] waiting on 2 deps
+[wait] polling flag[105] (currently 1)
+[wait] flag[105] set
+[wait] polling flag[110] (currently 0)
+[wait] flag[110] set
+[wait] all deps satisfied
+[signal] task 111: signaling 2 PEs
+[signal] task 111 -> PE 1 flag[111]
+[signal] task 111 -> PE 2 flag[111]
+[signal] task 111: done
+[wait] waiting on 2 deps
+[wait] polling flag[109] (currently 1)
+[wait] flag[109] set
+[wait] polling flag[112] (currently 1)
+[wait] flag[112] set
+[wait] all deps satisfied
+[signal] task 115: signaling 1 PEs
+[signal] task 115 -> PE 2 flag[115]
+[signal] task 115: done
+[wait] waiting on 1 deps
+[wait] polling flag[118] (currently 0)
+[wait] flag[118] set
+[wait] all deps satisfied
+[signal] task 119: signaling 0 PEs
+[signal] task 119: done
+device 3 | 0 run | time (s): 0.0500
+Total time used (s): 0.0500
+device 1 | 0 run | time (s): 0.0483
+Total time used (s): 0.0483
+device 2 | 0 run | time (s): 0.0492
+Total time used (s): 0.0492
+device 0 | 0 run | time (s): 0.0478
+Total time used (s): 0.0478
