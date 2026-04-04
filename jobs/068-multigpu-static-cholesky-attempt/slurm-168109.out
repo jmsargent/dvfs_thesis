@@ -23,3 +23,167 @@ totalNodes=120
 bufferSize=544
 tileSize=262144
 device 0 | tiledCholeskyStatic: building 120 graphs
+device 0 | tiledCholeskyStatic: graph construction done
+device 2 | tiledCholeskyStatic: graph construction done
+device 3 | tiledCholeskyStatic: graph construction done
+device 1 | tiledCholeskyStatic: graph construction done
+device 0 | tiledCholeskyStatic: graphs instantiated, entering timing loop
+device 0 | Setup time (s): 1.6235
+device 2 | tiledCholeskyStatic: graphs instantiated, entering timing loop
+device 2 | Setup time (s): 1.6264
+device 3 | tiledCholeskyStatic: graphs instantiated, entering timing loop
+device 3 | Setup time (s): 1.6265
+device 1 | tiledCholeskyStatic: graphs instantiated, entering timing loop
+device 1 | Setup time (s): 1.6265
+device 3 | run 0: launching 30 tasks
+device 3 | launching task 3
+device 3 | launching task 7
+device 3 | launching task 11
+device 3 | launching task 15
+device 3 | launching task 19
+device 0 | run 0: launching 30 tasks
+device 0 | launching task 0
+device 0 | launching task 4
+device 0 | launching task 8
+device 0 | launching task 12
+device 0 | launching task 16
+device 0 | launching task 20
+device 0 | launching task 24
+device 0 | launching task 28
+device 0 | launching task 32
+device 0 | launching task 36
+device 0 | launching task 40
+device 0 | launching task 44
+device 0 | launching task 48
+device 0 | launching task 52
+device 0 | launching task 56
+device 0 | launching task 60
+device 1 | run 0: launching 30 tasks
+device 1 | launching task 1
+device 1 | launching task 5
+device 1 | launching task 9
+device 1 | launching task 13
+device 1 | launching task 17
+device 1 | launching task 21
+device 1 | launching task 25
+device 1 | launching task 29
+device 2 | run 0: launching 30 tasks
+device 2 | launching task 2
+device 2 | launching task 6
+device 2 | launching task 10
+device 2 | launching task 14
+device 2 | launching task 18
+device 2 | launching task 22
+device 2 | launching task 26
+device 2 | launching task 30
+device 3 | launching task 23
+device 3 | launching task 27
+device 3 | launching task 31
+device 3 | launching task 35
+device 3 | launching task 39
+device 0 | launching task 64
+device 0 | launching task 68
+device 0 | launching task 72
+device 0 | launching task 76
+device 0 | launching task 80
+device 0 | launching task 84
+device 0 | launching task 88
+device 0 | launching task 92
+device 0 | launching task 96
+device 0 | launching task 100
+device 1 | launching task 33
+device 1 | launching task 37
+device 1 | launching task 41
+device 1 | launching task 45
+device 1 | launching task 49
+device 2 | launching task 34
+device 2 | launching task 38
+device 2 | launching task 42
+device 2 | launching task 46
+device 2 | launching task 50
+device 3 | launching task 43
+device 3 | launching task 47
+device 3 | launching task 51
+device 3 | launching task 55
+device 3 | launching task 59
+device 3 | launching task 63
+device 3 | launching task 67
+device 0 | launching task 104
+device 0 | launching task 108
+device 0 | launching task 112
+device 0 | launching task 116
+device 0 | run 0: all tasks launched, waiting for stream
+device 1 | launching task 53
+device 1 | launching task 57
+device 1 | launching task 61
+device 1 | launching task 65
+device 1 | launching task 69
+device 2 | launching task 54
+device 2 | launching task 58
+device 2 | launching task 62
+device 2 | launching task 66
+device 3 | launching task 71
+device 3 | launching task 75
+device 3 | launching task 79
+device 1 | launching task 73
+device 1 | launching task 77
+device 1 | launching task 81
+device 2 | launching task 70
+device 2 | launching task 74
+device 2 | launching task 78
+device 2 | launching task 82
+device 3 | launching task 83
+device 3 | launching task 87
+device 3 | launching task 91
+device 3 | launching task 95
+device 1 | launching task 85
+device 1 | launching task 89
+device 1 | launching task 93
+device 1 | launching task 97
+device 2 | launching task 86
+device 2 | launching task 90
+device 3 | launching task 99
+device 3 | launching task 103
+device 2 | launching task 94
+device 2 | launching task 98
+device 2 | launching task 102
+device 1 | launching task 101
+device 1 | launching task 105
+device 1 | launching task 109
+device 3 | launching task 107
+device 3 | launching task 111
+device 3 | launching task 115
+device 3 | launching task 119
+device 2 | launching task 106
+device 2 | launching task 110
+device 1 | launching task 113
+device 1 | launching task 117
+device 2 | launching task 114
+device 3 | run 0: all tasks launched, waiting for stream
+device 1 | run 0: all tasks launched, waiting for stream
+device 2 | launching task 118
+device 2 | run 0: all tasks launched, waiting for stream
+[wait] waiting on 1 deps
+[wait] polling flag[0] (currently 0)
+[wait] waiting on 1 deps
+[wait] polling flag[0] (currently 0)
+[wait] waiting on 1 deps
+[wait] polling flag[0] (currently 0)
+[signal] task 0: signaling 4 PEs
+[signal] task 0 -> PE 0 flag[0]
+[signal] task 0 -> PE 1 flag[0]
+[signal] task 0 -> PE 2 flag[0]
+[signal] task 0 -> PE 3 flag[0]
+[signal] task 0: done
+[wait] waiting on 1 deps
+[wait] polling flag[0] (currently 1)
+[wait] flag[0] set
+[wait] all deps satisfied
+[signal] task 4: signaling 4 PEs
+[signal] task 4 -> PE 0 flag[4]
+[signal] task 4 -> PE 1 flag[4]
+[signal] task 4 -> PE 2 flag[4]
+[signal] task 4 -> PE 3 flag[4]
+[signal] task 4: done
+[wait] waiting on 1 deps
+[wait] polling flag[1] (currently 0)
