@@ -152,7 +152,7 @@ namespace mustard {
         if (debug) printf("[wait] waiting on %d deps\n", n_deps);
         for (int i = 0; i < n_deps; i++) {
             if (debug) printf("[wait] polling flag[%d] (currently %d)\n", d_deps[i], d_completion_flags[d_deps[i]]);
-            while (d_completion_flags[d_deps[i]] == 0) { }
+            nvshmem_int_wait_until(&d_completion_flags[d_deps[i]], NVSHMEM_CMP_EQ, 1);
             if (debug) printf("[wait] flag[%d] set\n", d_deps[i]);
         }
         if (debug) printf("[wait] all deps satisfied\n");

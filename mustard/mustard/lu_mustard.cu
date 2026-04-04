@@ -1029,6 +1029,7 @@ void tiledLUStatic(bool verify, bool dot)
     };
 
     // Inject wait and signal kernels into owned subgraphs
+    int debug = cfg.debugKernels;
     for (int task : pe_tasks[myPE]) {
         cudaGraph_t sg = tiledLUGraphCreator->subgraphs[task];
         auto& deps = tiledLUGraphCreator->subgraphDependencies[task];
@@ -1046,7 +1047,7 @@ void tiledLUStatic(bool verify, bool dot)
             waitParams.blockDim = dim3(1);
             waitParams.func = (void *)mustard::kernel_wait_static;
             int n_deps = (int)deps.size();
-            void *waitArgs[4] = {&d_task_deps[task], &n_deps, &d_completion_flags, &verbose};
+            void *waitArgs[4] = {&d_task_deps[task], &n_deps, &d_completion_flags, &debug};
             waitParams.kernelParams = waitArgs;
             checkCudaErrors(cudaGraphAddKernelNode(&waitNode, sg, nullptr, 0, &waitParams));
 
@@ -1068,7 +1069,7 @@ void tiledLUStatic(bool verify, bool dot)
         signalParams.func = (void *)mustard::kernel_signal_static;
         int task_id_val = task;
         void *signalArgs[5] = {&task_id_val, &d_completion_flags,
-                               &d_task_notify_pes[task], &n_notify, &verbose};
+                               &d_task_notify_pes[task], &n_notify, &debug};
         signalParams.kernelParams = signalArgs;
         checkCudaErrors(cudaGraphAddKernelNode(&signalNode, sg, &tail, 1, &signalParams));
     }
