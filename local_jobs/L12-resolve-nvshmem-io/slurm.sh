@@ -3,8 +3,8 @@
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu:L4:1
 #SBATCH --cpus-per-task=1
-#SBATCH --output=local_jobs/L11-resolve-nvshmem-callisto/result_%j.out
-#SBATCH --nodelist=callisto
+#SBATCH --output=local_jobs/L12-resolve-nvshmem-io/result_%j.out
+#SBATCH --nodelist=io
 
 CONTAINER_PATH="/data/users/sargent/dvfs_thesis/containers/container.sif"
 
