@@ -118,21 +118,20 @@ inline bool initNvshmemDevice(argh::parser& cmdl, MustardConfig& cfg)
         exit(1);
     }
 
-    if (cmdl[{"v", "verbose"}]) {
-        printf("Hello from rank: %d\n", rank);
-    }
+    printf("[rank %d] init: got OMPI_COMM_WORLD_LOCAL_RANK\n", rank); fflush(stdout);
 
     int dev_count, using_device;
     checkCudaErrors(cudaGetDeviceCount(&dev_count));
     using_device = rank % dev_count;
     checkCudaErrors(cudaSetDevice(using_device));
 
-    if (cmdl[{"v", "verbose"}]) {
-        printf("Rank: %d | Device count: %d | Using device: %d \n", rank, dev_count, using_device);
-    }
+    printf("[rank %d] init: cudaSetDevice(%d) ok (dev_count=%d)\n", rank, using_device, dev_count); fflush(stdout);
 
+    printf("[rank %d] init: calling nvshmem_init()...\n", rank); fflush(stdout);
     nvshmem_init();
+    printf("[rank %d] init: nvshmem_init() returned\n", rank); fflush(stdout);
     cfg.myPE = nvshmem_team_my_pe(NVSHMEMX_TEAM_NODE);
+    printf("[rank %d] init: myPE=%d, nPEs=%d\n", rank, cfg.myPE, nvshmem_n_pes()); fflush(stdout);
     // checkCudaErrors(cudaSetDevice(cfg.myPE));
 
     cfg.verbose = cmdl[{"v", "verbose"}] && cfg.myPE == 0;
