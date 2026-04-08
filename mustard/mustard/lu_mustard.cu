@@ -977,6 +977,18 @@ void tiledLUStatic(bool verify, bool dot)
     for (int j = 0; j < totalNodes; j++)
         for (int dep : tiledLUGraphCreator->subgraphDependencies[j])
             dependents[dep].push_back(j);
+    
+    // Debug: print dependency and notify info
+    for (int task : pe_tasks[myPE]) {
+        std::set<int> notify_set;
+        for (int d : dependents[task]) notify_set.insert(task_pe[d]);
+        printf("PE %d task %d: dependents=[", myPE, task);
+        for (int d : dependents[task]) printf("%d,", d);
+        printf("] notify_pes=[");
+        for (int p : notify_set) printf("%d,", p);
+        printf("]\n");
+    }
+    fflush(stdout);
 
     // Allocate per-task device arrays for deps and notify PEs
     std::vector<int*> d_task_deps(totalNodes, nullptr);
@@ -1100,30 +1112,41 @@ void tiledLUStatic(bool verify, bool dot)
     double totalTime = 0.0;
 
     for (int i = 0; i < runs; i++) {
-        checkCudaErrors(cudaMemcpy(d_matrix, originalMatrix.get(), N * N * sizeof(double),
-                                   cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpy(d_matrix, originalMatrix.get(), N * N * sizeof(double),
+                               cudaMemcpyHostToDevice));
 
-        // Reset completion flags on all PEs
-        nvshmem_barrier_all();
-        if (myPE == 0) {
-            std::vector<int> zeros(totalNodes, 0);
-            for (int pe = 0; pe < nPEs; pe++)
-                nvshmem_int_put(d_completion_flags, zeros.data(), totalNodes, pe);
-            nvshmem_quiet();
-        }
-        nvshmem_barrier_all();
+    // Reset completion flags on all PEs
+    nvshmem_barrier_all();
+    if (myPE == 0) {
+        std::vector<int> zeros(totalNodes, 0);
+        for (int pe = 0; pe < nPEs; pe++)
+            nvshmem_int_put(d_completion_flags, zeros.data(), totalNodes, pe);
+        nvshmem_quiet();
+    }
+    nvshmem_barrier_all();
 
-        clock.start(s);
-        for (int task : my_tasks_sorted)
-            checkCudaErrors(cudaGraphLaunch(h_subgraphsExec[task], s));
-        checkCudaErrors(cudaStreamSynchronize(s));
-        clock.end(s);
-        checkCudaErrors(cudaDeviceSynchronize());
-        nvshmem_barrier_all();
+    int numStreams = std::min((int)my_tasks_sorted.size(), 32);
+    std::vector<cudaStream_t> taskStreams(numStreams);
+    for (int si = 0; si < numStreams; si++)
+        checkCudaErrors(cudaStreamCreate(&taskStreams[si]));
 
-        float time = clock.getTimeInSeconds();
-        printf("device %d | %d run | time (s): %4.4f\n", myPE, i, time);
-        totalTime += time;
+    auto t_start = std::chrono::high_resolution_clock::now();
+    for (int idx = 0; idx < (int)my_tasks_sorted.size(); idx++) {
+        int task = my_tasks_sorted[idx];
+        checkCudaErrors(cudaGraphLaunch(h_subgraphsExec[task], taskStreams[idx % numStreams]));
+    }
+    for (int si = 0; si < numStreams; si++)
+        checkCudaErrors(cudaStreamSynchronize(taskStreams[si]));
+    checkCudaErrors(cudaDeviceSynchronize());
+    auto t_end = std::chrono::high_resolution_clock::now();
+
+    for (int si = 0; si < numStreams; si++)
+        checkCudaErrors(cudaStreamDestroy(taskStreams[si]));
+    nvshmem_barrier_all();
+
+    double time = std::chrono::duration<double>(t_end - t_start).count();
+    printf("device %d | %d run | time (s): %4.4f\n", myPE, i, time);
+    totalTime += time;
     }
     printf("Total time used (s): %4.4f\n", totalTime);
 
