@@ -11,9 +11,12 @@
         "${env:HOME}/.local/include/nvshmem",
         "${env:HOME}/.local/include/ompi"
       ],
-      "defines": [
+     "defines": [
         "_FORCE_INLINES",
-        "VERBOSE"
+        "VERBOSE",
+        "__CUDACC__",
+        "__CUDA_ARCH__=890",
+        "__NVCC__"
       ]
     }
   ],
