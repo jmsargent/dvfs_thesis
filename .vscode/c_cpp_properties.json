@@ -1,0 +1,21 @@
+{
+  "configurations": [
+    {
+      "name": "minerva",
+      "intelliSenseMode": "linux-gcc-x64",
+      "compilerPath": "/usr/bin/g++",
+      "includePath": [
+        "${workspaceFolder}/mustard/include/*",
+        "${workspaceFolder}/**",
+        "${env:HOME}/.local/include/cuda",
+        "${env:HOME}/.local/include/nvshmem",
+        "${env:HOME}/.local/include/ompi"
+      ],
+      "defines": [
+        "_FORCE_INLINES",
+        "VERBOSE"
+      ]
+    }
+  ],
+  "version": 4
+}

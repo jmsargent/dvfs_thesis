@@ -1,0 +1,32 @@
+[
+{
+  "directory": "/data/users/sargent/dvfs_thesis/mustard/build/mustard",
+  "command": "/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/12.6/bin/nvcc -forward-unknown-to-host-compiler  --options-file CMakeFiles/cholesky_mustard.dir/includes_CUDA.rsp -I/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/include -L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib -lnvshmem_host -lnvshmem_device -lcuda -D_FORCE_INLINES -DVERBOSE --expt-extended-lambda -use_fast_math --expt-relaxed-constexpr \"--generate-code=arch=compute_89,code=[compute_89,sm_89]\" -Wno-deprecated-declarations -Xcompiler -pthread -x cu -rdc=true -c /data/users/sargent/dvfs_thesis/mustard/mustard/cholesky_mustard.cu -o CMakeFiles/cholesky_mustard.dir/cholesky_mustard.cu.o",
+  "file": "/data/users/sargent/dvfs_thesis/mustard/mustard/cholesky_mustard.cu",
+  "output": "mustard/CMakeFiles/cholesky_mustard.dir/cholesky_mustard.cu.o"
+},
+{
+  "directory": "/data/users/sargent/dvfs_thesis/mustard/build/mustard",
+  "command": "/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/12.6/bin/nvcc -forward-unknown-to-host-compiler  --options-file CMakeFiles/pingpong_mustard.dir/includes_CUDA.rsp -I/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/include -L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib -lnvshmem_host -lnvshmem_device -lcuda -D_FORCE_INLINES -DVERBOSE --expt-extended-lambda -use_fast_math --expt-relaxed-constexpr \"--generate-code=arch=compute_89,code=[compute_89,sm_89]\" -Wno-deprecated-declarations -Xcompiler -pthread -x cu -rdc=true -c /data/users/sargent/dvfs_thesis/mustard/mustard/pingpong_mustard.cu -o CMakeFiles/pingpong_mustard.dir/pingpong_mustard.cu.o",
+  "file": "/data/users/sargent/dvfs_thesis/mustard/mustard/pingpong_mustard.cu",
+  "output": "mustard/CMakeFiles/pingpong_mustard.dir/pingpong_mustard.cu.o"
+},
+{
+  "directory": "/data/users/sargent/dvfs_thesis/mustard/build/mustard",
+  "command": "/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/12.6/bin/nvcc -forward-unknown-to-host-compiler  --options-file CMakeFiles/lu_mustard.dir/includes_CUDA.rsp -I/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/include -L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib -lnvshmem_host -lnvshmem_device -lcuda -D_FORCE_INLINES -DVERBOSE --expt-extended-lambda -use_fast_math --expt-relaxed-constexpr \"--generate-code=arch=compute_89,code=[compute_89,sm_89]\" -Wno-deprecated-declarations -Xcompiler -pthread -x cu -rdc=true -c /data/users/sargent/dvfs_thesis/mustard/mustard/lu_mustard.cu -o CMakeFiles/lu_mustard.dir/lu_mustard.cu.o",
+  "file": "/data/users/sargent/dvfs_thesis/mustard/mustard/lu_mustard.cu",
+  "output": "mustard/CMakeFiles/lu_mustard.dir/lu_mustard.cu.o"
+},
+{
+  "directory": "/data/users/sargent/dvfs_thesis/mustard/build/mustard",
+  "command": "/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/12.6/bin/nvcc -forward-unknown-to-host-compiler  --options-file CMakeFiles/p_lu_mustard.dir/includes_CUDA.rsp -I/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/include -L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib -lnvshmem_host -lnvshmem_device -lcuda -D_FORCE_INLINES -DVERBOSE --expt-extended-lambda -use_fast_math --expt-relaxed-constexpr \"--generate-code=arch=compute_89,code=[compute_89,sm_89]\" -Wno-deprecated-declarations -Xcompiler -pthread -x cu -rdc=true -c /data/users/sargent/dvfs_thesis/mustard/mustard/lu_mustard_p.cu -o CMakeFiles/p_lu_mustard.dir/lu_mustard_p.cu.o",
+  "file": "/data/users/sargent/dvfs_thesis/mustard/mustard/lu_mustard_p.cu",
+  "output": "mustard/CMakeFiles/p_lu_mustard.dir/lu_mustard_p.cu.o"
+},
+{
+  "directory": "/data/users/sargent/dvfs_thesis/mustard/build/mustard",
+  "command": "/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/12.6/bin/nvcc -forward-unknown-to-host-compiler  --options-file CMakeFiles/cg_mustard.dir/includes_CUDA.rsp -I/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/include -L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib -lnvshmem_host -lnvshmem_device -lcuda -D_FORCE_INLINES -DVERBOSE --expt-extended-lambda -use_fast_math --expt-relaxed-constexpr \"--generate-code=arch=compute_89,code=[compute_89,sm_89]\" -Wno-deprecated-declarations -Xcompiler -pthread -x cu -rdc=true -c /data/users/sargent/dvfs_thesis/mustard/mustard/cg_mustard.cu -o CMakeFiles/cg_mustard.dir/cg_mustard.cu.o",
+  "file": "/data/users/sargent/dvfs_thesis/mustard/mustard/cg_mustard.cu",
+  "output": "mustard/CMakeFiles/cg_mustard.dir/cg_mustard.cu.o"
+}
+]
