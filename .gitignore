@@ -9,5 +9,4 @@ containers/container.sif
 .idea
 venv_hpc
 venv
-.vscode
 **/.DS_Store
