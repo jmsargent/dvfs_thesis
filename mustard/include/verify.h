@@ -28,7 +28,8 @@ inline void cleanCusolverLUDecompositionResult(double *L, double *U, const int n
     }
 }
 
-inline bool verifyLUDecomposition(double *A, double *L, double *U, const int n, bool verbose = false)
+inline bool verifyLUDecomposition(double *A, double *L, double *U, const int n,
+                                  bool verbose = false)
 {
     auto newA = std::make_unique<double[]>(n * n);
     memset(newA.get(), 0, n * n * sizeof(double));

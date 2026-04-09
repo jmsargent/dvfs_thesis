@@ -1,8 +1,8 @@
 #pragma once
 
-#include <stdlib.h>
 #include <cuda_runtime.h>
 #include <curand.h>
+#include <stdlib.h>
 
 #ifdef __cplusplus
 #include "utils.h"
@@ -10,31 +10,36 @@
 // Minimal CUDA error check for C callers that only use CPU helpers.
 #include <stdio.h>
 #ifndef checkCudaErrors
-#define checkCudaErrors(val) \
-    do { cudaError_t _e = (val); if (_e != cudaSuccess) { \
-        fprintf(stderr, "CUDA error %s at %s:%d\n", cudaGetErrorString(_e), __FILE__, __LINE__); \
-        exit(EXIT_FAILURE); } } while(0)
+#define checkCudaErrors(val)                                                              \
+    do                                                                                    \
+    {                                                                                     \
+        cudaError_t _e = (val);                                                           \
+        if (_e != cudaSuccess)                                                            \
+        {                                                                                 \
+            fprintf(stderr, "CUDA error %s at %s:%d\n", cudaGetErrorString(_e), __FILE__, \
+                    __LINE__);                                                            \
+            exit(EXIT_FAILURE);                                                           \
+        }                                                                                 \
+    } while (0)
 #endif
 #endif
 
 // ---- CPU-side matrix generation ----
 
-// Credit to: https://math.stackexchange.com/questions/357980/how-to-generate-random-symmetric-positive-definite-matrices-using-matlab
+// Credit to:
+// https://math.stackexchange.com/questions/357980/how-to-generate-random-symmetric-positive-definite-matrices-using-matlab
 static inline void generateRandomSymmetricPositiveDefiniteMatrix(double *h_A, const size_t n)
 {
     // srand(time(NULL));
     srand(420);
 
     for (int i = 0; i < n; i++)
-        for (int j = i; j < n; j++)
-            h_A[i * n + j] = (double)rand() / (double)RAND_MAX;
+        for (int j = i; j < n; j++) h_A[i * n + j] = (double)rand() / (double)RAND_MAX;
 
     for (int i = 0; i < n; i++)
-        for (int j = i; j >= 0; j--)
-            h_A[i * n + j] = h_A[j * n + i];
+        for (int j = i; j >= 0; j--) h_A[i * n + j] = h_A[j * n + i];
 
-    for (int i = 0; i < n; i++)
-        h_A[i * n + i] = h_A[i * n + i] + n;
+    for (int i = 0; i < n; i++) h_A[i * n + i] = h_A[i * n + i] + n;
 }
 
 // ---- GPU-side matrix generation (CUDA only) ----
@@ -44,13 +49,12 @@ static inline void generateRandomSymmetricPositiveDefiniteMatrix(double *h_A, co
 __global__ void kernel_makeMatrixSymmetric(double *d_matrix, size_t n)
 {
     size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
-    size_t x = idx / n;
-    size_t y = idx % n;
+    size_t x   = idx / n;
+    size_t y   = idx % n;
 
-    if (x >= y || x >= n || y >= n)
-        return;
+    if (x >= y || x >= n || y >= n) return;
 
-    double average = 0.5 * (d_matrix[x * n + y] + d_matrix[y * n + x]);
+    double average      = 0.5 * (d_matrix[x * n + y] + d_matrix[y * n + x]);
     d_matrix[x * n + y] = average;
     d_matrix[y * n + x] = average;
 }
@@ -58,8 +62,7 @@ __global__ void kernel_makeMatrixSymmetric(double *d_matrix, size_t n)
 __global__ void kernel_addIdentityScaled(double *d_matrix, size_t n)
 {
     size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= n)
-        return;
+    if (idx >= n) return;
     d_matrix[idx * n + idx] += n;
 }
 
@@ -75,7 +78,7 @@ inline void generateRandomSPDMatrixGPU(double *h_A, const size_t n)
     curandGenerateUniformDouble(prng, d_A, n * n);
 
     size_t numThreads = 1024;
-    size_t numBlocks = (n * n + numThreads - 1) / numThreads;
+    size_t numBlocks  = (n * n + numThreads - 1) / numThreads;
     kernel_makeMatrixSymmetric<<<numBlocks, numThreads>>>(d_A, n);
 
     numBlocks = (n + numThreads - 1) / numThreads;
@@ -94,7 +97,7 @@ inline void generateRSPDMatrixBlockGPU(curandGenerator_t prng, double *d_A, cons
     curandGenerateUniformDouble(prng, d_A, n * n);
 
     size_t numThreads = 1024;
-    size_t numBlocks = (n * n + numThreads - 1) / numThreads;
+    size_t numBlocks  = (n * n + numThreads - 1) / numThreads;
     kernel_makeMatrixSymmetric<<<numBlocks, numThreads>>>(d_A, n);
 
     numBlocks = (n + numThreads - 1) / numThreads;
@@ -103,4 +106,4 @@ inline void generateRSPDMatrixBlockGPU(curandGenerator_t prng, double *d_A, cons
     checkCudaErrors(cudaDeviceSynchronize());
 }
 
-#endif // __CUDACC__
+#endif  // __CUDACC__

@@ -2,23 +2,25 @@
 
 #include <iostream>
 #include <string>
+
 #include "argh.h"
 #include "utils.h"
 
 // Common configuration shared by all mustard executables.
-struct MustardConfig {
-    size_t N = 15;
-    size_t B = 3;
-    size_t T = 5;
-    int    myPE = 0;
-    int    verbose = 0;
-    int    workspace = 256; // cublas workspace in kb
-    int    smLimit = 20;
-    int    runs = 1;
-    bool   staticMultiGPU = false;
-    int    debugKernels = 0;
+struct MustardConfig
+{
+    size_t      N              = 15;
+    size_t      B              = 3;
+    size_t      T              = 5;
+    int         myPE           = 0;
+    int         verbose        = 0;
+    int         workspace      = 256;  // cublas workspace in kb
+    int         smLimit        = 20;
+    int         runs           = 1;
+    bool        staticMultiGPU = false;
+    int         debugKernels   = 0;
     std::string invocationPath = "";
-    std::string measureFlags = "";  // e.g. "task_wait_time,task_compute_time"
+    std::string measureFlags   = "";  // e.g. "task_wait_time,task_compute_time"
 };
 
 // Print common options shared by all executables.
@@ -43,7 +45,8 @@ inline void printCommonUsage()
 inline void printSingleNodeUsage(const char* progName, const char* decomposition)
 {
     std::cerr << "Usage: " << progName << " [options]\n"
-              << "\n  " << decomposition << " decomposition on one or more GPUs using CUDA graphs.\n"
+              << "\n  " << decomposition
+              << " decomposition on one or more GPUs using CUDA graphs.\n"
               << "  The number of GPUs is determined by the number of NVSHMEM PEs (MPI ranks).\n"
               << "\n  Mode (pick one; default is single-kernel if none given):\n"
               << "    --tiled              Tiled execution (one graph per tile step)\n"
@@ -76,39 +79,54 @@ inline void printPartitionedUsage(const char* progName)
 // Returns false if validation fails (error already printed).
 inline bool parseCommonArgs(argh::parser& cmdl, MustardConfig& cfg)
 {
-    if (cmdl[{"h", "help"}]) {
+    if (cmdl[{"h", "help"}])
+    {
         return false;  // caller checks and prints usage
     }
-    if (!(cmdl({"N", "n"}, cfg.N) >> cfg.N)) {
-        std::cerr << "Error: Must provide a valid N value! Got '" << cmdl({"N", "n"}).str() << "'" << std::endl;
+    if (!(cmdl({"N", "n"}, cfg.N) >> cfg.N))
+    {
+        std::cerr << "Error: Must provide a valid N value! Got '" << cmdl({"N", "n"}).str() << "'"
+                  << std::endl;
         return false;
     }
-    if (!(cmdl({"t", "T"}, cfg.T) >> cfg.T)) {
-        std::cerr << "Error: Must provide a valid T value! Got '" << cmdl({"T", "t"}).str() << "'" << std::endl;
+    if (!(cmdl({"t", "T"}, cfg.T) >> cfg.T))
+    {
+        std::cerr << "Error: Must provide a valid T value! Got '" << cmdl({"T", "t"}).str() << "'"
+                  << std::endl;
         return false;
     }
-    if (cfg.N % cfg.T > 0) {
-        std::cerr << "Error: N must be divisible by T! Got 'N=" << cfg.N << " & T=" << cfg.T << "'" << std::endl;
+    if (cfg.N % cfg.T > 0)
+    {
+        std::cerr << "Error: N must be divisible by T! Got 'N=" << cfg.N << " & T=" << cfg.T << "'"
+                  << std::endl;
         return false;
     }
-    if (!(cmdl({"sm", "SM", "smLimit"}, cfg.smLimit) >> cfg.smLimit) || cfg.smLimit > 108 || cfg.smLimit < 1) {
-        std::cerr << "Error: Must provide a valid SM Limit value! Got '" << cmdl({"sm", "SM", "smLimit"}).str() << "'" << std::endl;
+    if (!(cmdl({"sm", "SM", "smLimit"}, cfg.smLimit) >> cfg.smLimit) || cfg.smLimit > 108 ||
+        cfg.smLimit < 1)
+    {
+        std::cerr << "Error: Must provide a valid SM Limit value! Got '"
+                  << cmdl({"sm", "SM", "smLimit"}).str() << "'" << std::endl;
         return false;
     }
-    if (!(cmdl({"workspace", "ws", "w", "W"}, cfg.workspace) >> cfg.workspace) || cfg.workspace > 1024 * 1024 || cfg.workspace < 1) {
-        std::cerr << "Error: Must provide a valid workspace (in kBytes) value! Got '" << cmdl({"workspace", "ws", "w"}).str() << "'" << std::endl;
+    if (!(cmdl({"workspace", "ws", "w", "W"}, cfg.workspace) >> cfg.workspace) ||
+        cfg.workspace > 1024 * 1024 || cfg.workspace < 1)
+    {
+        std::cerr << "Error: Must provide a valid workspace (in kBytes) value! Got '"
+                  << cmdl({"workspace", "ws", "w"}).str() << "'" << std::endl;
         return false;
     }
-    if (!(cmdl({"run", "runs", "r", "R"}, cfg.runs) >> cfg.runs) || cfg.runs < 1) {
-        std::cerr << "Error: Must provide a valid number of runs! Got '" << cmdl({"run", "r", "R"}).str() << "'" << std::endl;
+    if (!(cmdl({"run", "runs", "r", "R"}, cfg.runs) >> cfg.runs) || cfg.runs < 1)
+    {
+        std::cerr << "Error: Must provide a valid number of runs! Got '"
+                  << cmdl({"run", "r", "R"}).str() << "'" << std::endl;
         return false;
     }
-    
+
     cmdl("invocations", "") >> cfg.invocationPath;
     cfg.staticMultiGPU = cmdl["static-multigpu"];
-    
+
     cmdl("measure", "") >> cfg.measureFlags;
-    
+
     return true;
 }
 
@@ -116,38 +134,45 @@ inline bool parseCommonArgs(argh::parser& cmdl, MustardConfig& cfg)
 // Sets cfg.myPE and cfg.verbose based on command-line flags.
 inline bool initNvshmemDevice(argh::parser& cmdl, MustardConfig& cfg)
 {
-
-    int rank = -1;
+    int   rank           = -1;
     char* local_rank_str = getenv("OMPI_COMM_WORLD_LOCAL_RANK");
 
-    if (local_rank_str) {
+    if (local_rank_str)
+    {
         rank = atoi(local_rank_str);
-    } else {
+    }
+    else
+    {
         printf("could not find OMPI_COMM_WORLD_LOCAL_RANK \n");
         exit(1);
     }
 
-    printf("[rank %d] init: got OMPI_COMM_WORLD_LOCAL_RANK\n", rank); fflush(stdout);
+    printf("[rank %d] init: got OMPI_COMM_WORLD_LOCAL_RANK\n", rank);
+    fflush(stdout);
 
     int dev_count, using_device;
     checkCudaErrors(cudaGetDeviceCount(&dev_count));
     using_device = rank % dev_count;
     checkCudaErrors(cudaSetDevice(using_device));
 
-    printf("[rank %d] init: cudaSetDevice(%d) ok (dev_count=%d)\n", rank, using_device, dev_count); fflush(stdout);
+    printf("[rank %d] init: cudaSetDevice(%d) ok (dev_count=%d)\n", rank, using_device, dev_count);
+    fflush(stdout);
 
-    printf("[rank %d] init: calling nvshmem_init()...\n", rank); fflush(stdout);
+    printf("[rank %d] init: calling nvshmem_init()...\n", rank);
+    fflush(stdout);
     nvshmem_init();
-    printf("[rank %d] init: nvshmem_init() returned\n", rank); fflush(stdout);
+    printf("[rank %d] init: nvshmem_init() returned\n", rank);
+    fflush(stdout);
     cfg.myPE = nvshmem_team_my_pe(NVSHMEMX_TEAM_NODE);
-    printf("[rank %d] init: myPE=%d, nPEs=%d\n", rank, cfg.myPE, nvshmem_n_pes()); fflush(stdout);
+    printf("[rank %d] init: myPE=%d, nPEs=%d\n", rank, cfg.myPE, nvshmem_n_pes());
+    fflush(stdout);
     // checkCudaErrors(cudaSetDevice(cfg.myPE));
 
-    cfg.verbose = cmdl[{"v", "verbose"}] && cfg.myPE == 0;
+    cfg.verbose      = cmdl[{"v", "verbose"}] && cfg.myPE == 0;
     cfg.debugKernels = cmdl[{"v", "verbose"}];
 
-
-    if (cfg.verbose) {
+    if (cfg.verbose)
+    {
         int gpusAvailable = -1;
         checkCudaErrors(cudaGetDeviceCount(&gpusAvailable));
         printf("Hello from NVSHMEM_PE=%d/%d\n", cfg.myPE, nvshmem_n_pes());

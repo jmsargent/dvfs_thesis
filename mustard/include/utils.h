@@ -2,6 +2,7 @@
 
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
+
 #include <iomanip>
 #include <iostream>
 
@@ -10,7 +11,8 @@ void __check(T result, char const *const func, const char *const file, int const
 {
     if (result)
     {
-        fprintf(stderr, "CUDA error at %s:%d code=%d \"%s\" \n", file, line, static_cast<unsigned int>(result), func);
+        fprintf(stderr, "CUDA error at %s:%d code=%d \"%s\" \n", file, line,
+                static_cast<unsigned int>(result), func);
         exit(EXIT_FAILURE);
     }
 }
@@ -31,17 +33,17 @@ inline void showMemUsage()
         exit(1);
     }
 
-    double free_db = (double)free_byte;
+    double free_db  = (double)free_byte;
     double total_db = (double)total_byte;
-    double used_db = total_db - free_db;
-    printf("GPU memory usage: used = %f, free = %f MB, total = %f MB\n",
-            used_db / 1024.0 / 1024.0, free_db / 1024.0 / 1024.0, total_db / 1024.0 / 1024.0);
+    double used_db  = total_db - free_db;
+    printf("GPU memory usage: used = %f, free = %f MB, total = %f MB\n", used_db / 1024.0 / 1024.0,
+           free_db / 1024.0 / 1024.0, total_db / 1024.0 / 1024.0);
 }
 
 __global__ void warmUp()
 {
     unsigned int tid = blockIdx.x * blockDim.x + threadIdx.x;
-    float ia, ib;
+    float        ia, ib;
     ia = ib = 0.0f;
     ib += ia + static_cast<float>(tid);
 }
@@ -69,14 +71,14 @@ inline void initializeCudaDevice(bool displayDeviceInfo)
 
 class CudaEventClock
 {
-public:
+   public:
     CudaEventClock();
     ~CudaEventClock();
-    void start(cudaStream_t stream = 0);
-    void end(cudaStream_t stream = 0);
+    void  start(cudaStream_t stream = 0);
+    void  end(cudaStream_t stream = 0);
     float getTimeInSeconds();
 
-private:
+   private:
     cudaEvent_t startEvent, endEvent;
 };
 
@@ -115,8 +117,7 @@ inline void printSquareMatrix(double *h_A, const size_t n)
     {
         for (size_t j = 0; j < n; j++)
         {
-            if (j != 0)
-                std::cout << " ";
+            if (j != 0) std::cout << " ";
             std::cout << std::setw(8) << std::setprecision(6) << h_A[i * n + j];
         }
         std::cout << std::endl;
@@ -129,8 +130,7 @@ inline void printMatrix(double *h_A, const size_t n, const size_t m)
     {
         for (size_t j = 0; j < m; j++)
         {
-            if (j != 0)
-                std::cout << " ";
+            if (j != 0) std::cout << " ";
             std::cout << std::setw(8) << std::setprecision(6) << h_A[i * m + j];
         }
         std::cout << std::endl;

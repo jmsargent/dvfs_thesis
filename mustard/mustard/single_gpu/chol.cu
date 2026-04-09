@@ -25,7 +25,8 @@ constexpr size_t N = 8 * 1;
 constexpr size_t B = N / 4;
 constexpr size_t T = N / B;
 
-// Credit to: https://math.stackexchange.com/questions/357980/how-to-generate-random-symmetric-positive-definite-matrices-using-matlab
+// Credit to:
+// https://math.stackexchange.com/questions/357980/how-to-generate-random-symmetric-positive-definite-matrices-using-matlab
 void generateRandomSymmetricPositiveDefiniteMatrix(double *h_A, const size_t n)
 {
     srand(time(NULL));
@@ -33,15 +34,13 @@ void generateRandomSymmetricPositiveDefiniteMatrix(double *h_A, const size_t n)
     double *h_A_temp = (double *)malloc(n * n * sizeof(double));
 
     for (int i = 0; i < n; i++)
-        for (int j = 0; j < n; j++)
-            h_A_temp[i * n + j] = (float)rand() / (float)RAND_MAX;
+        for (int j = 0; j < n; j++) h_A_temp[i * n + j] = (float)rand() / (float)RAND_MAX;
 
     for (int i = 0; i < n; i++)
         for (int j = 0; j < n; j++)
             h_A[i * n + j] = 0.5 * (h_A_temp[i * n + j] + h_A_temp[j * n + i]);
 
-    for (int i = 0; i < n; i++)
-        h_A[i * n + i] = h_A[i * n + i] + n;
+    for (int i = 0; i < n; i++) h_A[i * n + i] = h_A[i * n + i] + n;
 }
 
 void printSquareMatrix(double *h_A, const size_t n)
@@ -50,8 +49,7 @@ void printSquareMatrix(double *h_A, const size_t n)
     {
         for (int j = 0; j < n; j++)
         {
-            if (j != 0)
-                std::cout << " ";
+            if (j != 0) std::cout << " ";
             std::cout << std::setw(6) << std::setprecision(3) << h_A[i * n + j];
         }
         std::cout << std::endl;
@@ -131,16 +129,8 @@ void trivialCholesky()
     size_t workspaceInBytesOnDevice, workspaceInBytesOnHost;
 
     checkCudaErrors(cusolverDnXpotrf_bufferSize(
-        cusolverDnHandle,
-        cusolverDnParams,
-        CUBLAS_FILL_MODE_LOWER,
-        N,
-        CUDA_R_64F,
-        d_A,
-        N,
-        CUDA_R_64F,
-        &workspaceInBytesOnDevice,
-        &workspaceInBytesOnHost));
+        cusolverDnHandle, cusolverDnParams, CUBLAS_FILL_MODE_LOWER, N, CUDA_R_64F, d_A, N,
+        CUDA_R_64F, &workspaceInBytesOnDevice, &workspaceInBytesOnHost));
 
     void *h_workspace = malloc(workspaceInBytesOnHost);
 
@@ -151,20 +141,10 @@ void trivialCholesky()
     checkCudaErrors(cudaMalloc(&d_info, sizeof(int)));
 
     // Calculate
-    checkCudaErrors(cusolverDnXpotrf(
-        cusolverDnHandle,
-        cusolverDnParams,
-        CUBLAS_FILL_MODE_LOWER,
-        N,
-        CUDA_R_64F,
-        d_A,
-        N,
-        CUDA_R_64F,
-        d_workspace,
-        workspaceInBytesOnDevice,
-        h_workspace,
-        workspaceInBytesOnHost,
-        d_info));
+    checkCudaErrors(cusolverDnXpotrf(cusolverDnHandle, cusolverDnParams, CUBLAS_FILL_MODE_LOWER, N,
+                                     CUDA_R_64F, d_A, N, CUDA_R_64F, d_workspace,
+                                     workspaceInBytesOnDevice, h_workspace, workspaceInBytesOnHost,
+                                     d_info));
 
     // Check
     int h_info = 0;
@@ -195,12 +175,13 @@ typedef std::pair<int, int> MatrixTile;
 
 class TiledCholeskyGraphCreator
 {
-public:
+   public:
     TiledCholeskyGraphCreator(cudaStream_t stream, cudaGraph_t graph) : stream(stream), graph(graph)
     {
         this->lastModifiedTile = std::make_pair(-1, -1);
     }
-    void beginCaptureOperation(MatrixTile tileToWrite, std::initializer_list<MatrixTile> tilesToRead)
+    void beginCaptureOperation(MatrixTile                        tileToWrite,
+                               std::initializer_list<MatrixTile> tilesToRead)
     {
         auto tiles = std::vector<MatrixTile>(tilesToRead);
         tiles.push_back(tileToWrite);
@@ -209,24 +190,27 @@ public:
         this->lastModifiedTile = tileToWrite;
         this->lastDependencies = dependencies;
 
-        checkCudaErrors(cudaStreamBeginCaptureToGraph(this->stream, this->graph, dependencies.data(), nullptr, dependencies.size(), cudaStreamCaptureModeGlobal));
+        checkCudaErrors(
+            cudaStreamBeginCaptureToGraph(this->stream, this->graph, dependencies.data(), nullptr,
+                                          dependencies.size(), cudaStreamCaptureModeGlobal));
     }
 
     void endCaptureOperation()
     {
         assert(this->lastModifiedTile.first != -1 && this->lastModifiedTile.second != -1);
         checkCudaErrors(cudaStreamEndCapture(this->stream, &this->graph));
-        this->tileLastModifiedByMap[this->lastModifiedTile] = this->getTailOfLastCapturedNodeChain();
+        this->tileLastModifiedByMap[this->lastModifiedTile] =
+            this->getTailOfLastCapturedNodeChain();
         this->lastModifiedTile = std::make_pair(-1, -1);
     };
 
-private:
+   private:
     std::map<MatrixTile, cudaGraphNode_t> tileLastModifiedByMap;
-    std::map<cudaGraphNode_t, bool> visited;
-    cudaStream_t stream;
-    cudaGraph_t graph;
-    MatrixTile lastModifiedTile;
-    std::vector<cudaGraphNode_t> lastDependencies;
+    std::map<cudaGraphNode_t, bool>       visited;
+    cudaStream_t                          stream;
+    cudaGraph_t                           graph;
+    MatrixTile                            lastModifiedTile;
+    std::vector<cudaGraphNode_t>          lastDependencies;
 
     std::vector<cudaGraphNode_t> getDependencies(std::vector<MatrixTile> tiles)
     {
@@ -252,17 +236,16 @@ private:
             size_t numEdges;
             checkCudaErrors(cudaGraphGetEdges(this->graph, nullptr, nullptr, &numEdges));
             auto from = std::make_unique<cudaGraphNode_t[]>(numEdges);
-            auto to = std::make_unique<cudaGraphNode_t[]>(numEdges);
+            auto to   = std::make_unique<cudaGraphNode_t[]>(numEdges);
             checkCudaErrors(cudaGraphGetEdges(this->graph, from.get(), to.get(), &numEdges));
 
             std::map<cudaGraphNode_t, bool> hasOutGoingEdge;
-            std::set<cudaGraphNode_t> noOutGoingEdgeNodes;
+            std::set<cudaGraphNode_t>       noOutGoingEdgeNodes;
             for (int i = 0; i < numEdges; i++)
             {
                 hasOutGoingEdge[from[i]] = true;
                 noOutGoingEdgeNodes.erase(from[i]);
-                if (!hasOutGoingEdge[to[i]])
-                    noOutGoingEdgeNodes.insert(to[i]);
+                if (!hasOutGoingEdge[to[i]]) noOutGoingEdgeNodes.insert(to[i]);
             }
 
             assert(noOutGoingEdgeNodes.size() == 1);
@@ -271,14 +254,16 @@ private:
         }
         else
         {
-            auto nodeBeforeChain = lastDependencies[0];
+            auto   nodeBeforeChain = lastDependencies[0];
             size_t numDependentNodes;
-            checkCudaErrors(cudaGraphNodeGetDependentNodes(nodeBeforeChain, nullptr, &numDependentNodes));
+            checkCudaErrors(
+                cudaGraphNodeGetDependentNodes(nodeBeforeChain, nullptr, &numDependentNodes));
 
             assert(numDependentNodes > 0);
 
             auto dependentNodes = std::make_unique<cudaGraphNode_t[]>(numDependentNodes);
-            checkCudaErrors(cudaGraphNodeGetDependentNodes(nodeBeforeChain, dependentNodes.get(), &numDependentNodes));
+            checkCudaErrors(cudaGraphNodeGetDependentNodes(nodeBeforeChain, dependentNodes.get(),
+                                                           &numDependentNodes));
 
             cudaGraphNode_t chainBeginningNode;
             for (int i = 0; i < numDependentNodes; i++)
@@ -295,8 +280,7 @@ private:
             {
                 visited[u] = true;
                 checkCudaErrors(cudaGraphNodeGetDependentNodes(u, nullptr, &numDependentNodes));
-                if (numDependentNodes == 0)
-                    break;
+                if (numDependentNodes == 0) break;
 
                 assert(numDependentNodes == 1);
 
@@ -313,23 +297,21 @@ private:
 void tiledCholesky()
 {
     // Initialize data
-    auto originalMatrix = std::make_unique<double[]>(N * N); // Column-major
+    auto originalMatrix = std::make_unique<double[]>(N * N);  // Column-major
     generateRandomSymmetricPositiveDefiniteMatrix(originalMatrix.get(), N);
 
     // Copy to device
     double *d_matrix;
     checkCudaErrors(cudaMallocManaged(&d_matrix, N * N * sizeof(double)));
-    checkCudaErrors(cudaMemcpy(d_matrix, originalMatrix.get(), N * N * sizeof(double), cudaMemcpyHostToDevice));
+    checkCudaErrors(
+        cudaMemcpy(d_matrix, originalMatrix.get(), N * N * sizeof(double), cudaMemcpyHostToDevice));
 
-    auto getMatrixBlock = [&](int i, int j)
-    {
-        return d_matrix + i * B + j * B * N;
-    };
+    auto getMatrixBlock = [&](int i, int j) { return d_matrix + i * B + j * B * N; };
 
     // Initialize libraries
     cusolverDnHandle_t cusolverDnHandle;
     cusolverDnParams_t cusolverDnParams;
-    cublasHandle_t cublasHandle;
+    cublasHandle_t     cublasHandle;
     checkCudaErrors(cusolverDnCreate(&cusolverDnHandle));
     checkCudaErrors(cusolverDnCreateParams(&cusolverDnParams));
     checkCudaErrors(cublasCreate(&cublasHandle));
@@ -338,24 +320,16 @@ void tiledCholesky()
     double *one, *minusOne;
     checkCudaErrors(cudaMallocManaged(&one, sizeof(double)));
     checkCudaErrors(cudaMallocManaged(&minusOne, sizeof(double)));
-    *one = 1.0;
+    *one      = 1.0;
     *minusOne = -1.0;
 
     // Prepare buffer for potrf
     size_t workspaceInBytesOnDevice, workspaceInBytesOnHost;
     checkCudaErrors(cusolverDnXpotrf_bufferSize(
-        cusolverDnHandle,
-        cusolverDnParams,
-        CUBLAS_FILL_MODE_LOWER,
-        B,
-        CUDA_R_64F,
-        d_matrix,
-        N,
-        CUDA_R_64F,
-        &workspaceInBytesOnDevice,
-        &workspaceInBytesOnHost));
+        cusolverDnHandle, cusolverDnParams, CUBLAS_FILL_MODE_LOWER, B, CUDA_R_64F, d_matrix, N,
+        CUDA_R_64F, &workspaceInBytesOnDevice, &workspaceInBytesOnHost));
     void *h_workspace, *d_workspace;
-    int *d_info;
+    int  *d_info;
     checkCudaErrors(cudaMallocManaged(&h_workspace, workspaceInBytesOnHost));
     checkCudaErrors(cudaMallocManaged(&d_workspace, workspaceInBytesOnDevice));
     checkCudaErrors(cudaMallocManaged(&d_info, sizeof(int)));
@@ -375,23 +349,12 @@ void tiledCholesky()
     {
         // A[k][k] = POTRF(A[k][k])
         // L[k][k] = POTRF(A[k][k])
-        tiledCholeskyGraphCreator->beginCaptureOperation(
-            std::make_pair(k, k),
-            {std::make_pair(k, k)});
-        checkCudaErrors(cusolverDnXpotrf(
-            cusolverDnHandle,
-            cusolverDnParams,
-            CUBLAS_FILL_MODE_LOWER,
-            B,
-            CUDA_R_64F,
-            getMatrixBlock(k, k),
-            N,
-            CUDA_R_64F,
-            d_workspace,
-            workspaceInBytesOnDevice,
-            h_workspace,
-            workspaceInBytesOnHost,
-            d_info));
+        tiledCholeskyGraphCreator->beginCaptureOperation(std::make_pair(k, k),
+                                                         {std::make_pair(k, k)});
+        checkCudaErrors(cusolverDnXpotrf(cusolverDnHandle, cusolverDnParams, CUBLAS_FILL_MODE_LOWER,
+                                         B, CUDA_R_64F, getMatrixBlock(k, k), N, CUDA_R_64F,
+                                         d_workspace, workspaceInBytesOnDevice, h_workspace,
+                                         workspaceInBytesOnHost, d_info));
         tiledCholeskyGraphCreator->endCaptureOperation();
 
         for (int i = k + 1; i < T; i++)
@@ -399,18 +362,10 @@ void tiledCholesky()
             // A[i][k] = TRSM(A[k][k], A[i][k])
             // L[i][k] * L[k][k]^T = A[i][k]
             tiledCholeskyGraphCreator->beginCaptureOperation(
-                std::make_pair(i, k),
-                {std::make_pair(k, k), std::make_pair(i, k)});
-            checkCudaErrors(cublasDtrsm(
-                cublasHandle,
-                CUBLAS_SIDE_RIGHT,
-                CUBLAS_FILL_MODE_LOWER,
-                CUBLAS_OP_T,
-                CUBLAS_DIAG_NON_UNIT,
-                B, B,
-                one,
-                getMatrixBlock(k, k), N,
-                getMatrixBlock(i, k), N));
+                std::make_pair(i, k), {std::make_pair(k, k), std::make_pair(i, k)});
+            checkCudaErrors(cublasDtrsm(cublasHandle, CUBLAS_SIDE_RIGHT, CUBLAS_FILL_MODE_LOWER,
+                                        CUBLAS_OP_T, CUBLAS_DIAG_NON_UNIT, B, B, one,
+                                        getMatrixBlock(k, k), N, getMatrixBlock(i, k), N));
             tiledCholeskyGraphCreator->endCaptureOperation();
         }
 
@@ -419,15 +374,10 @@ void tiledCholesky()
             // A[i][i] = SYRK(A[i][k], A[i][i])
             // A[i][i] = A[i][i] - L[i][k] * L[i][k]^T
             tiledCholeskyGraphCreator->beginCaptureOperation(
-                std::make_pair(i, i),
-                {std::make_pair(i, i), std::make_pair(i, k)});
-            checkCudaErrors(cublasDsyrk(
-                cublasHandle,
-                CUBLAS_FILL_MODE_LOWER,
-                CUBLAS_OP_N,
-                B, B,
-                minusOne, getMatrixBlock(i, k), N,
-                one, getMatrixBlock(i, i), N));
+                std::make_pair(i, i), {std::make_pair(i, i), std::make_pair(i, k)});
+            checkCudaErrors(cublasDsyrk(cublasHandle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, B, B,
+                                        minusOne, getMatrixBlock(i, k), N, one,
+                                        getMatrixBlock(i, i), N));
             tiledCholeskyGraphCreator->endCaptureOperation();
 
             for (int j = i + 1; j < T; j++)
@@ -438,17 +388,9 @@ void tiledCholesky()
                     std::make_pair(j, i),
                     {std::make_pair(j, i), std::make_pair(j, k), std::make_pair(i, k)});
                 checkCudaErrors(cublasGemmEx(
-                    cublasHandle,
-                    CUBLAS_OP_N,
-                    CUBLAS_OP_T,
-                    B, B, B,
-                    minusOne,
-                    getMatrixBlock(j, k), CUDA_R_64F, N,
-                    getMatrixBlock(i, k), CUDA_R_64F, N,
-                    one,
-                    getMatrixBlock(j, i), CUDA_R_64F, N,
-                    CUBLAS_COMPUTE_64F,
-                    CUBLAS_GEMM_DEFAULT));
+                    cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, B, B, B, minusOne, getMatrixBlock(j, k),
+                    CUDA_R_64F, N, getMatrixBlock(i, k), CUDA_R_64F, N, one, getMatrixBlock(j, i),
+                    CUDA_R_64F, N, CUBLAS_COMPUTE_64F, CUBLAS_GEMM_DEFAULT));
                 tiledCholeskyGraphCreator->endCaptureOperation();
             }
         }
@@ -463,7 +405,8 @@ void tiledCholesky()
     checkCudaErrors(cudaDeviceSynchronize());
 
     cleanCusolverCholeskyDecompositionResult(d_matrix, N);
-    printf("Result passes verification: %d\n", verifyCholeskyDecomposition(originalMatrix.get(), d_matrix, N));
+    printf("Result passes verification: %d\n",
+           verifyCholeskyDecomposition(originalMatrix.get(), d_matrix, N));
 
     free(h_workspace);
     cudaFree(d_matrix);

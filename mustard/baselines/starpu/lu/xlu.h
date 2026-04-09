@@ -18,69 +18,83 @@
 #define __XLU_H__
 
 #include <starpu.h>
+
 #include "../common/blas.h"
 
-#define TAG11(k)	((starpu_tag_t)( (1ULL<<60) | (unsigned long long)(k)))
-#define TAG12(k,i)	((starpu_tag_t)(((2ULL<<60) | (((unsigned long long)(k))<<32)	\
-					| (unsigned long long)(i))))
-#define TAG21(k,j)	((starpu_tag_t)(((3ULL<<60) | (((unsigned long long)(k))<<32)	\
-					| (unsigned long long)(j))))
-#define TAG22(k,i,j)	((starpu_tag_t)(((4ULL<<60) | ((unsigned long long)(k)<<32) 	\
-					| ((unsigned long long)(i)<<16)	\
-					| (unsigned long long)(j))))
-#define PIVOT(k,i)	((starpu_tag_t)(((5ULL<<60) | (((unsigned long long)(k))<<32)	\
-					| (unsigned long long)(i))))
+#define TAG11(k) ((starpu_tag_t)((1ULL << 60) | (unsigned long long)(k)))
+#define TAG12(k, i) \
+    ((starpu_tag_t)(((2ULL << 60) | (((unsigned long long)(k)) << 32) | (unsigned long long)(i))))
+#define TAG21(k, j) \
+    ((starpu_tag_t)(((3ULL << 60) | (((unsigned long long)(k)) << 32) | (unsigned long long)(j))))
+#define TAG22(k, i, j)                                                \
+    ((starpu_tag_t)(((4ULL << 60) | ((unsigned long long)(k) << 32) | \
+                     ((unsigned long long)(i) << 16) | (unsigned long long)(j))))
+#define PIVOT(k, i) \
+    ((starpu_tag_t)(((5ULL << 60) | (((unsigned long long)(k)) << 32) | (unsigned long long)(i))))
 
-#define FPRINTF(ofile, fmt, ...) do { if (!getenv("STARPU_SSILENT")) {fprintf(ofile, fmt, ## __VA_ARGS__); }} while(0)
-#define PRINTF(fmt, ...) do { if (!getenv("STARPU_SSILENT")) {printf(fmt, ## __VA_ARGS__); }} while(0)
+#define FPRINTF(ofile, fmt, ...)                \
+    do                                          \
+    {                                           \
+        if (!getenv("STARPU_SSILENT"))          \
+        {                                       \
+            fprintf(ofile, fmt, ##__VA_ARGS__); \
+        }                                       \
+    } while (0)
+#define PRINTF(fmt, ...)                \
+    do                                  \
+    {                                   \
+        if (!getenv("STARPU_SSILENT"))  \
+        {                               \
+            printf(fmt, ##__VA_ARGS__); \
+        }                               \
+    } while (0)
 
-#define BLAS3_FLOP(n1,n2,n3)    \
-        (2*((uint64_t)n1)*((uint64_t)n2)*((uint64_t)n3))
+#define BLAS3_FLOP(n1, n2, n3) (2 * ((uint64_t)n1) * ((uint64_t)n2) * ((uint64_t)n3))
 
 #ifdef CHECK_RESULTS
 static void compare_A_LU(float *A, float *LU, unsigned size, unsigned ld)
 {
-	unsigned i,j;
-	float *L;
-	float *U;
+    unsigned i, j;
+    float   *L;
+    float   *U;
 
-	L = malloc(size*size*sizeof(float));
-	U = malloc(size*size*sizeof(float));
+    L = malloc(size * size * sizeof(float));
+    U = malloc(size * size * sizeof(float));
 
-	memset(L, 0, size*size*sizeof(float));
-	memset(U, 0, size*size*sizeof(float));
+    memset(L, 0, size * size * sizeof(float));
+    memset(U, 0, size * size * sizeof(float));
 
-	/* only keep the lower part */
-	for (j = 0; j < size; j++)
-	{
-		for (i = 0; i < j; i++)
-		{
-			L[j+i*size] = LU[j+i*ld];
-		}
+    /* only keep the lower part */
+    for (j = 0; j < size; j++)
+    {
+        for (i = 0; i < j; i++)
+        {
+            L[j + i * size] = LU[j + i * ld];
+        }
 
-		/* diag i = j */
-		L[j+j*size] = LU[j+j*ld];
-		U[j+j*size] = 1.0f;
+        /* diag i = j */
+        L[j + j * size] = LU[j + j * ld];
+        U[j + j * size] = 1.0f;
 
-		for (i = j+1; i < size; i++)
-		{
-			U[j+i*size] = LU[j+i*ld];
-		}
-	}
+        for (i = j + 1; i < size; i++)
+        {
+            U[j + i * size] = LU[j + i * ld];
+        }
+    }
 
-        /* now A_err = L, compute L*U */
-	STARPU_STRMM("R", "U", "N", "U", size, size, 1.0f, U, size, L, size);
+    /* now A_err = L, compute L*U */
+    STARPU_STRMM("R", "U", "N", "U", size, size, 1.0f, U, size, L, size);
 
-	float max_err = 0.0f;
-	for (i = 0; i < size ; i++)
-	{
-		for (j = 0; j < size; j++) 
-		{
-			max_err = STARPU_MAX(max_err, fabs(  L[j+i*size] - A[j+i*ld]  ));
-		}
-	}
+    float max_err = 0.0f;
+    for (i = 0; i < size; i++)
+    {
+        for (j = 0; j < size; j++)
+        {
+            max_err = STARPU_MAX(max_err, fabs(L[j + i * size] - A[j + i * ld]));
+        }
+    }
 
-	FPRINTF(stdout, "max error between A and L*U = %f \n", max_err);
+    FPRINTF(stdout, "max error between A and L*U = %f \n", max_err);
 }
 #endif /* CHECK_RESULTS */
 
@@ -109,19 +123,22 @@ extern struct starpu_perfmodel model_11;
 extern struct starpu_perfmodel model_12;
 extern struct starpu_perfmodel model_21;
 extern struct starpu_perfmodel model_22;
-extern unsigned bound;
-extern unsigned bounddeps;
-extern unsigned boundprio;
+extern unsigned                bound;
+extern unsigned                bounddeps;
+extern unsigned                boundprio;
 
 struct piv_s
 {
-	unsigned *piv; /* complete pivot array */
-	unsigned first; /* first element */
-	unsigned last; /* last element */
+    unsigned *piv;   /* complete pivot array */
+    unsigned  first; /* first element */
+    unsigned  last;  /* last element */
 };
 
-int STARPU_LU(lu_decomposition)(TYPE *matA, unsigned size, unsigned ld, unsigned nblocks, unsigned no_prio);
-int STARPU_LU(lu_decomposition_pivot_no_stride)(TYPE **matA, unsigned *ipiv, unsigned size, unsigned ld, unsigned nblocks, unsigned no_prio);
-int STARPU_LU(lu_decomposition_pivot)(TYPE *matA, unsigned *ipiv, unsigned size, unsigned ld, unsigned nblocks, unsigned no_prio);
+int STARPU_LU(lu_decomposition)(TYPE *matA, unsigned size, unsigned ld, unsigned nblocks,
+                                unsigned no_prio);
+int STARPU_LU(lu_decomposition_pivot_no_stride)(TYPE **matA, unsigned *ipiv, unsigned size,
+                                                unsigned ld, unsigned nblocks, unsigned no_prio);
+int STARPU_LU(lu_decomposition_pivot)(TYPE *matA, unsigned *ipiv, unsigned size, unsigned ld,
+                                      unsigned nblocks, unsigned no_prio);
 
 #endif /* __XLU_H__ */

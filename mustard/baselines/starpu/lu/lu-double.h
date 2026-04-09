@@ -19,28 +19,28 @@
 #define TYPE double
 #define CUBLAS_TYPE TYPE
 
-#define STARPU_LU(name)       starpu_dlu_##name
+#define STARPU_LU(name) starpu_dlu_##name
 
-#define CUBLAS_GEMM	cublasDgemm
-#define CUBLAS_TRSM	cublasDtrsm
-#define CUBLAS_SCAL	cublasDscal
-#define CUBLAS_GER	cublasDger
-#define CUBLAS_SWAP	cublasDswap
-#define CUBLAS_IAMAX	cublasIdamax
+#define CUBLAS_GEMM cublasDgemm
+#define CUBLAS_TRSM cublasDtrsm
+#define CUBLAS_SCAL cublasDscal
+#define CUBLAS_GER cublasDger
+#define CUBLAS_SWAP cublasDswap
+#define CUBLAS_IAMAX cublasIdamax
 
-#define CPU_GEMM	STARPU_DGEMM
-#define CPU_TRSM	STARPU_DTRSM
-#define CPU_SCAL	STARPU_DSCAL
-#define CPU_GER		STARPU_DGER
-#define CPU_SWAP	STARPU_DSWAP
+#define CPU_GEMM STARPU_DGEMM
+#define CPU_TRSM STARPU_DTRSM
+#define CPU_SCAL STARPU_DSCAL
+#define CPU_GER STARPU_DGER
+#define CPU_SWAP STARPU_DSWAP
 
-#define CPU_TRMM	STARPU_DTRMM
-#define CPU_AXPY	STARPU_DAXPY
-#define CPU_ASUM	STARPU_DASUM
-#define CPU_IAMAX	STARPU_IDAMAX
+#define CPU_TRMM STARPU_DTRMM
+#define CPU_AXPY STARPU_DAXPY
+#define CPU_ASUM STARPU_DASUM
+#define CPU_IAMAX STARPU_IDAMAX
 
-#define PIVOT_THRESHHOLD	10e-10
+#define PIVOT_THRESHHOLD 10e-10
 
 #define CAN_EXECUTE .can_execute = can_execute,
 
-#define ISZERO(f)	(fpclassify(f) == FP_ZERO)
+#define ISZERO(f) (fpclassify(f) == FP_ZERO)

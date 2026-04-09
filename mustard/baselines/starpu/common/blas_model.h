@@ -21,44 +21,38 @@
 
 double gemm_cost(struct starpu_task *task, unsigned nimpl);
 
-static struct starpu_perfmodel starpu_sgemm_model =
-{
-	.type = STARPU_HISTORY_BASED,
+static struct starpu_perfmodel starpu_sgemm_model = {.type = STARPU_HISTORY_BASED,
 #ifdef STARPU_ATLAS
-	.symbol = "sgemm_atlas"
+                                                     .symbol = "sgemm_atlas"
 #elif defined(STARPU_GOTO)
-	.symbol = "sgemm_goto"
+                                                     .symbol = "sgemm_goto"
 #elif defined(STARPU_OPENBLAS)
-	.symbol = "sgemm_openblas"
+                                                     .symbol = "sgemm_openblas"
 #else
-	.symbol = "sgemm"
+                                                     .symbol = "sgemm"
 #endif
 };
 
-static struct starpu_perfmodel starpu_sgemm_model_common =
-{
-	.cost_function = gemm_cost,
-	.type = STARPU_COMMON,
+static struct starpu_perfmodel starpu_sgemm_model_common = {
+    .cost_function = gemm_cost,
+    .type          = STARPU_COMMON,
 };
 
-static struct starpu_perfmodel starpu_dgemm_model =
-{
-	.type = STARPU_HISTORY_BASED,
+static struct starpu_perfmodel starpu_dgemm_model = {.type = STARPU_HISTORY_BASED,
 #ifdef STARPU_ATLAS
-	.symbol = "dgemm_atlas"
+                                                     .symbol = "dgemm_atlas"
 #elif defined(STARPU_GOTO)
-	.symbol = "dgemm_goto"
+                                                     .symbol = "dgemm_goto"
 #elif defined(STARPU_OPENBLAS)
-	.symbol = "dgemm_openblas"
+                                                     .symbol = "dgemm_openblas"
 #else
-	.symbol = "dgemm"
+                                                     .symbol = "dgemm"
 #endif
 };
 
-static struct starpu_perfmodel starpu_dgemm_model_common =
-{
-	.cost_function = gemm_cost,
-	.type = STARPU_COMMON,
+static struct starpu_perfmodel starpu_dgemm_model_common = {
+    .cost_function = gemm_cost,
+    .type          = STARPU_COMMON,
 };
 
 #endif /* __BLAS_MODEL_H__ */

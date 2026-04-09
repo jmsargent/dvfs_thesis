@@ -2,21 +2,26 @@
 #include <cuda_runtime.h>
 #include <nvshmem.h>
 #include <nvshmemx.h>
-#include "mustard.h"
-#include <vector>
+
 #include <cmath>
 #include <iostream>
+#include <vector>
 
+#include "mustard.h"
 
 // Performs a global sum reduction and broadcasts the result to all PEs
-__global__ void mustard_allreduce_sum_kernel(float* d_val) {
-    if (threadIdx.x == 0 && blockIdx.x == 0) {
+__global__ void mustard_allreduce_sum_kernel(float* d_val)
+{
+    if (threadIdx.x == 0 && blockIdx.x == 0)
+    {
         int mype = nvshmem_my_pe();
         int npes = nvshmem_n_pes();
 
         // 1. Accumulate all values to PE 0
-        if (mype == 0) {
-            for (int i = 1; i < npes; i++) {
+        if (mype == 0)
+        {
+            for (int i = 1; i < npes; i++)
+            {
                 *d_val += nvshmem_float_g(d_val, i);
             }
         }
@@ -26,41 +31,52 @@ __global__ void mustard_allreduce_sum_kernel(float* d_val) {
 
         // 3. Broadcast the total from PE 0 to all other PEs
         float total = nvshmem_float_g(d_val, 0);
-        *d_val = total;
+        *d_val      = total;
     }
 }
 
 // Performs a global allgather to reconstruct the full search direction vector p
-__global__ void mustard_allgather_p_kernel(float* d_p, float* d_r, int local_n) {
+__global__ void mustard_allgather_p_kernel(float* d_p, float* d_r, int local_n)
+{
     int mype = nvshmem_my_pe();
     int npes = nvshmem_n_pes();
 
     // Each PE puts its local residual r into the correct slot of every other PE's p
-    for (int i = 0; i < npes; i++) {
-        if (i != mype) {
+    for (int i = 0; i < npes; i++)
+    {
+        if (i != mype)
+        {
             nvshmem_float_put(d_p + (mype * local_n), d_r, local_n, i);
-        } else {
+        }
+        else
+        {
             // Local copy
-            for(int j=0; j < local_n; j++) d_p[mype * local_n + j] = d_r[j];
+            for (int j = 0; j < local_n; j++) d_p[mype * local_n + j] = d_r[j];
         }
     }
     nvshmem_barrier_all();
 }
 
-__global__ void scalar_divide_kernel(float* dot_rr, float* dot_pq, float* alpha, float* dot_rr_new) {
-    if (threadIdx.x == 0 && blockIdx.x == 0) {
+__global__ void scalar_divide_kernel(float* dot_rr, float* dot_pq, float* alpha, float* dot_rr_new)
+{
+    if (threadIdx.x == 0 && blockIdx.x == 0)
+    {
         *alpha = (*dot_rr) / (*dot_pq);
     }
 }
 
-__global__ void beta_calc_kernel(float* dot_rr_old, float* dot_rr_new, float* beta) {
-    if (threadIdx.x == 0 && blockIdx.x == 0) {
+__global__ void beta_calc_kernel(float* dot_rr_old, float* dot_rr_new, float* beta)
+{
+    if (threadIdx.x == 0 && blockIdx.x == 0)
+    {
         *beta = (*dot_rr_new) / (*dot_rr_old);
     }
 }
 
-__global__ void scalar_negate_kernel(float* alpha, float* neg_alpha) {
-    if (blockIdx.x == 0 && threadIdx.x == 0) {
+__global__ void scalar_negate_kernel(float* alpha, float* neg_alpha)
+{
+    if (blockIdx.x == 0 && threadIdx.x == 0)
+    {
         *neg_alpha = -(*alpha);
     }
 }
@@ -68,15 +84,17 @@ __global__ void scalar_negate_kernel(float* alpha, float* neg_alpha) {
 // file: mustard/cg_mustard.cu
 /*
  * Step Size ($\alpha$): Minimizes the error along the current search direction.Residual
- * ($r$): Formally defined as $b - Ax$. In the loop, it is updated recursively to avoid a full matrix-vector multiplication.Search Direction
- * ($p$): Unlike steepest descent, CG uses "Conjugate" directions, meaning $p_i^T A p_j = 0$ for $i \neq j$. This prevents the algorithm from "repeating" work in directions it has already optimized.Correction Factor
+ * ($r$): Formally defined as $b - Ax$. In the loop, it is updated recursively to avoid a full
+ * matrix-vector multiplication.Search Direction
+ * ($p$): Unlike steepest descent, CG uses "Conjugate" directions, meaning $p_i^T A p_j = 0$ for $i
+ * \neq j$. This prevents the algorithm from "repeating" work in directions it has already
+ * optimized.Correction Factor
  * ($\beta$): Used to modify the residual into a new conjugate search direction.
  */
-void solve_mustard_cg_full(cublasHandle_t handle, cudaStream_t stream,
-                           float* d_A, float* d_x, float* d_r, float* d_p, float* d_q,
-                           float* d_dot_rr, float* d_dot_pq, float* d_dot_rr_new,
-                           float* d_alpha, float* d_beta, int n, int max_iter) {
-
+void solve_mustard_cg_full(cublasHandle_t handle, cudaStream_t stream, float* d_A, float* d_x,
+                           float* d_r, float* d_p, float* d_q, float* d_dot_rr, float* d_dot_pq,
+                           float* d_dot_rr_new, float* d_alpha, float* d_beta, int n, int max_iter)
+{
     cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
     cublasSetStream(handle, stream);
 
@@ -152,33 +170,35 @@ void solve_mustard_cg_full(cublasHandle_t handle, cudaStream_t stream,
     cudaGraphExec_t instance;
     cudaGraphInstantiate(&instance, graph, nullptr, nullptr, 0);
 
-    for (int i = 0; i < max_iter; i++) {
+    for (int i = 0; i < max_iter; i++)
+    {
         cudaGraphLaunch(instance, stream);
     }
     cudaStreamSynchronize(stream);
 
     cudaGraphExecDestroy(instance);
     cudaGraphDestroy(graph);
-    cudaFree(d_one); cudaFree(d_zero); cudaFree(d_neg_alpha);
+    cudaFree(d_one);
+    cudaFree(d_zero);
+    cudaFree(d_neg_alpha);
 }
 
-void cg_solver_cluster(cublasHandle_t handle, cudaStream_t stream,
-                              float* d_A, float* d_x, float* d_r, float* d_p, float* d_q,
-                              float* d_dot_rr, float* d_dot_pq, float* d_dot_rr_new,
-                              float* d_alpha, float* d_beta, int n, int max_iter) {
-
-    int mype = nvshmem_my_pe();
-    int npes = nvshmem_n_pes();
-    int local_n = n / npes; // Assuming n is divisible by npes for simplicity
+void cg_solver_cluster(cublasHandle_t handle, cudaStream_t stream, float* d_A, float* d_x,
+                       float* d_r, float* d_p, float* d_q, float* d_dot_rr, float* d_dot_pq,
+                       float* d_dot_rr_new, float* d_alpha, float* d_beta, int n, int max_iter)
+{
+    int mype    = nvshmem_my_pe();
+    int npes    = nvshmem_n_pes();
+    int local_n = n / npes;  // Assuming n is divisible by npes for simplicity
 
     cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
     cublasSetStream(handle, stream);
 
     // NVSHMEM-allocated scalars for global reductions
-    float *d_one = (float*)nvshmem_malloc(sizeof(float));
-    float *d_zero = (float*)nvshmem_malloc(sizeof(float));
-    float *d_neg_alpha = (float*)nvshmem_malloc(sizeof(float));
-    float h_one = 1.0f, h_zero = 0.0f;
+    float* d_one       = (float*)nvshmem_malloc(sizeof(float));
+    float* d_zero      = (float*)nvshmem_malloc(sizeof(float));
+    float* d_neg_alpha = (float*)nvshmem_malloc(sizeof(float));
+    float  h_one = 1.0f, h_zero = 0.0f;
     cudaMemcpy(d_one, &h_one, sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_zero, &h_zero, sizeof(float), cudaMemcpyHostToDevice);
 
@@ -188,8 +208,8 @@ void cg_solver_cluster(cublasHandle_t handle, cudaStream_t stream,
     // mustard::TiledGraphCreator uses NVSHMEM-backed dependency tracking
     mustard::TiledGraphCreator creator(stream, graph, false);
 
-    MatrixTile t_A = {0, 0}, t_p = {1, 0}, t_q = {2, 0}, t_alpha = {3, 0},
-               t_x = {4, 0}, t_r = {5, 0}, t_beta = {6, 0};
+    MatrixTile t_A = {0, 0}, t_p = {1, 0}, t_q = {2, 0}, t_alpha = {3, 0}, t_x = {4, 0},
+               t_r = {5, 0}, t_beta = {6, 0};
 
     // 1. Parallel Matrix-Vector: q = A_local * p_global
     // Each PE computes a piece of q using its local slice of A.
@@ -245,29 +265,30 @@ void cg_solver_cluster(cublasHandle_t handle, cudaStream_t stream,
     cudaGraphExec_t instance;
     cudaGraphInstantiate(&instance, graph, nullptr, nullptr, 0);
 
-    for (int i = 0; i < max_iter; i++) {
+    for (int i = 0; i < max_iter; i++)
+    {
         cudaGraphLaunch(instance, stream);
     }
     cudaStreamSynchronize(stream);
 
     cudaGraphExecDestroy(instance);
     cudaGraphDestroy(graph);
-    nvshmem_free(d_one); nvshmem_free(d_zero); nvshmem_free(d_neg_alpha);
+    nvshmem_free(d_one);
+    nvshmem_free(d_zero);
+    nvshmem_free(d_neg_alpha);
 }
 
 // Helper to prepare the initial state for the CG iteration
-void initialize_mustard_cg(cublasHandle_t handle, cudaStream_t stream,
-                          float* d_A, float* d_b, float* d_x,
-                          float* d_r, float* d_p, float* d_dot_rr,
-                          int n) {
-
+void initialize_mustard_cg(cublasHandle_t handle, cudaStream_t stream, float* d_A, float* d_b,
+                           float* d_x, float* d_r, float* d_p, float* d_dot_rr, int n)
+{
     // Set pointer mode to HOST for the setup phase to simplify initialization logic
     cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST);
     cublasSetStream(handle, stream);
 
-    float one = 1.0f;
+    float one     = 1.0f;
     float neg_one = -1.0f;
-    float zero = 0.0f;
+    float zero    = 0.0f;
 
     // 1. r = b (Copy b to r)
     cudaMemcpyAsync(d_r, d_b, n * sizeof(float), cudaMemcpyDeviceToDevice, stream);
@@ -286,13 +307,13 @@ void initialize_mustard_cg(cublasHandle_t handle, cudaStream_t stream,
     cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
 }
 
-void initialize_cg_distributed(cublasHandle_t handle, cudaStream_t stream,
-                                       float* d_A, float* d_b, float* d_x,
-                                       float* d_r, float* d_p, float* d_dot_rr,
-                                       int n, int local_n, int mype, int npes) {
+void initialize_cg_distributed(cublasHandle_t handle, cudaStream_t stream, float* d_A, float* d_b,
+                               float* d_x, float* d_r, float* d_p, float* d_dot_rr, int n,
+                               int local_n, int mype, int npes)
+{
     cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
 
-    float h_one = 1.0f, h_neg_one = -1.0f, h_zero = 0.0f;
+    float  h_one = 1.0f, h_neg_one = -1.0f, h_zero = 0.0f;
     float *d_one, *d_neg_one, *d_zero;
     cudaMalloc(&d_one, sizeof(float));
     cudaMalloc(&d_neg_one, sizeof(float));
@@ -313,24 +334,27 @@ void initialize_cg_distributed(cublasHandle_t handle, cudaStream_t stream,
     mustard_allgather_p_kernel<<<1, 1, 0, stream>>>(d_p, d_r, local_n);
 
     cudaStreamSynchronize(stream);
-    cudaFree(d_one); cudaFree(d_neg_one); cudaFree(d_zero);
+    cudaFree(d_one);
+    cudaFree(d_neg_one);
+    cudaFree(d_zero);
 }
 
 // ---------------------------------------------------------
 // Example Wrapper for the full process
 // ---------------------------------------------------------
-void run_cg_solver(float* d_A, float* d_b, float* d_x, int n, int max_iter) {
+void run_cg_solver(float* d_A, float* d_b, float* d_x, int n, int max_iter)
+{
     float *d_r, *d_p, *d_q;
     float *d_dot_rr, *d_dot_pq, *d_dot_rr_new, *d_alpha, *d_beta;
 
     cudaMalloc(&d_r, n * sizeof(float));
     cudaMalloc(&d_p, n * sizeof(float));
     cudaMalloc(&d_q, n * sizeof(float));
-    cudaMalloc(&d_dot_rr,     sizeof(float));
-    cudaMalloc(&d_dot_pq,     sizeof(float));
+    cudaMalloc(&d_dot_rr, sizeof(float));
+    cudaMalloc(&d_dot_pq, sizeof(float));
     cudaMalloc(&d_dot_rr_new, sizeof(float));
-    cudaMalloc(&d_alpha,      sizeof(float));
-    cudaMalloc(&d_beta,       sizeof(float));
+    cudaMalloc(&d_alpha, sizeof(float));
+    cudaMalloc(&d_beta, sizeof(float));
 
     cublasHandle_t handle;
     cublasCreate(&handle);
@@ -339,37 +363,45 @@ void run_cg_solver(float* d_A, float* d_b, float* d_x, int n, int max_iter) {
 
     initialize_mustard_cg(handle, stream, d_A, d_b, d_x, d_r, d_p, d_dot_rr, n);
 
-        solve_mustard_cg_full(handle, stream, d_A, d_x, d_r, d_p, d_q,
-                          d_dot_rr, d_dot_pq, d_dot_rr_new,
+    solve_mustard_cg_full(handle, stream, d_A, d_x, d_r, d_p, d_q, d_dot_rr, d_dot_pq, d_dot_rr_new,
                           d_alpha, d_beta, n, max_iter);
 
-    cudaFree(d_r); cudaFree(d_p); cudaFree(d_q);
-    cudaFree(d_dot_rr); cudaFree(d_dot_pq); cudaFree(d_dot_rr_new);
-    cudaFree(d_alpha); cudaFree(d_beta);
+    cudaFree(d_r);
+    cudaFree(d_p);
+    cudaFree(d_q);
+    cudaFree(d_dot_rr);
+    cudaFree(d_dot_pq);
+    cudaFree(d_dot_rr_new);
+    cudaFree(d_alpha);
+    cudaFree(d_beta);
     cublasDestroy(handle);
     cudaStreamDestroy(stream);
 }
 
-void cpu_cg_verify(const float* A, const float* b, float* x, int n, int max_iter, float tol = 1e-6f) {
+void cpu_cg_verify(const float* A, const float* b, float* x, int n, int max_iter, float tol = 1e-6f)
+{
     std::vector<float> r(n), p(n), q(n);
-    float dot_rr, dot_rr_new, alpha, beta, dot_pq;
+    float              dot_rr, dot_rr_new, alpha, beta, dot_pq;
 
     // r = b - A*x
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++)
+    {
         float ax = 0;
         for (int j = 0; j < n; j++) ax += A[i * n + j] * x[j];
         r[i] = b[i] - ax;
         p[i] = r[i];
     }
 
-    for (int iter = 0; iter < max_iter; iter++) {
+    for (int iter = 0; iter < max_iter; iter++)
+    {
         dot_rr = 0;
         for (int i = 0; i < n; i++) dot_rr += r[i] * r[i];
 
         if (std::sqrt(dot_rr) < tol) break;
 
         // q = A * p
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < n; i++)
+        {
             q[i] = 0;
             for (int j = 0; j < n; j++) q[i] += A[i * n + j] * p[i];
         }
@@ -379,7 +411,8 @@ void cpu_cg_verify(const float* A, const float* b, float* x, int n, int max_iter
 
         alpha = dot_rr / dot_pq;
 
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < n; i++)
+        {
             x[i] += alpha * p[i];
             r[i] -= alpha * q[i];
         }
@@ -389,15 +422,15 @@ void cpu_cg_verify(const float* A, const float* b, float* x, int n, int max_iter
 
         beta = dot_rr_new / dot_rr;
 
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < n; i++)
+        {
             p[i] = r[i] + beta * p[i];
         }
     }
 }
 
-
-int main(int argc, char** argv) {
-
+int main(int argc, char** argv)
+{
     // Match LU benchmark: init first, then set device based on node-local PE
     nvshmem_init();
     int mype = nvshmem_my_pe();
@@ -407,26 +440,27 @@ int main(int argc, char** argv) {
     int local_pe = nvshmem_team_my_pe(NVSHMEMX_TEAM_NODE);
     cudaSetDevice(local_pe);
 
-    int n = 1024;
+    int n       = 1024;
     int local_n = n / npes;
 
-    if (mype == 0) {
+    if (mype == 0)
+    {
         printf("Launching Multi-GPU CG with N=%d (%d PEs)\n", n, npes);
     }
 
     // --- 2. Allocation on Symmetric Heap ---
-    float *d_A_local = (float*)nvshmem_malloc(local_n * n * sizeof(float));
-    float *d_x       = (float*)nvshmem_malloc(n * sizeof(float));
-    float *d_r_local = (float*)nvshmem_malloc(local_n * sizeof(float));
-    float *d_p       = (float*)nvshmem_malloc(n * sizeof(float));
-    float *d_q_local = (float*)nvshmem_malloc(local_n * sizeof(float));
-    float *d_b_local = (float*)nvshmem_malloc(local_n * sizeof(float));
+    float* d_A_local = (float*)nvshmem_malloc(local_n * n * sizeof(float));
+    float* d_x       = (float*)nvshmem_malloc(n * sizeof(float));
+    float* d_r_local = (float*)nvshmem_malloc(local_n * sizeof(float));
+    float* d_p       = (float*)nvshmem_malloc(n * sizeof(float));
+    float* d_q_local = (float*)nvshmem_malloc(local_n * sizeof(float));
+    float* d_b_local = (float*)nvshmem_malloc(local_n * sizeof(float));
 
-    float *d_dot_rr     = (float*)nvshmem_malloc(sizeof(float));
-    float *d_dot_pq     = (float*)nvshmem_malloc(sizeof(float));
-    float *d_dot_rr_new = (float*)nvshmem_malloc(sizeof(float));
-    float *d_alpha      = (float*)nvshmem_malloc(sizeof(float));
-    float *d_beta       = (float*)nvshmem_malloc(sizeof(float));
+    float* d_dot_rr     = (float*)nvshmem_malloc(sizeof(float));
+    float* d_dot_pq     = (float*)nvshmem_malloc(sizeof(float));
+    float* d_dot_rr_new = (float*)nvshmem_malloc(sizeof(float));
+    float* d_alpha      = (float*)nvshmem_malloc(sizeof(float));
+    float* d_beta       = (float*)nvshmem_malloc(sizeof(float));
 
     // Initialize d_x and d_b (simplified for example)
     cudaMemset(d_x, 0, n * sizeof(float));
@@ -438,19 +472,20 @@ int main(int argc, char** argv) {
     cudaStreamCreate(&stream);
 
     // --- 3. Distributed Initialization ---
-    initialize_cg_distributed(handle, stream, d_A_local, d_b_local, d_x,
-                                      d_r_local, d_p, d_dot_rr, n, local_n, mype, npes);
+    initialize_cg_distributed(handle, stream, d_A_local, d_b_local, d_x, d_r_local, d_p, d_dot_rr,
+                              n, local_n, mype, npes);
 
     // --- 4. Launch Main Solver ---
     int max_iter = 100;
-    cg_solver_cluster(handle, stream, d_A_local, d_x, d_r_local, d_p, d_q_local,
-                      d_dot_rr, d_dot_pq, d_dot_rr_new, d_alpha, d_beta, n, max_iter);
+    cg_solver_cluster(handle, stream, d_A_local, d_x, d_r_local, d_p, d_q_local, d_dot_rr, d_dot_pq,
+                      d_dot_rr_new, d_alpha, d_beta, n, max_iter);
 
     // 5. Gather result for verification
     // Each PE has a valid local slice of d_x if we used the local update pattern.
     // If d_x was updated globally on all PEs, any PE can provide it.
 
-    if (mype == 0) {
+    if (mype == 0)
+    {
         std::vector<float> h_x_gpu(n);
         std::vector<float> h_x_cpu(n, 0.0f);
 
@@ -471,27 +506,34 @@ int main(int argc, char** argv) {
 
         // Verify Results
         float max_err = 0;
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < n; i++)
+        {
             max_err = std::max(max_err, std::abs(h_x_gpu[i] - h_x_cpu[i]));
         }
 
         std::cout << "Max Absolute Difference: " << max_err << std::endl;
-        if (max_err < 1e-4) {
+        if (max_err < 1e-4)
+        {
             std::cout << "VERIFICATION SUCCESSFUL" << std::endl;
-        } else {
+        }
+        else
+        {
             std::cout << "VERIFICATION FAILED" << std::endl;
         }
 
         float norm_x = 0;
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < n; i++)
+        {
             norm_x += h_x_gpu[i] * h_x_gpu[i];
         }
         norm_x = std::sqrt(norm_x);
 
         std::cout << "GPU Solution Norm: " << norm_x << std::endl;
 
-        if (norm_x < 1e-9) {
-            std::cout << "WARNING: Solution is near zero. Check matrix initialization." << std::endl;
+        if (norm_x < 1e-9)
+        {
+            std::cout << "WARNING: Solution is near zero. Check matrix initialization."
+                      << std::endl;
         }
     }
 

@@ -47,20 +47,19 @@
  * Users Notice.
  */
 
-#include <cstdio>
-#include <cstdlib>
-#include <vector>
-
 #include <cuda_runtime.h>
 #include <cusolverMg.h>
 
 #include <chrono>
+#include <cstdio>
+#include <cstdlib>
 #include <ctime>
+#include <vector>
 
+#include "argh.h"
 #include "cusolverMg_utils.h"
 #include "cusolver_utils.h"
 #include "gen.h"
-#include "argh.h"
 #include "utils.h"
 
 // /* compute |x|_inf */
@@ -89,31 +88,41 @@
 //     }
 // }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     auto cmdl = argh::parser(argc, argv);
 
-    size_t N = 24000;
-    int T = 100; /* tile size */
-    int MAX_NUM_DEVICES = 8;
-    int runs = 1;
-    if (!(cmdl({"g", "gpu", "gpu_count", "GPU"}, MAX_NUM_DEVICES) >> MAX_NUM_DEVICES)) {
-        std::cerr << "Must provide a valid gpu_count value! Got '" << cmdl({"g", "gpu", "gpu_count", "GPU"}).str() << "'" << std::endl;
+    size_t N               = 24000;
+    int    T               = 100; /* tile size */
+    int    MAX_NUM_DEVICES = 8;
+    int    runs            = 1;
+    if (!(cmdl({"g", "gpu", "gpu_count", "GPU"}, MAX_NUM_DEVICES) >> MAX_NUM_DEVICES))
+    {
+        std::cerr << "Must provide a valid gpu_count value! Got '"
+                  << cmdl({"g", "gpu", "gpu_count", "GPU"}).str() << "'" << std::endl;
         return 0;
     }
-    if (!(cmdl({"N", "n"}, N) >> N)) {
-        std::cerr << "Must provide a valid N value! Got '" << cmdl({"N", "n"}).str() << "'" << std::endl;
+    if (!(cmdl({"N", "n"}, N) >> N))
+    {
+        std::cerr << "Must provide a valid N value! Got '" << cmdl({"N", "n"}).str() << "'"
+                  << std::endl;
         return 0;
     }
-    if (!(cmdl({"b", "B"}, T) >> T)) {
-        std::cerr << "Must provide a valid B value! Got '" << cmdl({"B", "b"}).str() << "'" << std::endl;
+    if (!(cmdl({"b", "B"}, T) >> T))
+    {
+        std::cerr << "Must provide a valid B value! Got '" << cmdl({"B", "b"}).str() << "'"
+                  << std::endl;
         return 0;
     }
-    if (N % T > 0) {
+    if (N % T > 0)
+    {
         std::cerr << "N must be divisible by B! Got 'N=" << N << " & B=" << T << "'" << std::endl;
         return 0;
     }
-    if (!(cmdl({"run", "runs", "r", "R"}, runs) >> runs) || runs < 1) {
-        std::cerr << "Must provide a valid number of runs! Got '" << cmdl({"run", "r", "R"}).str() << "'" << std::endl;
+    if (!(cmdl({"run", "runs", "r", "R"}, runs) >> runs) || runs < 1)
+    {
+        std::cerr << "Must provide a valid number of runs! Got '" << cmdl({"run", "r", "R"}).str()
+                  << "'" << std::endl;
         return 0;
     }
 
@@ -123,11 +132,11 @@ int main(int argc, char *argv[]) {
 
     /* maximum number of GPUs */
 
-    int nbGpus = 0;
+    int              nbGpus = 0;
     std::vector<int> deviceList(MAX_NUM_DEVICES);
 
-    const int IA = 1;
-    const int JA = 1;
+    const int IA  = 1;
+    const int JA  = 1;
     const int lda = N;
 
     // const int IB = 1;
@@ -145,7 +154,7 @@ int main(int argc, char *argv[]) {
 
     int64_t lwork_getrf = 0;
     int64_t lwork_getrs = 0;
-    int64_t lwork = 0; /* workspace: number of elements per device */
+    int64_t lwork       = 0; /* workspace: number of elements per device */
 
     std::printf("Test 1D Laplacian of order %d\n", (int)N);
 
@@ -156,7 +165,8 @@ int main(int argc, char *argv[]) {
 
     nbGpus = (nbGpus < MAX_NUM_DEVICES) ? nbGpus : MAX_NUM_DEVICES;
     std::printf("\tThere are %d GPUs \n", nbGpus);
-    for (int j = 0; j < nbGpus; j++) {
+    for (int j = 0; j < nbGpus; j++)
+    {
         deviceList[j] = j;
         cudaDeviceProp prop;
         CUDA_CHECK(cudaGetDeviceProperties(&prop, j));
@@ -172,8 +182,9 @@ int main(int argc, char *argv[]) {
     // auto originalMatrix = std::make_unique<double[]>(N * N);
     // double *A = originalMatrix.get();
     double *A;
-    if ((A = (double *)malloc(N * N * sizeof(double))) == NULL) {
-    //if (A == NULL) {
+    if ((A = (double *)malloc(N * N * sizeof(double))) == NULL)
+    {
+        // if (A == NULL) {
         std::printf("Unable to allocate memory\n");
         return 0;
     }
@@ -198,10 +209,10 @@ int main(int argc, char *argv[]) {
     //     B[IDX1F(row)] = 1.0;
     // }
 
-// #ifdef SHOW_FORMAT
-//     std::printf("B = matlab base-1\n");
-//     print_matrix(N, 1, B.data(), ldb, CUBLAS_OP_T);
-// #endif
+    // #ifdef SHOW_FORMAT
+    //     std::printf("B = matlab base-1\n");
+    //     print_matrix(N, 1, B.data(), ldb, CUBLAS_OP_T);
+    // #endif
 
     std::printf("Step 5: Create matrix descriptors for A and B \n");
 
@@ -212,7 +223,7 @@ int main(int argc, char *argv[]) {
     CUSOLVER_CHECK(cusolverMgCreateMatrixDesc(&descrA, N, /* nubmer of rows of (global) A */
                                               N,          /* number of columns of (global) A */
                                               N,          /* number or rows in a tile */
-                                              T,        /* number of columns in a tile */
+                                              T,          /* number of columns in a tile */
                                               traits<data_type>::cuda_data_type, gridA));
 
     /* (global) B is N-by-1 */
@@ -230,7 +241,7 @@ int main(int argc, char *argv[]) {
 
     /* A := 0 */
     createMat<data_type>(nbGpus, deviceList.data(), N, /* number of columns of global A */
-                         T,                          /* number of columns per column tile */
+                         T,                            /* number of columns per column tile */
                          lda,                          /* leading dimension of local A */
                          array_d_A.data());
 
@@ -242,7 +253,7 @@ int main(int argc, char *argv[]) {
 
     // /* IPIV := 0, IPIV is consistent with A */
     createMat<int>(nbGpus, deviceList.data(), N, /* number of columns of global IPIV */
-                   T,                          /* number of columns per column tile */
+                   T,                            /* number of columns per column tile */
                    1,                            /* leading dimension of local IPIV */
                    array_d_IPIV.data());
 
@@ -252,7 +263,7 @@ int main(int argc, char *argv[]) {
                          A, lda,
                          /* output */
                          N,                /* number of columns of global A */
-                         T,              /* number of columns per column tile */
+                         T,                /* number of columns per column tile */
                          lda,              /* leading dimension of local A */
                          array_d_A.data(), /* host pointer array of dimension nbGpus */
                          IA, JA);
@@ -290,134 +301,135 @@ int main(int argc, char *argv[]) {
                    reinterpret_cast<void **>(array_d_work.data()));
 
     /* sync all devices */
-    //CudaEventClock clock;
+    // CudaEventClock clock;
     CUDA_CHECK(cudaDeviceSynchronize());
 
     std::printf("Step 9: Solve A*X = B by GETRF and GETRS \n");
-    //clock.start();
+    // clock.start();
     double totalTime = 0.0;
-    for (int i = 0; i < runs; i++) {
+    for (int i = 0; i < runs; i++)
+    {
         CUDA_CHECK(cudaDeviceSynchronize());
 
         auto start = std::chrono::high_resolution_clock::now();
-        CUSOLVER_CHECK(
-            cusolverMgGetrf(cusolverH, N, N, reinterpret_cast<void **>(array_d_A.data()), IA, JA,
-                            descrA, array_d_IPIV.data(), traits<data_type>::cuda_data_type,
-                            reinterpret_cast<void **>(array_d_work.data()), lwork, &info /* host */
-                            ));
-        //clock.end();
-        auto end = std::chrono::high_resolution_clock::now();
+        CUSOLVER_CHECK(cusolverMgGetrf(
+            cusolverH, N, N, reinterpret_cast<void **>(array_d_A.data()), IA, JA, descrA,
+            array_d_IPIV.data(), traits<data_type>::cuda_data_type,
+            reinterpret_cast<void **>(array_d_work.data()), lwork, &info /* host */
+            ));
+        // clock.end();
+        auto                          end     = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> elapsed = end - start;
         printf("Run %d time used (s): %4.4f\n", i, elapsed.count());
         totalTime += elapsed.count();
-        
-        if (i != runs-1)
-            memcpyH2D<data_type>(nbGpus, deviceList.data(), N, N,
-                                /* input */
-                                A, lda,
-                                /* output */
-                                N,                /* number of columns of global A */
-                                T,              /* number of columns per column tile */
-                                lda,              /* leading dimension of local A */
-                                array_d_A.data(), /* host pointer array of dimension nbGpus */
-                                IA, JA);
 
+        if (i != runs - 1)
+            memcpyH2D<data_type>(nbGpus, deviceList.data(), N, N,
+                                 /* input */
+                                 A, lda,
+                                 /* output */
+                                 N,                /* number of columns of global A */
+                                 T,                /* number of columns per column tile */
+                                 lda,              /* leading dimension of local A */
+                                 array_d_A.data(), /* host pointer array of dimension nbGpus */
+                                 IA, JA);
     }
-    //printf("Total time used (s): %4.4f\n", clock.getTimeInSeconds());
+    // printf("Total time used (s): %4.4f\n", clock.getTimeInSeconds());
     printf("Total time used (s): %4.4f\n", totalTime);
 
     /* sync all devices */
     CUDA_CHECK(cudaDeviceSynchronize());
 
     /* check if A is singular */
-    if (0 > info) {
+    if (0 > info)
+    {
         std::printf("%d-th parameter is wrong \n", -info);
         exit(1);
     }
 
-//     CUSOLVER_CHECK(cusolverMgGetrs(cusolverH, CUBLAS_OP_N, N, 1, /* NRHS */
-//                                    reinterpret_cast<void **>(array_d_A.data()), IA, JA, descrA,
-//                                    NULL, reinterpret_cast<void **>(array_d_B.data()),
-//                                    IB, JB, descrB, traits<data_type>::cuda_data_type,
-//                                    reinterpret_cast<void **>(array_d_work.data()), lwork,
-//                                    &info /* host */
-//                                    ));
-//     /* sync all devices */
-//     CUDA_CHECK(cudaDeviceSynchronize());
+    //     CUSOLVER_CHECK(cusolverMgGetrs(cusolverH, CUBLAS_OP_N, N, 1, /* NRHS */
+    //                                    reinterpret_cast<void **>(array_d_A.data()), IA, JA,
+    //                                    descrA, NULL, reinterpret_cast<void **>(array_d_B.data()),
+    //                                    IB, JB, descrB, traits<data_type>::cuda_data_type,
+    //                                    reinterpret_cast<void **>(array_d_work.data()), lwork,
+    //                                    &info /* host */
+    //                                    ));
+    //     /* sync all devices */
+    //     CUDA_CHECK(cudaDeviceSynchronize());
 
-//     /* check if parameters are valid */
-//     if (0 > info) {
-//         std::printf("%d-th parameter is wrong \n", -info);
-//         exit(1);
-//     }
+    //     /* check if parameters are valid */
+    //     if (0 > info) {
+    //         std::printf("%d-th parameter is wrong \n", -info);
+    //         exit(1);
+    //     }
 
-//     std::printf("Step 10: Retrieve IPIV and solution vector X\n");
+    //     std::printf("Step 10: Retrieve IPIV and solution vector X\n");
 
-//     memcpyD2H<data_type>(nbGpus, deviceList.data(), N, 1,
-//                          /* input */
-//                          1,   /* number of columns of global B */
-//                          T_B, /* number of columns per column tile */
-//                          ldb, /* leading dimension of local B */
-//                          array_d_B.data(), IB, JB,
-//                          /* output */
-//                          X.data(), /* N-by-1 */
-//                          ldb);
+    //     memcpyD2H<data_type>(nbGpus, deviceList.data(), N, 1,
+    //                          /* input */
+    //                          1,   /* number of columns of global B */
+    //                          T_B, /* number of columns per column tile */
+    //                          ldb, /* leading dimension of local B */
+    //                          array_d_B.data(), IB, JB,
+    //                          /* output */
+    //                          X.data(), /* N-by-1 */
+    //                          ldb);
 
     /* IPIV is consistent with A, use JA and T */
     memcpyD2H<int>(nbGpus, deviceList.data(), 1, N,
                    /* input */
-                   N,   /* number of columns of global IPIV */
+                   N, /* number of columns of global IPIV */
                    T, /* number of columns per column tile */
-                   1,   /* leading dimension of local IPIV */
+                   1, /* leading dimension of local IPIV */
                    array_d_IPIV.data(), 1, JA,
                    /* output */
                    IPIV.data(), /* 1-by-N */
                    1);
 
-// #ifdef SHOW_FORMAT
-//     /* X is N-by-1 */
-// std::printf("X = matlab base-1\n");
-// print_matrix(N, 1, X.data(), N, CUBLAS_OP_T);
-// #endif
+    // #ifdef SHOW_FORMAT
+    //     /* X is N-by-1 */
+    // std::printf("X = matlab base-1\n");
+    // print_matrix(N, 1, X.data(), N, CUBLAS_OP_T);
+    // #endif
 
-// #ifdef SHOW_FORMAT
-//     /* IPIV is 1-by-N */
+    // #ifdef SHOW_FORMAT
+    //     /* IPIV is 1-by-N */
     // std::printf("IPIV = matlab base-1, 1-by-%d matrix\n", N);
     // for (int row = 1; row <= N; row++) {
     //     std::printf("IPIV(%d) = %d \n", row, IPIV[IDX1F(row)]);
     // }
-// #endif
+    // #endif
 
-//     std::printf("Step 11: Measure residual error |b - A*x| \n");
-//     data_type max_err = 0;
-//     for (int row = 1; row <= N; row++) {
-//         data_type sum = 0.0;
-//         for (int col = 1; col <= N; col++) {
-//             data_type Aij = A[IDX2F(row, col, lda)];
-//             data_type xj = X[IDX1F(col)];
-//             sum += Aij * xj;
-//         }
-//         data_type bi = B[IDX1F(row)];
-//         data_type err = fabs(bi - sum);
+    //     std::printf("Step 11: Measure residual error |b - A*x| \n");
+    //     data_type max_err = 0;
+    //     for (int row = 1; row <= N; row++) {
+    //         data_type sum = 0.0;
+    //         for (int col = 1; col <= N; col++) {
+    //             data_type Aij = A[IDX2F(row, col, lda)];
+    //             data_type xj = X[IDX1F(col)];
+    //             sum += Aij * xj;
+    //         }
+    //         data_type bi = B[IDX1F(row)];
+    //         data_type err = fabs(bi - sum);
 
-//         max_err = (max_err > err) ? max_err : err;
-//     }
-//     data_type x_nrm_inf = vec_nrm_inf(N, X.data());
-//     data_type b_nrm_inf = vec_nrm_inf(N, B.data());
+    //         max_err = (max_err > err) ? max_err : err;
+    //     }
+    //     data_type x_nrm_inf = vec_nrm_inf(N, X.data());
+    //     data_type b_nrm_inf = vec_nrm_inf(N, B.data());
 
-//     data_type A_nrm_inf = 4.0;
-//     data_type rel_err = max_err / (A_nrm_inf * x_nrm_inf + b_nrm_inf);
-//     std::printf("\n|b - A*x|_inf = %E\n", max_err);
-//     std::printf("|x|_inf = %E\n", x_nrm_inf);
-//     std::printf("|b|_inf = %E\n", b_nrm_inf);
-//     std::printf("|A|_inf = %E\n", A_nrm_inf);
-//     /* relative error is around machine zero  */
-//     /* the user can use |b - A*x|/(N*|A|*|x|+|b|) as well */
-//     std::printf("|b - A*x|/(|A|*|x|+|b|) = %E\n\n", rel_err);
+    //     data_type A_nrm_inf = 4.0;
+    //     data_type rel_err = max_err / (A_nrm_inf * x_nrm_inf + b_nrm_inf);
+    //     std::printf("\n|b - A*x|_inf = %E\n", max_err);
+    //     std::printf("|x|_inf = %E\n", x_nrm_inf);
+    //     std::printf("|b|_inf = %E\n", b_nrm_inf);
+    //     std::printf("|A|_inf = %E\n", A_nrm_inf);
+    //     /* relative error is around machine zero  */
+    //     /* the user can use |b - A*x|/(N*|A|*|x|+|b|) as well */
+    //     std::printf("|b - A*x|/(|A|*|x|+|b|) = %E\n\n", rel_err);
 
     std::printf("step 12: Free resources \n");
     destroyMat(nbGpus, deviceList.data(), N, /* number of columns of global A */
-               T,                          /* number of columns per column tile */
+               T,                            /* number of columns per column tile */
                reinterpret_cast<void **>(array_d_A.data()));
     // destroyMat(nbGpus, deviceList.data(), 1, /* number of columns of global B */
     //            T_B,                          /* number of columns per column tile */

@@ -1,3 +1,11 @@
 {
-    "cmake.sourceDirectory": "/data/users/sargent/dvfs_thesis/mustard"
+    "cmake.sourceDirectory": "/data/users/sargent/dvfs_thesis/mustard",
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "ms-vscode.cpptools",
+    "[cuda-cpp]": {
+        "editor.defaultFormatter": "ms-vscode.cpptools"
+    },
+    "[jsonc]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    }
 }
