@@ -10,4 +10,6 @@ containers/container.sif
 venv_hpc
 venv
 **/.DS_Store
-local_jobs/**.out
+local_jobs/**/**.out
+local_jobs/**/**.dot
+local_jobs/**/nvshmem_debug
