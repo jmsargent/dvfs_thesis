@@ -10,3 +10,4 @@ containers/container.sif
 venv_hpc
 venv
 **/.DS_Store
+local_jobs/**.out
