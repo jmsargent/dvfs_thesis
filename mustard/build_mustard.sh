@@ -60,4 +60,4 @@ find ~/dvfs_thesis/mustard/build -name "*.rsp" | while read rsp; do
     sed -i "${PATCH_ARGS[@]}" "$rsp"
 done
 
-sed -i "${PATCH_ARGS[@]}" ~/dvfs_thesis/mustard/b
+sed -i "${PATCH_ARGS[@]}" ~/dvfs_thesis/mustard/build/compile_commands.json

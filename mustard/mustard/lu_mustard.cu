@@ -642,7 +642,7 @@ void tiledLUStatic(bool verify, bool dot)
     // Initialize data
     auto originalMatrix = std::make_unique<double[]>(N * N);
     generateRandomSymmetricPositiveDefiniteMatrix(originalMatrix.get(), N);
-
+    
     // NVSHMEM allocations (all PEs participate)
     volatile int *d_flags         = (volatile int *)nvshmem_malloc(sizeof(int) * 32);
     double       *d_matrices      = (double *)nvshmem_malloc(N * N * sizeof(double));
@@ -830,87 +830,15 @@ void tiledLUStatic(bool verify, bool dot)
 
     checkCudaErrors(cudaDeviceSynchronize());
 
-    // Static task assignment — round-robin
-    std::vector<std::vector<int>> pe_tasks(nPEs);
-    for (int i = 0; i < totalNodes; i++) pe_tasks[i % nPEs].push_back(i);
-
-    std::vector<int> task_pe(totalNodes);
-    for (int i = 0; i < totalNodes; i++) task_pe[i] = i % nPEs;
-
-    // Topological sort of myPE's tasks respecting same-PE dependencies
-    std::vector<int> my_tasks_sorted;
-    std::set<int>    topo_done;
-    while (my_tasks_sorted.size() < pe_tasks[myPE].size())
-    {
-        bool progress = false;
-        for (int task : pe_tasks[myPE])
-        {
-            if (topo_done.count(task)) continue;
-            bool ready = true;
-            for (int dep : tiledLUGraphCreator->subgraphDependencies[task])
-            {
-                if (task_pe[dep] == myPE && !topo_done.count(dep))
-                {
-                    ready = false;
-                    break;
-                }
-            }
-            if (ready)
-            {
-                my_tasks_sorted.push_back(task);
-                topo_done.insert(task);
-                progress = true;
-            }
-        }
-        if (!progress) break;
-    }
-
     // NVSHMEM completion flags
     int *d_completion_flags = (int *)nvshmem_malloc(sizeof(int) * totalNodes);
     checkCudaErrors(cudaMemset(d_completion_flags, 0, sizeof(int) * totalNodes));
 
-    // Reverse dependency map
-    std::vector<std::vector<int>> dependents(totalNodes);
-    for (int j = 0; j < totalNodes; j++)
-        for (int dep : tiledLUGraphCreator->subgraphDependencies[j]) dependents[dep].push_back(j);
+    // Static round-robin task assignment, topo sort, and device dep/notify arrays
+    auto scheduler = std::make_unique<mustard::StaticRoundRobinScheduler>(
+        nPEs, myPE, totalNodes, tiledLUGraphCreator->subgraphDependencies);
 
-    // Debug: print dependency and notify info
-    for (int task : pe_tasks[myPE])
-    {
-        std::set<int> notify_set;
-        for (int d : dependents[task]) notify_set.insert(task_pe[d]);
-        printf("PE %d task %d: dependents=[", myPE, task);
-        for (int d : dependents[task]) printf("%d,", d);
-        printf("] notify_pes=[");
-        for (int p : notify_set) printf("%d,", p);
-        printf("]\n");
-    }
-    fflush(stdout);
-
-    // Allocate per-task device arrays for deps and notify PEs
-    std::vector<int *> d_task_deps(totalNodes, nullptr);
-    std::vector<int *> d_task_notify_pes(totalNodes, nullptr);
-
-    for (int task : pe_tasks[myPE])
-    {
-        auto &deps = tiledLUGraphCreator->subgraphDependencies[task];
-        if (!deps.empty())
-        {
-            checkCudaErrors(cudaMalloc(&d_task_deps[task], sizeof(int) * deps.size()));
-            checkCudaErrors(cudaMemcpy(d_task_deps[task], deps.data(), sizeof(int) * deps.size(),
-                                       cudaMemcpyHostToDevice));
-        }
-
-        std::set<int> notify_set;
-        for (int dep_task : dependents[task]) notify_set.insert(task_pe[dep_task]);
-        std::vector<int> notify_vec(notify_set.begin(), notify_set.end());
-        if (!notify_vec.empty())
-        {
-            checkCudaErrors(cudaMalloc(&d_task_notify_pes[task], sizeof(int) * notify_vec.size()));
-            checkCudaErrors(cudaMemcpy(d_task_notify_pes[task], notify_vec.data(),
-                                       sizeof(int) * notify_vec.size(), cudaMemcpyHostToDevice));
-        }
-    }
+    const std::vector<int> &my_tasks_sorted = scheduler->getMyTasksOrdered();
 
     // Helper to find tail node of a subgraph
     auto getSubgraphTail = [](cudaGraph_t g) -> cudaGraphNode_t
@@ -947,12 +875,13 @@ void tiledLUStatic(bool verify, bool dot)
     // Track waitNode per task so loop 2 can reference it
     std::vector<cudaGraphNode_t> task_wait_node(totalNodes, nullptr);
 
-    for (int task : pe_tasks[myPE])
+    for (int task : my_tasks_sorted)
     {
-        cudaGraph_t sg   = tiledLUGraphCreator->subgraphs[task];
-        auto       &deps = tiledLUGraphCreator->subgraphDependencies[task];
+        cudaGraph_t sg     = tiledLUGraphCreator->subgraphs[task];
+        int         n_deps = scheduler->getDepCount(task);
+        int        *d_deps = scheduler->getTaskDeps(task);
 
-        if (!deps.empty())
+        if (n_deps > 0)
         {
             size_t numRoots;
             cudaGraphGetRootNodes(sg, nullptr, &numRoots);
@@ -964,8 +893,7 @@ void tiledLUStatic(bool verify, bool dot)
             waitParams.gridDim              = dim3(1);
             waitParams.blockDim             = dim3(1);
             waitParams.func                 = (void *)mustard::kernel_wait_static;
-            int   n_deps                    = (int)deps.size();
-            void *waitArgs[4]       = {&d_task_deps[task], &n_deps, &d_completion_flags, &debug};
+            void *waitArgs[4]       = {&d_deps, &n_deps, &d_completion_flags, &debug};
             waitParams.kernelParams = waitArgs;
             checkCudaErrors(cudaGraphAddKernelNode(&waitNode, sg, nullptr, 0, &waitParams));
             task_wait_node[task] = waitNode;
@@ -973,10 +901,8 @@ void tiledLUStatic(bool verify, bool dot)
             for (auto &root : roots) MUSTARD_cudaGraphAddDependencies(sg, &waitNode, &root, 1);
         }
 
-        std::set<int> notify_set;
-        for (int dep_task : dependents[task]) notify_set.insert(task_pe[dep_task]);
-        int n_notify = (int)notify_set.size();
-
+        int  n_notify        = scheduler->getNotifyCount(task);
+        int *d_notify_pes    = scheduler->getNotifyPEs(task);
         cudaGraphNode_t      tail = getSubgraphTail(sg);
         cudaGraphNode_t      signalNode;
         cudaKernelNodeParams signalParams = {0};
@@ -984,7 +910,7 @@ void tiledLUStatic(bool verify, bool dot)
         signalParams.blockDim             = dim3(1);
         signalParams.func                 = (void *)mustard::kernel_signal_static;
         int   task_id_val                 = task;
-        void *signalArgs[5]       = {&task_id_val, &d_completion_flags, &d_task_notify_pes[task],
+        void *signalArgs[5]       = {&task_id_val, &d_completion_flags, &d_notify_pes,
                                      &n_notify, &debug};
         signalParams.kernelParams = signalArgs;
         checkCudaErrors(cudaGraphAddKernelNode(&signalNode, sg, &tail, 1, &signalParams));
@@ -996,15 +922,15 @@ void tiledLUStatic(bool verify, bool dot)
 
     if (measure_wait || measure_compute)
     {
-        for (int task : pe_tasks[myPE])
+        for (int task : my_tasks_sorted)
         {
-            cudaGraph_t sg   = tiledLUGraphCreator->subgraphs[task];
-            auto       &deps = tiledLUGraphCreator->subgraphDependencies[task];
+            cudaGraph_t sg     = tiledLUGraphCreator->subgraphs[task];
+            int         n_deps = scheduler->getDepCount(task);
 
             // Inject compute start event: after waitNode if present, else before roots
             checkCudaErrors(cudaEventCreate(&ev_compute_start[task]));
             cudaGraphNode_t computeStartNode;
-            if (!deps.empty())
+            if (n_deps > 0)
             {
                 // waitNode is the single root — add event node after it
                 cudaGraphNode_t waitNode = task_wait_node[task];
@@ -1060,7 +986,7 @@ void tiledLUStatic(bool verify, bool dot)
 
     // Instantiate and upload owned subgraphs
     cudaGraphExec_t *h_subgraphsExec = new cudaGraphExec_t[totalNodes];
-    for (int task : pe_tasks[myPE])
+    for (int task : my_tasks_sorted)
     {
         if (dot)
         {
@@ -1190,7 +1116,7 @@ void tiledLUStatic(bool verify, bool dot)
         fflush(stdout);
 
         // Cleanup events
-        for (int task : pe_tasks[myPE])
+        for (int task : my_tasks_sorted)
         {
             if (ev_compute_start[task]) checkCudaErrors(cudaEventDestroy(ev_compute_start[task]));
             if (ev_compute_end[task]) checkCudaErrors(cudaEventDestroy(ev_compute_end[task]));
@@ -1210,12 +1136,7 @@ void tiledLUStatic(bool verify, bool dot)
         free(h_U);
     }
 
-    // Cleanup
-    for (int task : pe_tasks[myPE])
-    {
-        if (d_task_deps[task]) checkCudaErrors(cudaFree(d_task_deps[task]));
-        if (d_task_notify_pes[task]) checkCudaErrors(cudaFree(d_task_notify_pes[task]));
-    }
+    // Cleanup (scheduler destructor frees d_task_deps and d_task_notify_pes)
     delete[] h_subgraphsExec;
     nvshmem_free(d_completion_flags);
     nvshmem_free(d_matrices);

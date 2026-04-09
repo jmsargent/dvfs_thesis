@@ -232,10 +232,12 @@ mustard/CMakeFiles/p_lu_mustard.dir/lu_mustard_p.cu.o : /data/users/sargent/dvfs
     /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/12.6/targets/x86_64-linux/include/cuda_fp16.hpp \
     /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/12.6/targets/x86_64-linux/include/cuda_bf16.h \
     /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/12.6/targets/x86_64-linux/include/cuda_bf16.hpp \
+    /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/math_libs/include/curand.h \
     /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/math_libs/include/cusolverDn.h \
     /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/math_libs/include/cusolver_common.h \
     /usr/include/inttypes.h \
-    /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/math_libs/include/curand.h \
+    /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/hpcx/hpcx-2.20/ompi/include/mpi.h \
+    /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/hpcx/hpcx-2.20/ompi/include/mpi_portable_platform.h \
     /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/include/nvshmem.h \
     /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/include/non_abi/nvshmem_build_options.h \
     /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/include/host/nvshmem_api.h \
@@ -700,6 +702,9 @@ mustard/CMakeFiles/p_lu_mustard.dir/lu_mustard_p.cu.o : /data/users/sargent/dvfs
     /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/include/device/nvshmemx_collective_launch_apis.h \
     /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/include/nvshmemx.h \
     /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/include/device/nvshmemx_coll_defines.cuh \
+    /usr/include/c++/11/algorithm \
+    /usr/include/c++/11/pstl/glue_algorithm_defs.h \
+    /usr/include/c++/11/pstl/execution_defs.h \
     /usr/include/c++/11/iostream \
     /usr/include/c++/11/ostream \
     /usr/include/c++/11/ios \
@@ -729,21 +734,16 @@ mustard/CMakeFiles/p_lu_mustard.dir/lu_mustard_p.cu.o : /data/users/sargent/dvfs
     /usr/include/c++/11/bits/atomic_lockfree_defines.h \
     /usr/include/c++/11/backward/auto_ptr.h \
     /usr/include/c++/11/pstl/glue_memory_defs.h \
-    /usr/include/c++/11/pstl/execution_defs.h \
-    /usr/include/c++/11/algorithm \
-    /usr/include/c++/11/pstl/glue_algorithm_defs.h \
-    /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/hpcx/hpcx-2.20/ompi/include/mpi.h \
-    /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/hpcx/hpcx-2.20/ompi/include/mpi_portable_platform.h \
     /data/users/sargent/dvfs_thesis/mustard/include/argh.h \
-    /usr/include/c++/11/sstream \
-    /usr/include/c++/11/bits/sstream.tcc \
-    /usr/include/c++/11/set \
-    /usr/include/c++/11/bits/stl_tree.h \
-    /usr/include/c++/11/bits/stl_set.h \
-    /usr/include/c++/11/bits/stl_multiset.h \
     /usr/include/c++/11/map \
+    /usr/include/c++/11/bits/stl_tree.h \
     /usr/include/c++/11/bits/stl_map.h \
     /usr/include/c++/11/bits/stl_multimap.h \
+    /usr/include/c++/11/set \
+    /usr/include/c++/11/bits/stl_set.h \
+    /usr/include/c++/11/bits/stl_multiset.h \
+    /usr/include/c++/11/sstream \
+    /usr/include/c++/11/bits/sstream.tcc \
     /data/users/sargent/dvfs_thesis/mustard/include/cli.h \
     /data/users/sargent/dvfs_thesis/mustard/include/utils.h \
     /usr/include/c++/11/iomanip \
