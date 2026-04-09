@@ -12,12 +12,13 @@ struct MustardConfig {
     size_t T = 5;
     int    myPE = 0;
     int    verbose = 0;
-    int    workspace = 256;   // cuBLAS workspace in kB
+    int    workspace = 256; // cublas workspace in kb
     int    smLimit = 20;
     int    runs = 1;
     bool   staticMultiGPU = false;
     int    debugKernels = 0;
     std::string invocationPath = "";
+    std::string measureFlags = "";  // e.g. "task_wait_time,task_compute_time"
 };
 
 // Print common options shared by all executables.
@@ -32,7 +33,10 @@ inline void printCommonUsage()
               << "    -v, --verbose        Enable verbose output\n"
               << "    --verify             Verify result correctness\n"
               << "    --dot                Dump execution graph in DOT format\n"
-              << "    --invocations=<path> Log task IDs and names to the specified path\n";
+              << "    --invocations=<path> Log task IDs and names to the specified path\n"
+              << "    --measure=<flags>    Comma-separated list of measurements to collect.\n"
+              << "                         Options: task_wait_time, task_compute_time\n"
+              << "                         Example: --measure=task_wait_time,task_compute_time\n";
 }
 
 // Print usage for lu_mustard / cholesky_mustard (single-node).
@@ -49,6 +53,7 @@ inline void printSingleNodeUsage(const char* progName, const char* decomposition
     std::cerr << "\n  Examples:\n"
               << "    " << progName << " -n=600 -t=2 --tiled --verify\n"
               << "    nvshmrun -np 4 " << progName << " -n=6000 -t=10 --subgraph -r=5\n"
+
               << std::endl;
 }
 
@@ -98,8 +103,12 @@ inline bool parseCommonArgs(argh::parser& cmdl, MustardConfig& cfg)
         std::cerr << "Error: Must provide a valid number of runs! Got '" << cmdl({"run", "r", "R"}).str() << "'" << std::endl;
         return false;
     }
+    
     cmdl("invocations", "") >> cfg.invocationPath;
     cfg.staticMultiGPU = cmdl["static-multigpu"];
+    
+    cmdl("measure", "") >> cfg.measureFlags;
+    
     return true;
 }
 

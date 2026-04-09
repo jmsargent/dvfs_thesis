@@ -700,8 +700,12 @@ void tiledLUStatic(bool verify, bool dot)
 
     int nPEs = nvshmem_n_pes();
 
+    // Parse measure flags
+    bool measure_wait    = cfg.measureFlags.find("task_wait_time")    != std::string::npos;
+    bool measure_compute = cfg.measureFlags.find("task_compute_time") != std::string::npos;
+
     // Initialize data
-    auto originalMatrix = std::make_unique<double[]>(N * N); // Column-major
+    auto originalMatrix = std::make_unique<double[]>(N * N);
     generateRandomSymmetricPositiveDefiniteMatrix(originalMatrix.get(), N);
 
     // NVSHMEM allocations (all PEs participate)
@@ -766,7 +770,7 @@ void tiledLUStatic(bool verify, bool dot)
 
     auto tiledLUGraphCreator = std::make_unique<mustard::TiledGraphCreator>(s, graph, true, totalNodes);
 
-    // Graph construction — verbatim copy of the subgraph path in tiledLU
+    // Graph construction
     for (int k = 0; k < T; k++)
     {
         checkCudaErrors(cublasSetWorkspace(cublasHandle, d_workspace_cublas[0], cublasWorkspaceSize));
@@ -977,7 +981,7 @@ void tiledLUStatic(bool verify, bool dot)
     for (int j = 0; j < totalNodes; j++)
         for (int dep : tiledLUGraphCreator->subgraphDependencies[j])
             dependents[dep].push_back(j);
-    
+
     // Debug: print dependency and notify info
     for (int task : pe_tasks[myPE]) {
         std::set<int> notify_set;
@@ -1040,13 +1044,15 @@ void tiledLUStatic(bool verify, bool dot)
         return nodes.back();
     };
 
-    // Inject wait and signal kernels into owned subgraphs
+    // --- Loop 1: Inject wait and signal kernels ---
     int debug = cfg.debugKernels;
+    // Track waitNode per task so loop 2 can reference it
+    std::vector<cudaGraphNode_t> task_wait_node(totalNodes, nullptr);
+
     for (int task : pe_tasks[myPE]) {
         cudaGraph_t sg = tiledLUGraphCreator->subgraphs[task];
         auto& deps = tiledLUGraphCreator->subgraphDependencies[task];
 
-        // Prepend wait kernel (only if task has dependencies)
         if (!deps.empty()) {
             size_t numRoots;
             cudaGraphGetRootNodes(sg, nullptr, &numRoots);
@@ -1062,12 +1068,12 @@ void tiledLUStatic(bool verify, bool dot)
             void *waitArgs[4] = {&d_task_deps[task], &n_deps, &d_completion_flags, &debug};
             waitParams.kernelParams = waitArgs;
             checkCudaErrors(cudaGraphAddKernelNode(&waitNode, sg, nullptr, 0, &waitParams));
+            task_wait_node[task] = waitNode;
 
             for (auto& root : roots)
                 MUSTARD_cudaGraphAddDependencies(sg, &waitNode, &root, 1);
         }
 
-        // Append signal kernel
         std::set<int> notify_set;
         for (int dep_task : dependents[task])
             notify_set.insert(task_pe[dep_task]);
@@ -1084,6 +1090,66 @@ void tiledLUStatic(bool verify, bool dot)
                                &d_task_notify_pes[task], &n_notify, &debug};
         signalParams.kernelParams = signalArgs;
         checkCudaErrors(cudaGraphAddKernelNode(&signalNode, sg, &tail, 1, &signalParams));
+    }
+
+    // --- Loop 2: Inject measurement event nodes (separate concern) ---
+    std::vector<cudaEvent_t> ev_compute_start(totalNodes, nullptr);
+    std::vector<cudaEvent_t> ev_compute_end(totalNodes, nullptr);
+
+    if (measure_wait || measure_compute) {
+        for (int task : pe_tasks[myPE]) {
+            cudaGraph_t sg = tiledLUGraphCreator->subgraphs[task];
+            auto& deps = tiledLUGraphCreator->subgraphDependencies[task];
+
+            // Inject compute start event: after waitNode if present, else before roots
+            checkCudaErrors(cudaEventCreate(&ev_compute_start[task]));
+            cudaGraphNode_t computeStartNode;
+            if (!deps.empty()) {
+                // waitNode is the single root — add event node after it
+                cudaGraphNode_t waitNode = task_wait_node[task];
+                checkCudaErrors(cudaGraphAddEventRecordNode(
+                    &computeStartNode, sg, &waitNode, 1, ev_compute_start[task]));
+                // rewire: children of waitNode (except computeStartNode) now depend on computeStartNode
+                size_t numDeps;
+                MUSTARD_cudaGraphNodeGetDependentNodes(waitNode, nullptr, &numDeps);
+                std::vector<cudaGraphNode_t> children(numDeps);
+                MUSTARD_cudaGraphNodeGetDependentNodes(waitNode, children.data(), &numDeps);
+                for (auto& child : children) {
+                    if (child == computeStartNode) continue;
+                    MUSTARD_cudaGraphAddDependencies(sg, &computeStartNode, &child, 1);
+                    MUSTARD_cudaGraphRemoveDependencies(sg, &waitNode, &child, 1);
+                }
+            } else {
+                // No wait node — insert before all current roots
+                size_t numRoots;
+                cudaGraphGetRootNodes(sg, nullptr, &numRoots);
+                std::vector<cudaGraphNode_t> roots(numRoots);
+                cudaGraphGetRootNodes(sg, roots.data(), &numRoots);
+                checkCudaErrors(cudaGraphAddEventRecordNode(
+                    &computeStartNode, sg, nullptr, 0, ev_compute_start[task]));
+                for (auto& root : roots)
+                    MUSTARD_cudaGraphAddDependencies(sg, &computeStartNode, &root, 1);
+            }
+
+            // Inject compute end event: tail is signalNode, so insert before it
+            if (measure_compute) {
+                checkCudaErrors(cudaEventCreate(&ev_compute_end[task]));
+                // signalNode is now the tail; its only parent is the previous tail (before signal)
+                cudaGraphNode_t signalNode = getSubgraphTail(sg);
+                size_t numParents;
+                MUSTARD_cudaGraphNodeGetDependencies(signalNode, nullptr, &numParents);
+                std::vector<cudaGraphNode_t> parents(numParents);
+                MUSTARD_cudaGraphNodeGetDependencies(signalNode, parents.data(), &numParents);
+                // insert computeEndNode after all parents of signalNode, before signalNode
+                cudaGraphNode_t computeEndNode;
+                checkCudaErrors(cudaGraphAddEventRecordNode(
+                    &computeEndNode, sg, parents.data(), numParents, ev_compute_end[task]));
+                // rewire signalNode to depend on computeEndNode instead of its current parents
+                for (auto& parent : parents)
+                    MUSTARD_cudaGraphRemoveDependencies(sg, &parent, &signalNode, 1);
+                MUSTARD_cudaGraphAddDependencies(sg, &computeEndNode, &signalNode, 1);
+            }
+        }
     }
 
     // Instantiate and upload owned subgraphs
@@ -1108,49 +1174,110 @@ void tiledLUStatic(bool verify, bool dot)
     double setup_time = std::chrono::duration<double>(setup_end - setup_start).count();
     printf("device %d | Setup time (s): %4.4f\n", myPE, setup_time);
 
-    CudaEventClock clock;
+    // Storage for per-task timings: [run][task_idx]
+    struct TaskTiming { float wait_ms = 0.0f; float compute_ms = 0.0f; };
+    int numMyTasks = (int)my_tasks_sorted.size();
+    std::vector<std::vector<TaskTiming>> all_timings(
+        runs, std::vector<TaskTiming>(numMyTasks));
+
     double totalTime = 0.0;
 
     for (int i = 0; i < runs; i++) {
-    checkCudaErrors(cudaMemcpy(d_matrix, originalMatrix.get(), N * N * sizeof(double),
-                               cudaMemcpyHostToDevice));
+        checkCudaErrors(cudaMemcpy(d_matrix, originalMatrix.get(), N * N * sizeof(double),
+                                   cudaMemcpyHostToDevice));
 
-    // Reset completion flags on all PEs
-    nvshmem_barrier_all();
-    if (myPE == 0) {
-        std::vector<int> zeros(totalNodes, 0);
-        for (int pe = 0; pe < nPEs; pe++)
-            nvshmem_int_put(d_completion_flags, zeros.data(), totalNodes, pe);
-        nvshmem_quiet();
-    }
-    nvshmem_barrier_all();
+        nvshmem_barrier_all();
+        if (myPE == 0) {
+            std::vector<int> zeros(totalNodes, 0);
+            for (int pe = 0; pe < nPEs; pe++)
+                nvshmem_int_put(d_completion_flags, zeros.data(), totalNodes, pe);
+            nvshmem_quiet();
+        }
+        nvshmem_barrier_all();
 
-    int numStreams = std::min((int)my_tasks_sorted.size(), 32);
-    std::vector<cudaStream_t> taskStreams(numStreams);
-    for (int si = 0; si < numStreams; si++)
-        checkCudaErrors(cudaStreamCreate(&taskStreams[si]));
+        int numStreams = std::min(numMyTasks, 32);
+        std::vector<cudaStream_t> taskStreams(numStreams);
+        for (int si = 0; si < numStreams; si++)
+            checkCudaErrors(cudaStreamCreate(&taskStreams[si]));
 
-    auto t_start = std::chrono::high_resolution_clock::now();
-    for (int idx = 0; idx < (int)my_tasks_sorted.size(); idx++) {
-        int task = my_tasks_sorted[idx];
-        checkCudaErrors(cudaGraphLaunch(h_subgraphsExec[task], taskStreams[idx % numStreams]));
-    }
-    for (int si = 0; si < numStreams; si++)
-        checkCudaErrors(cudaStreamSynchronize(taskStreams[si]));
-    checkCudaErrors(cudaDeviceSynchronize());
-    auto t_end = std::chrono::high_resolution_clock::now();
+        // Reference event for wait time measurement (option B: single ref before all launches)
+        cudaEvent_t ev_ref = nullptr;
+        if (measure_wait) {
+            checkCudaErrors(cudaEventCreate(&ev_ref));
+            checkCudaErrors(cudaEventRecord(ev_ref, taskStreams[0]));
+        }
 
-    for (int si = 0; si < numStreams; si++)
-        checkCudaErrors(cudaStreamDestroy(taskStreams[si]));
-    nvshmem_barrier_all();
+        auto t_start = std::chrono::high_resolution_clock::now();
+        for (int idx = 0; idx < numMyTasks; idx++) {
+            int task = my_tasks_sorted[idx];
+            checkCudaErrors(cudaGraphLaunch(h_subgraphsExec[task], taskStreams[idx % numStreams]));
+        }
+        for (int si = 0; si < numStreams; si++)
+            checkCudaErrors(cudaStreamSynchronize(taskStreams[si]));
+        checkCudaErrors(cudaDeviceSynchronize());
+        auto t_end = std::chrono::high_resolution_clock::now();
 
-    double time = std::chrono::duration<double>(t_end - t_start).count();
-    printf("device %d | %d run | time (s): %4.4f\n", myPE, i, time);
-    totalTime += time;
+        // Collect per-task timings after all GPU work is done
+        if (measure_wait || measure_compute) {
+            for (int idx = 0; idx < numMyTasks; idx++) {
+                int task = my_tasks_sorted[idx];
+                auto& deps = tiledLUGraphCreator->subgraphDependencies[task];
+                TaskTiming& tt = all_timings[i][idx];
+
+                if (measure_wait) {
+                    if (!deps.empty())
+                        checkCudaErrors(cudaEventElapsedTime(
+                            &tt.wait_ms, ev_ref, ev_compute_start[task]));
+                    else
+                        tt.wait_ms = 0.0f;
+                }
+                if (measure_compute) {
+                    checkCudaErrors(cudaEventElapsedTime(
+                        &tt.compute_ms, ev_compute_start[task], ev_compute_end[task]));
+                }
+            }
+        }
+
+        if (ev_ref) checkCudaErrors(cudaEventDestroy(ev_ref));
+
+        for (int si = 0; si < numStreams; si++)
+            checkCudaErrors(cudaStreamDestroy(taskStreams[si]));
+        nvshmem_barrier_all();
+
+        double time = std::chrono::duration<double>(t_end - t_start).count();
+        printf("device %d | %d run | time (s): %4.4f\n", myPE, i, time);
+        totalTime += time;
     }
     printf("Total time used (s): %4.4f\n", totalTime);
 
-    if (verify) {
+    // Print CSV after all runs
+    if (measure_wait || measure_compute) {
+        printf("pe,run,task_id,op_name");
+        if (measure_wait)    printf(",wait_ms");
+        if (measure_compute) printf(",compute_ms");
+        printf("\n");
+
+        for (int i = 0; i < runs; i++) {
+            for (int idx = 0; idx < numMyTasks; idx++) {
+                int task = my_tasks_sorted[idx];
+                printf("%d,%d,%d,%s",
+                       myPE, i, task,
+                       tiledLUGraphCreator->subgraphOpNames[task].c_str());
+                if (measure_wait)    printf(",%.4f", all_timings[i][idx].wait_ms);
+                if (measure_compute) printf(",%.4f", all_timings[i][idx].compute_ms);
+                printf("\n");
+            }
+        }
+        fflush(stdout);
+
+        // Cleanup events
+        for (int task : pe_tasks[myPE]) {
+            if (ev_compute_start[task]) checkCudaErrors(cudaEventDestroy(ev_compute_start[task]));
+            if (ev_compute_end[task])   checkCudaErrors(cudaEventDestroy(ev_compute_end[task]));
+        }
+    }
+
+    if (verify && myPE == 0) {
         double *h_L = (double *)malloc(N * N * sizeof(double));
         double *h_U = (double *)malloc(N * N * sizeof(double));
         checkCudaErrors(cudaMemcpy(h_L, d_matrix, N * N * sizeof(double), cudaMemcpyDeviceToHost));
