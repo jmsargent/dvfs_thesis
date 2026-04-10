@@ -17,6 +17,7 @@
 #include "cli.h"
 #include "gen.h"
 #include "mustard.h"
+#include "injectors.h"
 #include "verify.h"
 
 // Global configuration (populated from CLI in main).
