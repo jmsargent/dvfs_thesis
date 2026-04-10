@@ -840,148 +840,19 @@ void tiledLUStatic(bool verify, bool dot)
 
     const std::vector<int> &my_tasks_sorted = scheduler->getMyTasksOrdered();
 
-    // Helper to find tail node of a subgraph
-    auto getSubgraphTail = [](cudaGraph_t g) -> cudaGraphNode_t
+    // Build injector chain based on measurement flags
+    mustard::InjectionContext ctx(totalNodes);
     {
-        size_t numEdges;
-        MUSTARD_cudaGraphGetEdges(g, nullptr, nullptr, &numEdges);
-        if (numEdges == 0)
-        {
-            size_t          numNodes = 1;
-            cudaGraphNode_t node;
-            cudaGraphGetNodes(g, &node, &numNodes);
-            return node;
-        }
-        std::vector<cudaGraphNode_t> from(numEdges), to(numEdges);
-        MUSTARD_cudaGraphGetEdges(g, from.data(), to.data(), &numEdges);
-        std::map<cudaGraphNode_t, bool> hasOutgoing;
-        std::set<cudaGraphNode_t>       noOutgoing;
-        for (size_t e = 0; e < numEdges; e++)
-        {
-            hasOutgoing[from[e]] = true;
-            noOutgoing.erase(from[e]);
-            if (!hasOutgoing[to[e]]) noOutgoing.insert(to[e]);
-        }
-        if (noOutgoing.size() == 1) return *noOutgoing.begin();
-        size_t numNodes = 0;
-        cudaGraphGetNodes(g, nullptr, &numNodes);
-        std::vector<cudaGraphNode_t> nodes(numNodes);
-        cudaGraphGetNodes(g, nodes.data(), &numNodes);
-        return nodes.back();
-    };
-
-    // --- Loop 1: Inject wait and signal kernels ---
-    int debug = cfg.debugKernels;
-    // Track waitNode per task so loop 2 can reference it
-    std::vector<cudaGraphNode_t> task_wait_node(totalNodes, nullptr);
-
-    for (int task : my_tasks_sorted)
-    {
-        cudaGraph_t sg     = tiledLUGraphCreator->subgraphs[task];
-        int         n_deps = scheduler->getDepCount(task);
-        int        *d_deps = scheduler->getTaskDeps(task);
-
-        if (n_deps > 0)
-        {
-            size_t numRoots;
-            cudaGraphGetRootNodes(sg, nullptr, &numRoots);
-            std::vector<cudaGraphNode_t> roots(numRoots);
-            cudaGraphGetRootNodes(sg, roots.data(), &numRoots);
-
-            cudaGraphNode_t      waitNode;
-            cudaKernelNodeParams waitParams = {0};
-            waitParams.gridDim              = dim3(1);
-            waitParams.blockDim             = dim3(1);
-            waitParams.func                 = (void *)mustard::kernel_wait_static;
-            void *waitArgs[4]       = {&d_deps, &n_deps, &d_completion_flags, &debug};
-            waitParams.kernelParams = waitArgs;
-            checkCudaErrors(cudaGraphAddKernelNode(&waitNode, sg, nullptr, 0, &waitParams));
-            task_wait_node[task] = waitNode;
-
-            for (auto &root : roots) MUSTARD_cudaGraphAddDependencies(sg, &waitNode, &root, 1);
-        }
-
-        int  n_notify        = scheduler->getNotifyCount(task);
-        int *d_notify_pes    = scheduler->getNotifyPEs(task);
-        cudaGraphNode_t      tail = getSubgraphTail(sg);
-        cudaGraphNode_t      signalNode;
-        cudaKernelNodeParams signalParams = {0};
-        signalParams.gridDim              = dim3(1);
-        signalParams.blockDim             = dim3(1);
-        signalParams.func                 = (void *)mustard::kernel_signal_static;
-        int   task_id_val                 = task;
-        void *signalArgs[5]       = {&task_id_val, &d_completion_flags, &d_notify_pes,
-                                     &n_notify, &debug};
-        signalParams.kernelParams = signalArgs;
-        checkCudaErrors(cudaGraphAddKernelNode(&signalNode, sg, &tail, 1, &signalParams));
-    }
-
-    // --- Loop 2: Inject measurement event nodes (separate concern) ---
-    std::vector<cudaEvent_t> ev_compute_start(totalNodes, nullptr);
-    std::vector<cudaEvent_t> ev_compute_end(totalNodes, nullptr);
-
-    if (measure_wait || measure_compute)
-    {
-        for (int task : my_tasks_sorted)
-        {
-            cudaGraph_t sg     = tiledLUGraphCreator->subgraphs[task];
-            int         n_deps = scheduler->getDepCount(task);
-
-            // Inject compute start event: after waitNode if present, else before roots
-            checkCudaErrors(cudaEventCreate(&ev_compute_start[task]));
-            cudaGraphNode_t computeStartNode;
-            if (n_deps > 0)
-            {
-                // waitNode is the single root — add event node after it
-                cudaGraphNode_t waitNode = task_wait_node[task];
-                checkCudaErrors(cudaGraphAddEventRecordNode(&computeStartNode, sg, &waitNode, 1,
-                                                            ev_compute_start[task]));
-                // rewire: children of waitNode (except computeStartNode) now depend on
-                // computeStartNode
-                size_t numDeps;
-                MUSTARD_cudaGraphNodeGetDependentNodes(waitNode, nullptr, &numDeps);
-                std::vector<cudaGraphNode_t> children(numDeps);
-                MUSTARD_cudaGraphNodeGetDependentNodes(waitNode, children.data(), &numDeps);
-                for (auto &child : children)
-                {
-                    if (child == computeStartNode) continue;
-                    MUSTARD_cudaGraphAddDependencies(sg, &computeStartNode, &child, 1);
-                    MUSTARD_cudaGraphRemoveDependencies(sg, &waitNode, &child, 1);
-                }
-            }
-            else
-            {
-                // No wait node — insert before all current roots
-                size_t numRoots;
-                cudaGraphGetRootNodes(sg, nullptr, &numRoots);
-                std::vector<cudaGraphNode_t> roots(numRoots);
-                cudaGraphGetRootNodes(sg, roots.data(), &numRoots);
-                checkCudaErrors(cudaGraphAddEventRecordNode(&computeStartNode, sg, nullptr, 0,
-                                                            ev_compute_start[task]));
-                for (auto &root : roots)
-                    MUSTARD_cudaGraphAddDependencies(sg, &computeStartNode, &root, 1);
-            }
-
-            // Inject compute end event: tail is signalNode, so insert before it
-            if (measure_compute)
-            {
-                checkCudaErrors(cudaEventCreate(&ev_compute_end[task]));
-                // signalNode is now the tail; its only parent is the previous tail (before signal)
-                cudaGraphNode_t signalNode = getSubgraphTail(sg);
-                size_t          numParents;
-                MUSTARD_cudaGraphNodeGetDependencies(signalNode, nullptr, &numParents);
-                std::vector<cudaGraphNode_t> parents(numParents);
-                MUSTARD_cudaGraphNodeGetDependencies(signalNode, parents.data(), &numParents);
-                // insert computeEndNode after all parents of signalNode, before signalNode
-                cudaGraphNode_t computeEndNode;
-                checkCudaErrors(cudaGraphAddEventRecordNode(&computeEndNode, sg, parents.data(),
-                                                            numParents, ev_compute_end[task]));
-                // rewire signalNode to depend on computeEndNode instead of its current parents
-                for (auto &parent : parents)
-                    MUSTARD_cudaGraphRemoveDependencies(sg, &parent, &signalNode, 1);
-                MUSTARD_cudaGraphAddDependencies(sg, &computeEndNode, &signalNode, 1);
-            }
-        }
+        auto injector = std::unique_ptr<mustard::IInjector>(
+            new mustard::SubgraphInjector(tiledLUGraphCreator->subgraphs, *scheduler,
+                                          d_completion_flags, cfg.debugKernels));
+        if (measure_wait || measure_compute)
+            injector = std::make_unique<mustard::WaitTimeDecorator>(std::move(injector),
+                                                                     tiledLUGraphCreator->subgraphs);
+        if (measure_compute)
+            injector = std::make_unique<mustard::ComputeTimeDecorator>(
+                std::move(injector), tiledLUGraphCreator->subgraphs);
+        injector->inject(my_tasks_sorted, ctx);
     }
 
     // Instantiate and upload owned subgraphs
@@ -1063,21 +934,20 @@ void tiledLUStatic(bool verify, bool dot)
             for (int idx = 0; idx < numMyTasks; idx++)
             {
                 int         task = my_tasks_sorted[idx];
-                auto       &deps = tiledLUGraphCreator->subgraphDependencies[task];
                 TaskTiming &tt   = all_timings[i][idx];
 
                 if (measure_wait)
                 {
-                    if (!deps.empty())
-                        checkCudaErrors(
-                            cudaEventElapsedTime(&tt.wait_ms, ev_ref, ev_compute_start[task]));
+                    if (ctx.task_wait_node[task] != nullptr)
+                        checkCudaErrors(cudaEventElapsedTime(&tt.wait_ms, ev_ref,
+                                                             ctx.compute_start[task]));
                     else
                         tt.wait_ms = 0.0f;
                 }
                 if (measure_compute)
                 {
-                    checkCudaErrors(cudaEventElapsedTime(&tt.compute_ms, ev_compute_start[task],
-                                                         ev_compute_end[task]));
+                    checkCudaErrors(cudaEventElapsedTime(&tt.compute_ms, ctx.compute_start[task],
+                                                         ctx.compute_end[task]));
                 }
             }
         }
@@ -1115,12 +985,7 @@ void tiledLUStatic(bool verify, bool dot)
         }
         fflush(stdout);
 
-        // Cleanup events
-        for (int task : my_tasks_sorted)
-        {
-            if (ev_compute_start[task]) checkCudaErrors(cudaEventDestroy(ev_compute_start[task]));
-            if (ev_compute_end[task]) checkCudaErrors(cudaEventDestroy(ev_compute_end[task]));
-        }
+        // Events are destroyed by InjectionContext destructor
     }
 
     if (verify && myPE == 0)

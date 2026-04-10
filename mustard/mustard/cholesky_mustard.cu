@@ -21,14 +21,14 @@
 
 // Global configuration (populated from CLI in main).
 static MustardConfig cfg;
-static size_t       &N = cfg.N;
-static size_t       &B = cfg.B;
-static size_t       &T = cfg.T;
+static size_t&       N = cfg.N;
+static size_t&       B = cfg.B;
+static size_t&       T = cfg.T;
 int                  myPE;
-static int          &verbose   = cfg.verbose;
-static int          &workspace = cfg.workspace;
-static int          &smLimit   = cfg.smLimit;
-static int          &runs      = cfg.runs;
+static int&          verbose   = cfg.verbose;
+static int&          workspace = cfg.workspace;
+static int&          smLimit   = cfg.smLimit;
+static int&          runs      = cfg.runs;
 
 void trivialCholesky(bool verify)
 {
@@ -40,10 +40,10 @@ void trivialCholesky(bool verify)
     checkCudaErrors(cusolverDnCreateParams(&cusolverDnParams));
 
     // Initialize data
-    double *h_A = (double *)malloc(N * N * sizeof(double));
+    double* h_A = (double*)malloc(N * N * sizeof(double));
     generateRandomSymmetricPositiveDefiniteMatrix(h_A, N);
 
-    double *d_A;
+    double* d_A;
     checkCudaErrors(cudaMalloc(&d_A, N * N * sizeof(double)));
     checkCudaErrors(cudaMemcpy(d_A, h_A, N * N * sizeof(double), cudaMemcpyHostToDevice));
 
@@ -53,12 +53,12 @@ void trivialCholesky(bool verify)
         cusolverDnHandle, cusolverDnParams, CUBLAS_FILL_MODE_LOWER, N, CUDA_R_64F, d_A, N,
         CUDA_R_64F, &workspaceInBytesOnDevice, &workspaceInBytesOnHost));
 
-    void *h_workspace = malloc(workspaceInBytesOnHost);
+    void* h_workspace = malloc(workspaceInBytesOnHost);
 
-    void *d_workspace;
+    void* d_workspace;
     checkCudaErrors(cudaMalloc(&d_workspace, workspaceInBytesOnDevice));
 
-    int *d_info;
+    int* d_info;
     checkCudaErrors(cudaMalloc(&d_info, sizeof(int)));
 
     CudaEventClock clock;
@@ -99,7 +99,7 @@ void trivialCholesky(bool verify)
     // Verify
     if (verify)
     {
-        double *h_L = (double *)malloc(N * N * sizeof(double));
+        double* h_L = (double*)malloc(N * N * sizeof(double));
         checkCudaErrors(cudaMemcpy(h_L, d_A, N * N * sizeof(double), cudaMemcpyDeviceToHost));
         cleanCusolverCholeskyDecompositionResult(h_L, N);
         printf("Result passes verification: %d\n",
@@ -126,15 +126,15 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
     generateRandomSymmetricPositiveDefiniteMatrix(originalMatrix.get(), N);
 
     // Copy to device
-    double       *d_matrix;
-    double       *d_matrices;
-    double       *d_matrix_remote;
-    volatile int *d_flags;
+    double*       d_matrix;
+    double*       d_matrices;
+    double*       d_matrix_remote;
+    volatile int* d_flags;
     if (subgraph)
     {
-        d_flags    = (volatile int *)nvshmem_malloc(sizeof(int) * 32);
-        d_matrices = (double *)nvshmem_malloc(N * N * sizeof(double));
-        d_matrix   = (double *)nvshmem_ptr(d_matrices, myPE);
+        d_flags    = (volatile int*)nvshmem_malloc(sizeof(int) * 32);
+        d_matrices = (double*)nvshmem_malloc(N * N * sizeof(double));
+        d_matrix   = (double*)nvshmem_ptr(d_matrices, myPE);
     }
     else
     {
@@ -142,9 +142,9 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
     }
     checkCudaErrors(
         cudaMemcpy(d_matrix, originalMatrix.get(), N * N * sizeof(double), cudaMemcpyHostToDevice));
-    if (myPE != 0) d_matrix_remote = (double *)nvshmem_ptr(d_matrices, 0);
+    if (myPE != 0) d_matrix_remote = (double*)nvshmem_ptr(d_matrices, 0);
 
-    auto getMatrixBlock = [&](double *matrix, int i, int j) { return matrix + i * B + j * B * N; };
+    auto getMatrixBlock = [&](double* matrix, int i, int j) { return matrix + i * B + j * B * N; };
 
     // Initialize libraries
     cusolverDnHandle_t cusolverDnHandle;
@@ -163,10 +163,10 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
     checkCudaErrors(cusolverDnDpotrf_bufferSize(cusolverDnHandle, CUBLAS_FILL_MODE_LOWER, B,
                                                 d_matrix, N, &workspaceInBytesOnDevice));
 
-    double *d_workspace_cusolver;
+    double* d_workspace_cusolver;
     int     workspaces         = T * T;
-    void  **d_workspace_cublas = (void **)malloc(sizeof(void *) * workspaces);
-    int    *d_info;
+    void**  d_workspace_cublas = (void**)malloc(sizeof(void*) * workspaces);
+    int*    d_info;
     workspaceInBytesOnDevice *= 8;
     checkCudaErrors(cudaMalloc(&d_workspace_cusolver, workspaceInBytesOnDevice));
     int cublasWorkspaceSize = 1024 * workspace;
@@ -360,13 +360,13 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
         if (verbose) tiledCholeskyGraphCreator->printDeps();
 
         // volatile int *d_flags;
-        int      *h_dependencies;  //, *d_dependencies;
+        int*      h_dependencies;  //, *d_dependencies;
         const int queue_size = totalNodes * 2;
         if (verbose) std::cout << "Creating queue..." << std::endl;
         BrokerWorkDistributor queue(queue_size);
         if (verbose) std::cout << "Allocating memory..." << std::endl;
 
-        int *d_dependencies = (int *)nvshmem_malloc(sizeof(int) * totalNodes);
+        int* d_dependencies = (int*)nvshmem_malloc(sizeof(int) * totalNodes);
         checkCudaErrors(cudaMallocHost(&h_dependencies, sizeof(int) * totalNodes));
         if (verbose) std::cout << "Setting dependencies..." << std::endl;
 
@@ -376,7 +376,7 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
         }
         if (verbose) std::cout << "Populating the queue..." << std::endl;
 
-        checkCudaErrors(cudaMemcpy((void *)d_dependencies, (void *)h_dependencies,
+        checkCudaErrors(cudaMemcpy((void*)d_dependencies, (void*)h_dependencies,
                                    sizeof(int) * totalNodes, cudaMemcpyHostToDevice));
         if (myPE == 0)
             mustard::kernel_populate_queue<<<108, 1024>>>(queue, d_dependencies, totalNodes);
@@ -396,8 +396,8 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
             tiledCholeskyGraphCreator->printInvocations(cfg.invocationPath, myPE);
         }
 
-        cudaGraphExec_t *h_subgraphsExec = new cudaGraphExec_t[totalNodes];
-        cudaGraphExec_t *d_subgraphsExec;
+        cudaGraphExec_t* h_subgraphsExec = new cudaGraphExec_t[totalNodes];
+        cudaGraphExec_t* d_subgraphsExec;
         for (int i = 0; i < totalNodes; i++)
         {
             char filename[20];
@@ -411,7 +411,7 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
             cudaGraphUpload(h_subgraphsExec[i], s);
         }
         checkCudaErrors(cudaMalloc(&d_subgraphsExec, sizeof(cudaGraphExec_t) * totalNodes));
-        checkCudaErrors(cudaMemcpy((void *)d_subgraphsExec, (void *)h_subgraphsExec,
+        checkCudaErrors(cudaMemcpy((void*)d_subgraphsExec, (void*)h_subgraphsExec,
                                    sizeof(cudaGraphExec_t) * totalNodes, cudaMemcpyHostToDevice));
 
         if (verbose) std::cout << "Initializing scheduler..." << std::endl;
@@ -445,8 +445,8 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
             nvshmem_barrier_all();
             if (myPE == 0)
             {
-                checkCudaErrors(cudaMemset((void *)d_flags, 0, sizeof(int) * 32));
-                checkCudaErrors(cudaMemcpy((void *)d_dependencies, (void *)h_dependencies,
+                checkCudaErrors(cudaMemset((void*)d_flags, 0, sizeof(int) * 32));
+                checkCudaErrors(cudaMemcpy((void*)d_dependencies, (void*)h_dependencies,
                                            sizeof(int) * totalNodes, cudaMemcpyHostToDevice));
                 mustard::kernel_populate_queue<<<108, 1024>>>(queue, d_dependencies, totalNodes);
                 checkCudaErrors(cudaDeviceSynchronize());
@@ -461,7 +461,7 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
         checkCudaErrors(cudaFreeHost(h_dependencies));
         checkCudaErrors(cudaFree(d_subgraphsExec));
         nvshmem_free(d_dependencies);
-        nvshmem_free((void *)d_flags);
+        nvshmem_free((void*)d_flags);
         queue.free_mem();
     }
     else
@@ -490,7 +490,7 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
 
     if (verify)
     {
-        double *h_L = (double *)malloc(N * N * sizeof(double));
+        double* h_L = (double*)malloc(N * N * sizeof(double));
         checkCudaErrors(cudaMemcpy(h_L, d_matrix, N * N * sizeof(double), cudaMemcpyDeviceToHost));
         cleanCusolverCholeskyDecompositionResult(h_L, N);
         printf("Result passes verification: %d\n",
@@ -523,15 +523,15 @@ void tiledCholeskyStatic(bool verify, bool dot)
     generateRandomSymmetricPositiveDefiniteMatrix(originalMatrix.get(), N);
 
     // NVSHMEM allocations (all PEs participate)
-    volatile int *d_flags         = (volatile int *)nvshmem_malloc(sizeof(int) * 32);
-    double       *d_matrices      = (double *)nvshmem_malloc(N * N * sizeof(double));
-    double       *d_matrix        = (double *)nvshmem_ptr(d_matrices, myPE);
-    double       *d_matrix_remote = nullptr;
+    volatile int* d_flags         = (volatile int*)nvshmem_malloc(sizeof(int) * 32);
+    double*       d_matrices      = (double*)nvshmem_malloc(N * N * sizeof(double));
+    double*       d_matrix        = (double*)nvshmem_ptr(d_matrices, myPE);
+    double*       d_matrix_remote = nullptr;
     checkCudaErrors(
         cudaMemcpy(d_matrix, originalMatrix.get(), N * N * sizeof(double), cudaMemcpyHostToDevice));
-    if (myPE != 0) d_matrix_remote = (double *)nvshmem_ptr(d_matrices, 0);
+    if (myPE != 0) d_matrix_remote = (double*)nvshmem_ptr(d_matrices, 0);
 
-    auto getMatrixBlock = [&](double *matrix, int i, int j) { return matrix + i * B + j * B * N; };
+    auto getMatrixBlock = [&](double* matrix, int i, int j) { return matrix + i * B + j * B * N; };
 
     // Initialize libraries
     cusolverDnHandle_t cusolverDnHandle;
@@ -548,10 +548,10 @@ void tiledCholeskyStatic(bool verify, bool dot)
     checkCudaErrors(cusolverDnDpotrf_bufferSize(cusolverDnHandle, CUBLAS_FILL_MODE_LOWER, B,
                                                 d_matrix, N, &workspaceInBytesOnDevice));
 
-    double *d_workspace_cusolver;
+    double* d_workspace_cusolver;
     int     workspaces         = T * T;
-    void  **d_workspace_cublas = (void **)malloc(sizeof(void *) * workspaces);
-    int    *d_info;
+    void**  d_workspace_cublas = (void**)malloc(sizeof(void*) * workspaces);
+    int*    d_info;
     workspaceInBytesOnDevice *= 8;
     checkCudaErrors(cudaMalloc(&d_workspace_cusolver, workspaceInBytesOnDevice));
     int cublasWorkspaceSize = 1024 * workspace;
@@ -704,93 +704,37 @@ void tiledCholeskyStatic(bool verify, bool dot)
     printf("device %d | tiledCholeskyStatic: graph construction done\n", myPE);
     fflush(stdout);
 
+    // Parse measure flags
+    bool measure_wait    = cfg.measureFlags.find("task_wait_time") != std::string::npos;
+    bool measure_compute = cfg.measureFlags.find("task_compute_time") != std::string::npos;
+
     // NVSHMEM completion flags
-    int *d_completion_flags = (int *)nvshmem_malloc(sizeof(int) * totalNodes);
+    int* d_completion_flags = (int*)nvshmem_malloc(sizeof(int) * totalNodes);
     checkCudaErrors(cudaMemset(d_completion_flags, 0, sizeof(int) * totalNodes));
 
     // Static round-robin task assignment, topo sort, and device dep/notify arrays
     auto scheduler = std::make_unique<mustard::StaticRoundRobinScheduler>(
         nPEs, myPE, totalNodes, tiledCholeskyGraphCreator->subgraphDependencies);
 
-    const std::vector<int> &my_tasks_sorted = scheduler->getMyTasksOrdered();
+    const std::vector<int>& my_tasks_sorted = scheduler->getMyTasksOrdered();
 
-    // Helper to find tail node of a subgraph
-    auto getSubgraphTail = [](cudaGraph_t g) -> cudaGraphNode_t
+    // Build injector chain based on measurement flags
+    mustard::InjectionContext ctx(totalNodes);
     {
-        size_t numEdges;
-        MUSTARD_cudaGraphGetEdges(g, nullptr, nullptr, &numEdges);
-        if (numEdges == 0)
-        {
-            size_t          numNodes = 1;
-            cudaGraphNode_t node;
-            cudaGraphGetNodes(g, &node, &numNodes);
-            return node;
-        }
-        std::vector<cudaGraphNode_t> from(numEdges), to(numEdges);
-        MUSTARD_cudaGraphGetEdges(g, from.data(), to.data(), &numEdges);
-        std::map<cudaGraphNode_t, bool> hasOutgoing;
-        std::set<cudaGraphNode_t>       noOutgoing;
-        for (size_t e = 0; e < numEdges; e++)
-        {
-            hasOutgoing[from[e]] = true;
-            noOutgoing.erase(from[e]);
-            if (!hasOutgoing[to[e]]) noOutgoing.insert(to[e]);
-        }
-        if (noOutgoing.size() == 1) return *noOutgoing.begin();
-        size_t numNodes = 0;
-        cudaGraphGetNodes(g, nullptr, &numNodes);
-        std::vector<cudaGraphNode_t> nodes(numNodes);
-        cudaGraphGetNodes(g, nodes.data(), &numNodes);
-        return nodes.back();
-    };
-
-    // Inject wait and signal kernels into owned subgraphs
-    int debug = cfg.debugKernels;
-    for (int task : my_tasks_sorted)
-    {
-        cudaGraph_t sg     = tiledCholeskyGraphCreator->subgraphs[task];
-        int         n_deps = scheduler->getDepCount(task);
-        int        *d_deps = scheduler->getTaskDeps(task);
-
-        // Prepend wait kernel (only if task has dependencies)
-        if (n_deps > 0)
-        {
-            size_t numRoots;
-            cudaGraphGetRootNodes(sg, nullptr, &numRoots);
-            std::vector<cudaGraphNode_t> roots(numRoots);
-            cudaGraphGetRootNodes(sg, roots.data(), &numRoots);
-
-            cudaGraphNode_t      waitNode;
-            cudaKernelNodeParams waitParams = {0};
-            waitParams.gridDim              = dim3(1);
-            waitParams.blockDim             = dim3(1);
-            waitParams.func                 = (void *)mustard::kernel_wait_static;
-            void *waitArgs[4]       = {&d_deps, &n_deps, &d_completion_flags, &debug};
-            waitParams.kernelParams = waitArgs;
-            checkCudaErrors(cudaGraphAddKernelNode(&waitNode, sg, nullptr, 0, &waitParams));
-
-            for (auto &root : roots) MUSTARD_cudaGraphAddDependencies(sg, &waitNode, &root, 1);
-        }
-
-        // Append signal kernel
-        int  n_notify     = scheduler->getNotifyCount(task);
-        int *d_notify_pes = scheduler->getNotifyPEs(task);
-
-        cudaGraphNode_t      tail = getSubgraphTail(sg);
-        cudaGraphNode_t      signalNode;
-        cudaKernelNodeParams signalParams = {0};
-        signalParams.gridDim              = dim3(1);
-        signalParams.blockDim             = dim3(1);
-        signalParams.func                 = (void *)mustard::kernel_signal_static;
-        int   task_id_val                 = task;
-        void *signalArgs[5]       = {&task_id_val, &d_completion_flags, &d_notify_pes,
-                                     &n_notify, &debug};
-        signalParams.kernelParams = signalArgs;
-        checkCudaErrors(cudaGraphAddKernelNode(&signalNode, sg, &tail, 1, &signalParams));
+        auto injector = std::unique_ptr<mustard::IInjector>(
+            new mustard::SubgraphInjector(tiledCholeskyGraphCreator->subgraphs, *scheduler,
+                                          d_completion_flags, cfg.debugKernels));
+        if (measure_wait || measure_compute)
+            injector = std::make_unique<mustard::WaitTimeDecorator>(
+                std::move(injector), tiledCholeskyGraphCreator->subgraphs);
+        if (measure_compute)
+            injector = std::make_unique<mustard::ComputeTimeDecorator>(
+                std::move(injector), tiledCholeskyGraphCreator->subgraphs);
+        injector->inject(my_tasks_sorted, ctx);
     }
 
     // Instantiate and upload owned subgraphs
-    cudaGraphExec_t *h_subgraphsExec = new cudaGraphExec_t[totalNodes];
+    cudaGraphExec_t* h_subgraphsExec = new cudaGraphExec_t[totalNodes];
     for (int task : my_tasks_sorted)
     {
         if (dot)
@@ -817,8 +761,15 @@ void tiledCholeskyStatic(bool verify, bool dot)
     printf("device %d | Setup time (s): %4.4f\n", myPE, setup_time);
     fflush(stdout);
 
-    CudaEventClock clock;
-    double         totalTime = 0.0;
+    struct TaskTiming
+    {
+        float wait_ms    = 0.0f;
+        float compute_ms = 0.0f;
+    };
+    int                                  numMyTasks = (int)my_tasks_sorted.size();
+    std::vector<std::vector<TaskTiming>> all_timings(runs, std::vector<TaskTiming>(numMyTasks));
+
+    double totalTime = 0.0;
 
     for (int i = 0; i < runs; i++)
     {
@@ -836,24 +787,50 @@ void tiledCholeskyStatic(bool verify, bool dot)
         }
         nvshmem_barrier_all();
 
-        printf("device %d | run %d: launching %zu tasks\n", myPE, i, my_tasks_sorted.size());
-        fflush(stdout);
-        int                       numStreams = std::min((int)my_tasks_sorted.size(), 32);
+        int                       numStreams = std::min(numMyTasks, 32);
         std::vector<cudaStream_t> taskStreams(numStreams);
         for (int si = 0; si < numStreams; si++) checkCudaErrors(cudaStreamCreate(&taskStreams[si]));
 
+        cudaEvent_t ev_ref = nullptr;
+        if (measure_wait)
+        {
+            checkCudaErrors(cudaEventCreate(&ev_ref));
+            checkCudaErrors(cudaEventRecord(ev_ref, taskStreams[0]));
+        }
+
         auto t_start = std::chrono::high_resolution_clock::now();
-        for (int idx = 0; idx < (int)my_tasks_sorted.size(); idx++)
+        for (int idx = 0; idx < numMyTasks; idx++)
         {
             int task = my_tasks_sorted[idx];
             checkCudaErrors(cudaGraphLaunch(h_subgraphsExec[task], taskStreams[idx % numStreams]));
         }
         for (int si = 0; si < numStreams; si++)
             checkCudaErrors(cudaStreamSynchronize(taskStreams[si]));
+        checkCudaErrors(cudaDeviceSynchronize());
         auto t_end = std::chrono::high_resolution_clock::now();
 
+        if (measure_wait || measure_compute)
+        {
+            for (int idx = 0; idx < numMyTasks; idx++)
+            {
+                int         task = my_tasks_sorted[idx];
+                TaskTiming &tt   = all_timings[i][idx];
+                if (measure_wait)
+                {
+                    if (ctx.task_wait_node[task] != nullptr)
+                        checkCudaErrors(cudaEventElapsedTime(&tt.wait_ms, ev_ref,
+                                                             ctx.compute_start[task]));
+                    else
+                        tt.wait_ms = 0.0f;
+                }
+                if (measure_compute)
+                    checkCudaErrors(cudaEventElapsedTime(&tt.compute_ms, ctx.compute_start[task],
+                                                         ctx.compute_end[task]));
+            }
+        }
+
+        if (ev_ref) checkCudaErrors(cudaEventDestroy(ev_ref));
         for (int si = 0; si < numStreams; si++) checkCudaErrors(cudaStreamDestroy(taskStreams[si]));
-        checkCudaErrors(cudaDeviceSynchronize());
         nvshmem_barrier_all();
 
         double time = std::chrono::duration<double>(t_end - t_start).count();
@@ -862,9 +839,32 @@ void tiledCholeskyStatic(bool verify, bool dot)
     }
     printf("Total time used (s): %4.4f\n", totalTime);
 
+    if (measure_wait || measure_compute)
+    {
+        printf("pe,run,task_id,op_name");
+        if (measure_wait) printf(",wait_ms");
+        if (measure_compute) printf(",compute_ms");
+        printf("\n");
+
+        for (int i = 0; i < runs; i++)
+        {
+            for (int idx = 0; idx < numMyTasks; idx++)
+            {
+                int task = my_tasks_sorted[idx];
+                printf("%d,%d,%d,%s", myPE, i, task,
+                       tiledCholeskyGraphCreator->subgraphOpNames[task].c_str());
+                if (measure_wait) printf(",%.4f", all_timings[i][idx].wait_ms);
+                if (measure_compute) printf(",%.4f", all_timings[i][idx].compute_ms);
+                printf("\n");
+            }
+        }
+        fflush(stdout);
+        // Events are destroyed by InjectionContext destructor
+    }
+
     if (verify)
     {
-        double *h_L = (double *)malloc(N * N * sizeof(double));
+        double* h_L = (double*)malloc(N * N * sizeof(double));
         checkCudaErrors(cudaMemcpy(h_L, d_matrix, N * N * sizeof(double), cudaMemcpyDeviceToHost));
         cleanCusolverCholeskyDecompositionResult(h_L, N);
         printf("Result passes verification: %d\n",
@@ -876,7 +876,7 @@ void tiledCholeskyStatic(bool verify, bool dot)
     delete[] h_subgraphsExec;
     nvshmem_free(d_completion_flags);
     nvshmem_free(d_matrices);
-    nvshmem_free((void *)d_flags);
+    nvshmem_free((void*)d_flags);
     checkCudaErrors(cudaFree(d_info));
     checkCudaErrors(cudaFree(d_workspace_cusolver));
     for (int i = 0; i < workspaces; i++) checkCudaErrors(cudaFree(d_workspace_cublas[i]));
@@ -895,7 +895,7 @@ void Cholesky(bool tiled, bool verify, bool subgraph, bool staticMultiGPU, bool 
         trivialCholesky(verify);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     auto wall_start    = std::chrono::system_clock::now();
     auto program_start = std::chrono::high_resolution_clock::now();
