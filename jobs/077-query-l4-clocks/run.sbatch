@@ -3,8 +3,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --gres=gpu:L4:1
-#SBATCH --nodelist=io
-#SBATCH --output=%j-clocks.out
+#SBATCH --nodelist=ganymede,europa
 
 echo "=== GPU Info ==="
 nvidia-smi --query-gpu=name,driver_version --format=csv,noheader -i 0
