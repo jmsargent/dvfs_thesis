@@ -23,3 +23,21 @@ Running cholesky_mustard...
 [rank 2] init: calling nvshmem_init()...
 [rank 3] init: cudaSetDevice(3) ok (dev_count=4)
 [rank 3] init: calling nvshmem_init()...
+[rank 1] init: nvshmem_init() returned
+[rank 1] init: myPE=1, nPEs=4
+device 1 | NVSHMEM init time (s): 21.9685
+[rank 0] init: nvshmem_init() returned
+[rank 0] init: myPE=0, nPEs=4
+Hello from NVSHMEM_PE=0/4
+4 GPUs detected, asked to use 4 GPUs
+Program start timestamp: 1776079330.311244
+device 0 | NVSHMEM init time (s): 21.9686
+[rank 3] init: nvshmem_init() returned
+[rank 3] init: myPE=3, nPEs=4
+device 3 | NVSHMEM init time (s): 21.9684
+[rank 2] init: nvshmem_init() returned
+[rank 2] init: myPE=2, nPEs=4
+device 2 | NVSHMEM init time (s): 21.9683
+STATIC-MULTIGPU with N=9600 (16 of 600x600 tiles)
+SM Limit per kernel = 20
+cuBLAS workspace = 256 kB
