@@ -2,12 +2,21 @@
   "git_sha": "03dbce2ab18c315211ccca77ca0580a7e1379068",
   "id": "077-query-l4-clocks",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/077-query-l4-clocks",
-  "last_update_at": "2026-04-13T12:43:39+02:00",
+  "last_update_at": "2026-04-13T12:43:48+02:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/077-query-l4-clocks/slurm-172829.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/077-query-l4-clocks/slurm-172829.out",
   "queued_at": "2026-04-13T12:43:34+02:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/077-query-l4-clocks/run.sbatch",
+  "slurm_info": {
+    "ElapsedRaw": "1",
+    "ExitCode": "0:0",
+    "JobIDRaw": "172829",
+    "MaxRSS": "",
+    "State": "COMPLETED",
+    "raw_state": "COMPLETED",
+    "source": "sacct"
+  },
   "slurm_job_id": 172829,
-  "state": "SUBMITTED",
+  "state": "COMPLETED",
   "submitted_at": "2026-04-13T12:43:36+02:00"
 }
