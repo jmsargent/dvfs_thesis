@@ -13,5 +13,6 @@ echo "=== Supported Graphics (SM) Clock Frequencies (MHz) ==="
 nvidia-smi --query-supported-clocks=gr --format=csv,noheader -i 0
 
 echo ""
+echo ""
 echo "=== Supported Memory Clock Frequencies (MHz) ==="
 nvidia-smi --query-supported-clocks=mem --format=csv,noheader -i 0
