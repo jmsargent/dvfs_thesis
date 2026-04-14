@@ -159,7 +159,9 @@ __global__ void kernel_wait_static(int* d_deps, int n_deps, int* d_completion_fl
 // to capture the start/end of actual computation, excluding synchronization wait time.
 __global__ void kernel_record_timestamp(unsigned long long* out)
 {
-    *out = __globaltimer();
+    unsigned long long t;
+    asm volatile("mov.u64 %0, %%globaltimer;" : "=l"(t));
+    *out = t;
 }
 
 class TiledGraphCreator

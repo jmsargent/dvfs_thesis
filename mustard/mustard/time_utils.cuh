@@ -44,9 +44,11 @@ inline void print_timestamp(const std::string &label, int precision = 7)
 namespace gpu_clock {
 
 // Small probe kernel: writes __globaltimer() to *out.
-__global__ void kernel_sample_globaltimer(unsigned long long* out)
+static __global__ void kernel_sample_globaltimer(unsigned long long* out)
 {
-    *out = __globaltimer();
+    unsigned long long t;
+    asm volatile("mov.u64 %0, %%globaltimer;" : "=l"(t));
+    *out = t;
 }
 
 struct CalibrationRef

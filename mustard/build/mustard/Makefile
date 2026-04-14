@@ -120,6 +120,20 @@ depend:
 .PHONY : depend
 
 # Convenience name for target.
+mustard/CMakeFiles/test_timer.dir/rule:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mustard/CMakeFiles/test_timer.dir/rule
+.PHONY : mustard/CMakeFiles/test_timer.dir/rule
+
+# Convenience name for target.
+test_timer: mustard/CMakeFiles/test_timer.dir/rule
+.PHONY : test_timer
+
+# fast build rule for target.
+test_timer/fast:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_timer.dir/build.make mustard/CMakeFiles/test_timer.dir/build
+.PHONY : test_timer/fast
+
+# Convenience name for target.
 mustard/CMakeFiles/cholesky_mustard.dir/rule:
 	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mustard/CMakeFiles/cholesky_mustard.dir/rule
 .PHONY : mustard/CMakeFiles/cholesky_mustard.dir/rule
@@ -309,6 +323,30 @@ pingpong_mustard.cu.s:
 	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/pingpong_mustard.dir/build.make mustard/CMakeFiles/pingpong_mustard.dir/pingpong_mustard.cu.s
 .PHONY : pingpong_mustard.cu.s
 
+test_timer.o: test_timer.cu.o
+.PHONY : test_timer.o
+
+# target to build an object file
+test_timer.cu.o:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_timer.dir/build.make mustard/CMakeFiles/test_timer.dir/test_timer.cu.o
+.PHONY : test_timer.cu.o
+
+test_timer.i: test_timer.cu.i
+.PHONY : test_timer.i
+
+# target to preprocess a source file
+test_timer.cu.i:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_timer.dir/build.make mustard/CMakeFiles/test_timer.dir/test_timer.cu.i
+.PHONY : test_timer.cu.i
+
+test_timer.s: test_timer.cu.s
+.PHONY : test_timer.s
+
+# target to generate assembly for a file
+test_timer.cu.s:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_timer.dir/build.make mustard/CMakeFiles/test_timer.dir/test_timer.cu.s
+.PHONY : test_timer.cu.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -322,6 +360,7 @@ help:
 	@echo "... lu_mustard"
 	@echo "... p_lu_mustard"
 	@echo "... pingpong_mustard"
+	@echo "... test_timer"
 	@echo "... cg_mustard.o"
 	@echo "... cg_mustard.i"
 	@echo "... cg_mustard.s"
@@ -337,6 +376,9 @@ help:
 	@echo "... pingpong_mustard.o"
 	@echo "... pingpong_mustard.i"
 	@echo "... pingpong_mustard.s"
+	@echo "... test_timer.o"
+	@echo "... test_timer.i"
+	@echo "... test_timer.s"
 .PHONY : help
 
 

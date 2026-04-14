@@ -4,7 +4,7 @@
 #SBATCH --ntasks=2
 #SBATCH --cpus-per-task=1
 #SBATCH --gres=gpu:L4:2
-#SBATCH --nodelist=europa
+#SBATCH --nodelist=callisto
 
 CONTAINER_PATH="/data/users/sargent/dvfs_thesis/containers/container.sif"
 OTHER_USER="sargent"
@@ -42,10 +42,10 @@ echo "All assigned GPUs: $ALL_GPUS"
 echo "Using GPUs (single NUMA): $CLEAN_GPUS"
 echo ""
 
-BENCH="lu_mustard"
+BENCH="cholesky_mustard"
 EXECUTABLE_PATH="${BIN_DIR}/${BENCH}"
 
-N_SIZE=14000
+N_SIZE=2400
 TILE=8
 RUNS=1
 
@@ -71,7 +71,7 @@ timeout 300 apptainer exec --nv --bind /dev/shm,/data "$CONTAINER_PATH" mpirun -
             -x NVSHMEM_REMOTE_TRANSPORT=none \
             -x NVSHMEM_DISABLE_CUDA_VMM=1 \
             -x NVSHMEM_DEBUG=INFO \
-            -x NVSHMEM_DEBUG_FILE="${PROJECT_DIR}/local_jobs/L20-lu-debug-ganymede/nvshmem_debug" \
+            -x NVSHMEM_DEBUG_FILE="${PROJECT_DIR}/local_jobs/L21-lu-debug-europa/nvshmem_debug" \
             -x NVSHMEM_DISABLE_GDRCOPY=1 \
             -x UCX_TLS=sm,cuda_copy,self \
             -x UCX_NET_DEVICES=all \
@@ -79,10 +79,3 @@ timeout 300 apptainer exec --nv --bind /dev/shm,/data "$CONTAINER_PATH" mpirun -
             -mca btl self,vader \
             -mca coll_hcoll_enable 0 \
             "$EXECUTABLE_PATH" -n="$N_SIZE" -t="$TILE" --static-multigpu -r="$RUNS" --measure=task_wait_time,task_compute_time
-
-echo ""
-echo "=== NVSHMEM debug logs ==="
-for f in "${PROJECT_DIR}/local_jobs/L17-cholesky-debug-callisto-2gpu"/nvshmem_debug.*; do
-    echo "--- $f ---"
-    cat "$f" 2>/dev/null
-done
