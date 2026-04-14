@@ -19,6 +19,7 @@
 #include "mustard.h"
 #include "injectors.h"
 #include "verify.h"
+#include "time_utils.cuh"
 
 // Global configuration (populated from CLI in main).
 static MustardConfig cfg;
@@ -706,8 +707,9 @@ void tiledCholeskyStatic(bool verify, bool dot)
     fflush(stdout);
 
     // Parse measure flags
-    bool measure_wait    = cfg.measureFlags.find("task_wait_time") != std::string::npos;
-    bool measure_compute = cfg.measureFlags.find("task_compute_time") != std::string::npos;
+    bool measure_wait       = cfg.measureFlags.find("task_wait_time") != std::string::npos;
+    bool measure_compute    = cfg.measureFlags.find("task_compute_time") != std::string::npos;
+    bool measure_timestamps = cfg.measureFlags.find("task_timestamps") != std::string::npos;
 
     // NVSHMEM completion flags
     int* d_completion_flags = (int*)nvshmem_malloc(sizeof(int) * totalNodes);
@@ -730,6 +732,9 @@ void tiledCholeskyStatic(bool verify, bool dot)
                 std::move(injector), tiledCholeskyGraphCreator->subgraphs);
         if (measure_compute)
             injector = std::make_unique<mustard::ComputeTimeDecorator>(
+                std::move(injector), tiledCholeskyGraphCreator->subgraphs);
+        if (measure_timestamps)
+            injector = std::make_unique<mustard::TimestampDecorator>(
                 std::move(injector), tiledCholeskyGraphCreator->subgraphs);
         injector->inject(my_tasks_sorted, ctx);
     }
@@ -764,11 +769,14 @@ void tiledCholeskyStatic(bool verify, bool dot)
 
     struct TaskTiming
     {
-        float wait_ms    = 0.0f;
-        float compute_ms = 0.0f;
+        float              wait_ms    = 0.0f;
+        float              compute_ms = 0.0f;
+        unsigned long long start_ns   = 0;
+        unsigned long long end_ns     = 0;
     };
     int                                  numMyTasks = (int)my_tasks_sorted.size();
     std::vector<std::vector<TaskTiming>> all_timings(runs, std::vector<TaskTiming>(numMyTasks));
+    std::vector<unsigned long long>      h_timestamps(totalNodes * 2);
 
     double totalTime = 0.0;
 
@@ -799,6 +807,10 @@ void tiledCholeskyStatic(bool verify, bool dot)
             checkCudaErrors(cudaEventRecord(ev_ref, taskStreams[0]));
         }
 
+        gpu_clock::CalibrationRef ts_ref;
+        if (measure_timestamps) ts_ref = gpu_clock::calibrate(taskStreams[0]);
+
+        if (myPE == 0) print_timestamp("cholesky tiledStatic start_time", 7);
         auto t_start = std::chrono::high_resolution_clock::now();
         for (int idx = 0; idx < numMyTasks; idx++)
         {
@@ -809,6 +821,7 @@ void tiledCholeskyStatic(bool verify, bool dot)
             checkCudaErrors(cudaStreamSynchronize(taskStreams[si]));
         checkCudaErrors(cudaDeviceSynchronize());
         auto t_end = std::chrono::high_resolution_clock::now();
+        if (myPE == 0) print_timestamp("cholesky tiledStatic end_time", 7);
 
         if (measure_wait || measure_compute)
         {
@@ -829,6 +842,19 @@ void tiledCholeskyStatic(bool verify, bool dot)
                                                          ctx.compute_end[task]));
             }
         }
+        if (measure_timestamps)
+        {
+            checkCudaErrors(cudaMemcpy(h_timestamps.data(), ctx.d_timestamps,
+                                       sizeof(unsigned long long) * totalNodes * 2,
+                                       cudaMemcpyDeviceToHost));
+            for (int idx = 0; idx < numMyTasks; idx++)
+            {
+                int         task = my_tasks_sorted[idx];
+                TaskTiming &tt   = all_timings[i][idx];
+                tt.start_ns = gpu_clock::globaltimer_to_unix_ns(h_timestamps[task * 2 + 0], ts_ref);
+                tt.end_ns   = gpu_clock::globaltimer_to_unix_ns(h_timestamps[task * 2 + 1], ts_ref);
+            }
+        }
 
         if (ev_ref) checkCudaErrors(cudaEventDestroy(ev_ref));
         for (int si = 0; si < numStreams; si++) checkCudaErrors(cudaStreamDestroy(taskStreams[si]));
@@ -840,11 +866,12 @@ void tiledCholeskyStatic(bool verify, bool dot)
     }
     printf("Total time used (s): %4.4f\n", totalTime);
 
-    if (measure_wait || measure_compute)
+    if (measure_wait || measure_compute || measure_timestamps)
     {
         printf("pe,run,task_id,op_name");
         if (measure_wait) printf(",wait_ms");
         if (measure_compute) printf(",compute_ms");
+        if (measure_timestamps) printf(",start_ns,end_ns");
         printf("\n");
 
         for (int i = 0; i < runs; i++)
@@ -856,6 +883,9 @@ void tiledCholeskyStatic(bool verify, bool dot)
                        tiledCholeskyGraphCreator->subgraphOpNames[task].c_str());
                 if (measure_wait) printf(",%.4f", all_timings[i][idx].wait_ms);
                 if (measure_compute) printf(",%.4f", all_timings[i][idx].compute_ms);
+                if (measure_timestamps)
+                    printf(",%lld,%lld", (long long)all_timings[i][idx].start_ns,
+                                         (long long)all_timings[i][idx].end_ns);
                 printf("\n");
             }
         }
@@ -914,11 +944,7 @@ int main(int argc, char** argv)
     auto init_end = std::chrono::high_resolution_clock::now();
 
     myPE = cfg.myPE;
-    if (myPE == 0)
-    {
-        double unix_start = std::chrono::duration<double>(wall_start.time_since_epoch()).count();
-        printf("Program start timestamp: %.6f\n", unix_start);
-    }
+    if (myPE == 0) print_timestamp("Program start timestamp", wall_start);
     double init_time = std::chrono::duration<double>(init_end - init_start).count();
     printf("device %d | NVSHMEM init time (s): %4.4f\n", myPE, init_time);
     fflush(stdout);
@@ -954,12 +980,7 @@ int main(int argc, char** argv)
     auto   program_end  = std::chrono::high_resolution_clock::now();
     double program_time = std::chrono::duration<double>(program_end - program_start).count();
     printf("device %d | Total program time (s): %4.4f\n", myPE, program_time);
-    if (myPE == 0)
-    {
-        auto   wall_end = std::chrono::system_clock::now();
-        double unix_end = std::chrono::duration<double>(wall_end.time_since_epoch()).count();
-        printf("Program end timestamp: %.6f\n", unix_end);
-    }
+    if (myPE == 0) print_timestamp("Program end timestamp");
 
     return 0;
 }

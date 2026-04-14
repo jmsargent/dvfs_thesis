@@ -154,6 +154,14 @@ __global__ void kernel_wait_static(int* d_deps, int n_deps, int* d_completion_fl
     if (debug) printf("[wait] all deps satisfied\n");
 }
 
+// Records the current GPU nanosecond wall-clock timestamp (__globaltimer) to *out.
+// Inject as a graph node immediately after the wait kernel and before the signal kernel
+// to capture the start/end of actual computation, excluding synchronization wait time.
+__global__ void kernel_record_timestamp(unsigned long long* out)
+{
+    *out = __globaltimer();
+}
+
 class TiledGraphCreator
 {
    public:
