@@ -25559,3 +25559,31 @@ Successfully set GPU frequency.
 Attempting to set GPU freq to 1740 MHz (using default memory freq 6251 MHz)...
 Successfully set GPU frequency.
 Running lu_mustard...
+[rank 0] init: got OMPI_COMM_WORLD_LOCAL_RANK
+[rank 3] init: got OMPI_COMM_WORLD_LOCAL_RANK
+[rank 2] init: got OMPI_COMM_WORLD_LOCAL_RANK
+[rank 1] init: got OMPI_COMM_WORLD_LOCAL_RANK
+[rank 2] init: cudaSetDevice(2) ok (dev_count=4)
+[rank 2] init: calling nvshmem_init()...
+[rank 0] init: cudaSetDevice(0) ok (dev_count=4)
+[rank 0] init: calling nvshmem_init()...
+[rank 3] init: cudaSetDevice(3) ok (dev_count=4)
+[rank 3] init: calling nvshmem_init()...
+[rank 1] init: cudaSetDevice(1) ok (dev_count=4)
+[rank 1] init: calling nvshmem_init()...
+[rank 0] init: nvshmem_init() returned
+[rank 0] init: myPE=0, nPEs=4
+Program start timestamp: 1776286199.5344001
+device 0 | NVSHMEM init time (s): 5.5476
+[rank 2] init: nvshmem_init() returned
+[rank 2] init: myPE=2, nPEs=4
+device 2 | NVSHMEM init time (s): 5.5476
+[rank 1] init: nvshmem_init() returned
+[rank 1] init: myPE=1, nPEs=4
+device 1 | NVSHMEM init time (s): 5.5465
+[rank 3] init: nvshmem_init() returned
+[rank 3] init: myPE=3, nPEs=4
+device 3 | NVSHMEM init time (s): 5.5475
+STATIC-MULTIGPU with N=9600 (16 of 600x600 tiles)
+SM Limit per kernel = 20
+cuBLAS workspace = 256 kB
