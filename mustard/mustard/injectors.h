@@ -50,12 +50,16 @@ struct InjectionContext
     // Device buffer written by TimestampDecorator: [task*2+0]=start ns, [task*2+1]=end ns
     // Values are raw __globaltimer() nanoseconds. Convert to wall time via a reference pair.
     unsigned long long*          d_timestamps;    // written by TimestampDecorator
+    // Device buffer written by WaitTimestampDecorator: [task*2+0]=wait_start ns, [task*2+1]=wait_end ns
+    // Both are 0 for tasks with no cross-GPU dependency (no wait kernel).
+    unsigned long long*          d_wait_timestamps;  // written by WaitTimestampDecorator
 
     explicit InjectionContext(int totalNodes)
         : task_wait_node(totalNodes, nullptr),
           compute_start(totalNodes, nullptr),
           compute_end(totalNodes, nullptr),
-          d_timestamps(nullptr)
+          d_timestamps(nullptr),
+          d_wait_timestamps(nullptr)
     {
     }
 
@@ -66,6 +70,7 @@ struct InjectionContext
         for (auto& ev : compute_end)
             if (ev) cudaEventDestroy(ev);
         if (d_timestamps) cudaFree(d_timestamps);
+        if (d_wait_timestamps) cudaFree(d_wait_timestamps);
     }
 };
 
@@ -228,6 +233,84 @@ class ComputeTimeDecorator : public IInjector
             for (auto& parent : parents)
                 MUSTARD_cudaGraphRemoveDependencies(sg, &parent, &signalNode, 1);
             MUSTARD_cudaGraphAddDependencies(sg, &computeEndNode, &signalNode, 1);
+        }
+    }
+
+   private:
+    std::unique_ptr<IInjector> inner_;
+    cudaGraph_t*               subgraphs_;
+};
+
+// Injects kernel_record_timestamp nodes immediately before and after the wait kernel to measure
+// cross-GPU spin-wait duration. Must be placed first in the decorator chain (right after
+// SubgraphInjector) so subsequent decorators see the rewired graph correctly.
+//
+// After inject(), ctx.d_wait_timestamps holds a device buffer with 2 entries per task:
+//   ctx.d_wait_timestamps[task * 2 + 0]  = wait-start __globaltimer() ns (just before spin-wait)
+//   ctx.d_wait_timestamps[task * 2 + 1]  = wait-end   __globaltimer() ns (just after spin-wait)
+// Both entries are 0 for tasks with no cross-GPU dependency (no wait kernel).
+class WaitTimestampDecorator : public IInjector
+{
+   public:
+    WaitTimestampDecorator(std::unique_ptr<IInjector> inner, cudaGraph_t* subgraphs)
+        : inner_(std::move(inner)), subgraphs_(subgraphs)
+    {
+    }
+
+    void inject(const std::vector<int>& tasks, InjectionContext& ctx) override
+    {
+        inner_->inject(tasks, ctx);
+
+        int totalNodes = (int)ctx.task_wait_node.size();
+        checkCudaErrors(cudaMalloc(&ctx.d_wait_timestamps,
+                                   sizeof(unsigned long long) * totalNodes * 2));
+        checkCudaErrors(cudaMemset(ctx.d_wait_timestamps, 0,
+                                   sizeof(unsigned long long) * totalNodes * 2));
+
+        for (int task : tasks)
+        {
+            if (ctx.task_wait_node[task] == nullptr) continue;  // no cross-GPU dep, skip
+
+            cudaGraph_t     sg       = subgraphs_[task];
+            cudaGraphNode_t waitNode = ctx.task_wait_node[task];
+
+            // --- Wait-start timestamp (before spin-wait kernel) ---
+            cudaGraphNode_t      tsWaitStartNode;
+            cudaKernelNodeParams tsWaitStartParams = {0};
+            tsWaitStartParams.gridDim              = dim3(1);
+            tsWaitStartParams.blockDim             = dim3(1);
+            tsWaitStartParams.func                 = (void*)kernel_record_timestamp;
+            unsigned long long* wait_start_ptr     = ctx.d_wait_timestamps + task * 2 + 0;
+            void*               waitStartArgs[1]   = {&wait_start_ptr};
+            tsWaitStartParams.kernelParams         = waitStartArgs;
+            // Insert as a new root (no deps), then make waitNode depend on it
+            checkCudaErrors(
+                cudaGraphAddKernelNode(&tsWaitStartNode, sg, nullptr, 0, &tsWaitStartParams));
+            MUSTARD_cudaGraphAddDependencies(sg, &tsWaitStartNode, &waitNode, 1);
+
+            // --- Wait-end timestamp (after spin-wait kernel, before compute) ---
+            cudaGraphNode_t      tsWaitEndNode;
+            cudaKernelNodeParams tsWaitEndParams = {0};
+            tsWaitEndParams.gridDim              = dim3(1);
+            tsWaitEndParams.blockDim             = dim3(1);
+            tsWaitEndParams.func                 = (void*)kernel_record_timestamp;
+            unsigned long long* wait_end_ptr     = ctx.d_wait_timestamps + task * 2 + 1;
+            void*               waitEndArgs[1]   = {&wait_end_ptr};
+            tsWaitEndParams.kernelParams         = waitEndArgs;
+            // Insert after waitNode, then rewire waitNode's existing children through tsWaitEndNode
+            checkCudaErrors(
+                cudaGraphAddKernelNode(&tsWaitEndNode, sg, &waitNode, 1, &tsWaitEndParams));
+
+            size_t numChildren;
+            MUSTARD_cudaGraphNodeGetDependentNodes(waitNode, nullptr, &numChildren);
+            std::vector<cudaGraphNode_t> children(numChildren);
+            MUSTARD_cudaGraphNodeGetDependentNodes(waitNode, children.data(), &numChildren);
+            for (auto& child : children)
+            {
+                if (child == tsWaitEndNode) continue;
+                MUSTARD_cudaGraphAddDependencies(sg, &tsWaitEndNode, &child, 1);
+                MUSTARD_cudaGraphRemoveDependencies(sg, &waitNode, &child, 1);
+            }
         }
     }
 

@@ -37,8 +37,14 @@ inline void printCommonUsage()
               << "    --dot                Dump execution graph in DOT format\n"
               << "    --invocations=<path> Log task IDs and names to the specified path\n"
               << "    --measure=<flags>    Comma-separated list of measurements to collect.\n"
-              << "                         Options: task_wait_time, task_compute_time\n"
-              << "                         Example: --measure=task_wait_time,task_compute_time\n";
+              << "                         Options: task_wait_time, task_compute_time,\n"
+              << "                                  task_timestamps, task_wait_timestamps\n"
+              << "                         task_wait_timestamps: nanosecond timestamps for when\n"
+              << "                           a task begins and ends its cross-GPU spin-wait\n"
+              << "                           (wait_start_ns, wait_end_ns); 0 for tasks with no\n"
+              << "                           cross-GPU dependency. Combine with task_timestamps\n"
+              << "                           to also capture compute start/end times.\n"
+              << "                         Example: --measure=task_wait_timestamps,task_timestamps\n";
 }
 
 // Print usage for lu_mustard / cholesky_mustard (single-node).

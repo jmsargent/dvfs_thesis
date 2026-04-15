@@ -638,9 +638,10 @@ void tiledLUStatic(bool verify, bool dot)
     int nPEs = nvshmem_n_pes();
 
     // Parse measure flags
-    bool measure_wait       = cfg.measureFlags.find("task_wait_time") != std::string::npos;
-    bool measure_compute    = cfg.measureFlags.find("task_compute_time") != std::string::npos;
-    bool measure_timestamps = cfg.measureFlags.find("task_timestamps") != std::string::npos;
+    bool measure_wait            = cfg.measureFlags.find("task_wait_time") != std::string::npos;
+    bool measure_compute         = cfg.measureFlags.find("task_compute_time") != std::string::npos;
+    bool measure_timestamps      = cfg.measureFlags.find("task_timestamps") != std::string::npos;
+    bool measure_wait_timestamps = cfg.measureFlags.find("task_wait_timestamps") != std::string::npos;
 
     // Initialize data
     auto originalMatrix = std::make_unique<double[]>(N * N);
@@ -849,6 +850,9 @@ void tiledLUStatic(bool verify, bool dot)
         auto injector = std::unique_ptr<mustard::IInjector>(
             new mustard::SubgraphInjector(tiledLUGraphCreator->subgraphs, *scheduler,
                                           d_completion_flags, cfg.debugKernels));
+        if (measure_wait_timestamps)
+            injector = std::make_unique<mustard::WaitTimestampDecorator>(
+                std::move(injector), tiledLUGraphCreator->subgraphs);
         if (measure_wait || measure_compute)
             injector = std::make_unique<mustard::WaitTimeDecorator>(std::move(injector),
                                                                      tiledLUGraphCreator->subgraphs);
@@ -888,14 +892,17 @@ void tiledLUStatic(bool verify, bool dot)
     // Storage for per-task timings: [run][task_idx]
     struct TaskTiming
     {
-        float              wait_ms    = 0.0f;
-        float              compute_ms = 0.0f;
-        unsigned long long start_ns   = 0;
-        unsigned long long end_ns     = 0;
+        float              wait_ms       = 0.0f;
+        float              compute_ms    = 0.0f;
+        unsigned long long start_ns      = 0;
+        unsigned long long end_ns        = 0;
+        unsigned long long wait_start_ns = 0;
+        unsigned long long wait_end_ns   = 0;
     };
     int                                  numMyTasks = (int)my_tasks_sorted.size();
     std::vector<std::vector<TaskTiming>> all_timings(runs, std::vector<TaskTiming>(numMyTasks));
     std::vector<unsigned long long>      h_timestamps(totalNodes * 2);
+    std::vector<unsigned long long>      h_wait_timestamps(totalNodes * 2);
 
     double totalTime = 0.0;
 
@@ -928,7 +935,7 @@ void tiledLUStatic(bool verify, bool dot)
         }
 
         gpu_clock::CalibrationRef ts_ref;
-        if (measure_timestamps) ts_ref = gpu_clock::calibrate(taskStreams[0]);
+        if (measure_timestamps || measure_wait_timestamps) ts_ref = gpu_clock::calibrate(taskStreams[0]);
 
         if (myPE == 0) print_timestamp("lu tiledStatic start_time", 7);
         auto t_start = std::chrono::high_resolution_clock::now();
@@ -979,6 +986,23 @@ void tiledLUStatic(bool verify, bool dot)
                 tt.end_ns   = gpu_clock::globaltimer_to_unix_ns(h_timestamps[task * 2 + 1], ts_ref);
             }
         }
+        if (measure_wait_timestamps && ctx.d_wait_timestamps)
+        {
+            checkCudaErrors(cudaMemcpy(h_wait_timestamps.data(), ctx.d_wait_timestamps,
+                                       sizeof(unsigned long long) * totalNodes * 2,
+                                       cudaMemcpyDeviceToHost));
+            for (int idx = 0; idx < numMyTasks; idx++)
+            {
+                int         task = my_tasks_sorted[idx];
+                TaskTiming &tt   = all_timings[i][idx];
+                if (h_wait_timestamps[task * 2 + 0] != 0)
+                    tt.wait_start_ns = gpu_clock::globaltimer_to_unix_ns(
+                        h_wait_timestamps[task * 2 + 0], ts_ref);
+                if (h_wait_timestamps[task * 2 + 1] != 0)
+                    tt.wait_end_ns = gpu_clock::globaltimer_to_unix_ns(
+                        h_wait_timestamps[task * 2 + 1], ts_ref);
+            }
+        }
 
         if (ev_ref) checkCudaErrors(cudaEventDestroy(ev_ref));
 
@@ -993,12 +1017,13 @@ void tiledLUStatic(bool verify, bool dot)
     printf("Total time used (s): %4.4f\n", totalTime);
 
     // Print CSV after all runs
-    if (measure_wait || measure_compute || measure_timestamps)
+    if (measure_wait || measure_compute || measure_timestamps || measure_wait_timestamps)
     {
         printf("pe,run,task_id,op_name");
         if (measure_wait) printf(",wait_ms");
         if (measure_compute) printf(",compute_ms");
         if (measure_timestamps) printf(",start_ns,end_ns");
+        if (measure_wait_timestamps) printf(",wait_start_ns,wait_end_ns");
         printf("\n");
 
         for (int i = 0; i < runs; i++)
@@ -1013,6 +1038,9 @@ void tiledLUStatic(bool verify, bool dot)
                 if (measure_timestamps)
                     printf(",%lld,%lld", (long long)all_timings[i][idx].start_ns,
                                          (long long)all_timings[i][idx].end_ns);
+                if (measure_wait_timestamps)
+                    printf(",%lld,%lld", (long long)all_timings[i][idx].wait_start_ns,
+                                         (long long)all_timings[i][idx].wait_end_ns);
                 printf("\n");
             }
         }
