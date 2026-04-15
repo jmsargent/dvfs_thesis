@@ -36,15 +36,18 @@ inline void printCommonUsage()
               << "    --verify             Verify result correctness\n"
               << "    --dot                Dump execution graph in DOT format\n"
               << "    --invocations=<path> Log task IDs and names to the specified path\n"
-              << "    --measure=<flags>    Comma-separated list of measurements to collect.\n"
-              << "                         Options: task_wait_time, task_compute_time,\n"
-              << "                                  task_timestamps, task_wait_timestamps\n"
-              << "                         task_wait_timestamps: nanosecond timestamps for when\n"
-              << "                           a task begins and ends its cross-GPU spin-wait\n"
-              << "                           (wait_start_ns, wait_end_ns); 0 for tasks with no\n"
-              << "                           cross-GPU dependency. Combine with task_timestamps\n"
-              << "                           to also capture compute start/end times.\n"
-              << "                         Example: --measure=task_wait_timestamps,task_timestamps\n";
+              << "    --measure=<flags>    Comma-separated list of columns to emit (one flag = one\n"
+              << "                         column). _ms = CUDA event duration; _ts = absolute\n"
+              << "                         Unix nanosecond timestamp.\n"
+              << "                           wait_ms       wait duration (ms, CUDA event)\n"
+              << "                           compute_ms    compute duration (ms, CUDA event)\n"
+              << "                           start_ts      compute start (absolute Unix ns)\n"
+              << "                           end_ts        compute end   (absolute Unix ns)\n"
+              << "                           wait_start_ts cross-GPU wait start (absolute Unix ns)\n"
+              << "                           wait_end_ts   cross-GPU wait end   (absolute Unix ns)\n"
+              << "                         wait_start_ts / wait_end_ts are 0 for tasks with no\n"
+              << "                         cross-GPU dependency.\n"
+              << "                         Example: --measure=wait_start_ts,wait_end_ts,start_ts\n";
 }
 
 // Print usage for lu_mustard / cholesky_mustard (single-node).
