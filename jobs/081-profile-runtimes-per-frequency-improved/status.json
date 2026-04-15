@@ -1,0 +1,10 @@
+{
+  "cancel_acknowledged_at": "2026-04-15T11:26:56+02:00",
+  "cancel_kill_mtime_ns": 1776238476486031535,
+  "cancel_request_state": "accepted",
+  "cancel_requested_at": "2026-04-15T11:26:55+02:00",
+  "id": "081-profile-runtimes-per-frequency-improved",
+  "last_update_at": "2026-04-15T11:26:59+02:00",
+  "slurm_job_id": 173773,
+  "state": "CANCEL_REQUESTED"
+}
