@@ -4,7 +4,16 @@
   "cancel_request_state": "accepted",
   "cancel_requested_at": "2026-04-15T11:26:55+02:00",
   "id": "081-profile-runtimes-per-frequency-improved",
-  "last_update_at": "2026-04-15T11:26:59+02:00",
+  "last_update_at": "2026-04-15T11:28:18+02:00",
+  "slurm_info": {
+    "ElapsedRaw": "102",
+    "ExitCode": "0:0",
+    "JobIDRaw": "173773",
+    "MaxRSS": "",
+    "State": "CANCELLED by 0",
+    "raw_state": "CANCELLED by 0",
+    "source": "sacct"
+  },
   "slurm_job_id": 173773,
-  "state": "CANCEL_REQUESTED"
+  "state": "CANCELLED"
 }
