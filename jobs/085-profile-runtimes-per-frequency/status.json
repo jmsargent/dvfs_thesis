@@ -1,8 +1,12 @@
 {
+  "cancel_acknowledged_at": "2026-04-20T13:28:12+02:00",
+  "cancel_kill_mtime_ns": 1776684490775318094,
+  "cancel_request_state": "accepted",
+  "cancel_requested_at": "2026-04-20T13:28:11+02:00",
   "git_sha": "304d92ae98003e5cfb4bda97d57ceb1a0d16da9d",
   "id": "085-profile-runtimes-per-frequency",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/085-profile-runtimes-per-frequency",
-  "last_update_at": "2026-04-20T13:21:51+02:00",
+  "last_update_at": "2026-04-20T13:28:12+02:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/085-profile-runtimes-per-frequency/slurm-176721.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/085-profile-runtimes-per-frequency/slurm-176721.out",
   "queued_at": "2026-04-20T13:21:42+02:00",
@@ -12,6 +16,6 @@
     "source": "squeue"
   },
   "slurm_job_id": 176721,
-  "state": "PENDING",
+  "state": "CANCEL_REQUESTED",
   "submitted_at": "2026-04-20T13:21:44+02:00"
 }
