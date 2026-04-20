@@ -18,6 +18,7 @@
 #include "gen.h"
 #include "mustard.h"
 #include "injectors.h"
+#include "pe_writer.h"
 #include "verify.h"
 #include "time_utils.cuh"
 
@@ -1029,32 +1030,34 @@ void tiledLUStatic(bool verify, bool dot)
     if (col_wait_ms || col_compute_ms || col_start_ts || col_end_ts ||
         col_wait_start_ts || col_wait_end_ts)
     {
-        printf("pe,run,task_id,op_name");
-        if (col_wait_ms)       printf(",wait_ms");
-        if (col_compute_ms)    printf(",compute_ms");
-        if (col_start_ts)      printf(",start_ts");
-        if (col_end_ts)        printf(",end_ts");
-        if (col_wait_start_ts) printf(",wait_start_ts");
-        if (col_wait_end_ts)   printf(",wait_end_ts");
-        printf("\n");
+        PEWriter out(cfg.outputPrefix, myPE);
+
+        out.print("pe,run,task_id,op_name");
+        if (col_wait_ms)       out.print(",wait_ms");
+        if (col_compute_ms)    out.print(",compute_ms");
+        if (col_start_ts)      out.print(",start_ts");
+        if (col_end_ts)        out.print(",end_ts");
+        if (col_wait_start_ts) out.print(",wait_start_ts");
+        if (col_wait_end_ts)   out.print(",wait_end_ts");
+        out.print("\n");
 
         for (int i = 0; i < runs; i++)
         {
             for (int idx = 0; idx < numMyTasks; idx++)
             {
                 int task = my_tasks_sorted[idx];
-                printf("%d,%d,%d,%s", myPE, i, task,
-                       tiledLUGraphCreator->subgraphOpNames[task].c_str());
-                if (col_wait_ms)       printf(",%.4f", all_timings[i][idx].wait_ms);
-                if (col_compute_ms)    printf(",%.4f", all_timings[i][idx].compute_ms);
-                if (col_start_ts)      printf(",%lld", (long long)all_timings[i][idx].start_ns);
-                if (col_end_ts)        printf(",%lld", (long long)all_timings[i][idx].end_ns);
-                if (col_wait_start_ts) printf(",%lld", (long long)all_timings[i][idx].wait_start_ns);
-                if (col_wait_end_ts)   printf(",%lld", (long long)all_timings[i][idx].wait_end_ns);
-                printf("\n");
+                out.print("%d,%d,%d,%s", myPE, i, task,
+                          tiledLUGraphCreator->subgraphOpNames[task].c_str());
+                if (col_wait_ms)       out.print(",%.4f", all_timings[i][idx].wait_ms);
+                if (col_compute_ms)    out.print(",%.4f", all_timings[i][idx].compute_ms);
+                if (col_start_ts)      out.print(",%lld", (long long)all_timings[i][idx].start_ns);
+                if (col_end_ts)        out.print(",%lld", (long long)all_timings[i][idx].end_ns);
+                if (col_wait_start_ts) out.print(",%lld", (long long)all_timings[i][idx].wait_start_ns);
+                if (col_wait_end_ts)   out.print(",%lld", (long long)all_timings[i][idx].wait_end_ns);
+                out.print("\n");
             }
         }
-        fflush(stdout);
+        out.flush();
 
         // Events are destroyed by InjectionContext destructor
     }

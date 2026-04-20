@@ -21,6 +21,7 @@ struct MustardConfig
     int         debugKernels   = 0;
     std::string invocationPath = "";
     std::string measureFlags   = "";  // e.g. "task_wait_time,task_compute_time"
+    std::string outputPrefix   = "";  // base path for per-PE output files
 };
 
 // Print common options shared by all executables.
@@ -47,7 +48,9 @@ inline void printCommonUsage()
               << "                           wait_end_ts   cross-GPU wait end   (absolute Unix ns)\n"
               << "                         wait_start_ts / wait_end_ts are 0 for tasks with no\n"
               << "                         cross-GPU dependency.\n"
-              << "                         Example: --measure=wait_start_ts,wait_end_ts,start_ts\n";
+              << "                         Example: --measure=wait_start_ts,wait_end_ts,start_ts\n"
+              << "    --output=<prefix>    Write per-PE timing output to <prefix>_pe<N>.csv.\n"
+              << "                         If omitted, timing CSV is printed to stdout.\n";
 }
 
 // Print usage for lu_mustard / cholesky_mustard (single-node).
@@ -135,6 +138,7 @@ inline bool parseCommonArgs(argh::parser& cmdl, MustardConfig& cfg)
     cfg.staticMultiGPU = cmdl["static-multigpu"];
 
     cmdl("measure", "") >> cfg.measureFlags;
+    cmdl("output", "") >> cfg.outputPrefix;
 
     return true;
 }
