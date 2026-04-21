@@ -11,3 +11,7 @@ Successfully set GPU frequency.
 Attempting to set GPU freq to 2040 MHz (using default memory freq 6251 MHz)...
 Successfully set GPU frequency.
 Running lu_mustard...
+[rank 2] init: got OMPI_COMM_WORLD_LOCAL_RANK
+[rank 0] init: got OMPI_COMM_WORLD_LOCAL_RANK
+[rank 1] init: got OMPI_COMM_WORLD_LOCAL_RANK
+[rank 3] init: got OMPI_COMM_WORLD_LOCAL_RANK
