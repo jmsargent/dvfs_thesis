@@ -7,11 +7,30 @@
 #include <set>
 #include <vector>
 
-#include "mustard.h"    // MUSTARD_* macros, kernel_wait_static, kernel_signal_static, checkCudaErrors
+#include "mustard.h"  // MUSTARD_* macros, kernel_wait_static, kernel_signal_static, checkCudaErrors
 #include "scheduler.h"  // StaticRoundRobinScheduler
 
 namespace mustard
 {
+
+inline cudaKernelNodeParams makeKernelParams(void* func, void** args)
+{
+    cudaKernelNodeParams p = {0};
+    p.gridDim              = dim3(1);
+    p.blockDim             = dim3(1);
+    p.func                 = func;
+    p.kernelParams         = args;
+    return p;
+}
+
+inline std::vector<cudaGraphNode_t> getRootNodes(cudaGraph_t g)
+{
+    size_t numRoots;
+    cudaGraphGetRootNodes(g, nullptr, &numRoots);
+    std::vector<cudaGraphNode_t> roots(numRoots);
+    cudaGraphGetRootNodes(g, roots.data(), &numRoots);
+    return roots;
+}
 
 inline cudaGraphNode_t getSubgraphTail(cudaGraph_t g)
 {
@@ -49,10 +68,10 @@ struct InjectionContext
     std::vector<cudaEvent_t>     compute_end;     // written by ComputeTimeDecorator
     // Device buffer written by TimestampDecorator: [task*2+0]=start ns, [task*2+1]=end ns
     // Values are raw __globaltimer() nanoseconds. Convert to wall time via a reference pair.
-    unsigned long long*          d_timestamps;    // written by TimestampDecorator
-    // Device buffer written by WaitTimestampDecorator: [task*2+0]=wait_start ns, [task*2+1]=wait_end ns
-    // Both are 0 for tasks with no cross-GPU dependency (no wait kernel).
-    unsigned long long*          d_wait_timestamps;  // written by WaitTimestampDecorator
+    unsigned long long* d_timestamps;  // written by TimestampDecorator
+    // Device buffer written by WaitTimestampDecorator: [task*2+0]=wait_start ns,
+    // [task*2+1]=wait_end ns Both are 0 for tasks with no cross-GPU dependency (no wait kernel).
+    unsigned long long* d_wait_timestamps;  // written by WaitTimestampDecorator
 
     explicit InjectionContext(int totalNodes)
         : task_wait_node(totalNodes, nullptr),
@@ -78,7 +97,7 @@ class IInjector
 {
    public:
     virtual void inject(const std::vector<int>& tasks, InjectionContext& ctx) = 0;
-    virtual ~IInjector()                                                       = default;
+    virtual ~IInjector()                                                      = default;
 };
 
 class SubgraphInjector : public IInjector
@@ -101,42 +120,49 @@ class SubgraphInjector : public IInjector
             int         n_deps = scheduler_.getDepCount(task);
             int*        d_deps = scheduler_.getTaskDeps(task);
 
-            if (n_deps > 0)
+            if (n_deps > 0)  // If there are dependencies on nodes on other GPUs
             {
-                size_t numRoots;
-                cudaGraphGetRootNodes(sg, nullptr, &numRoots);
-                std::vector<cudaGraphNode_t> roots(numRoots);
-                cudaGraphGetRootNodes(sg, roots.data(), &numRoots);
-
-                cudaGraphNode_t      waitNode;
-                cudaKernelNodeParams waitParams = {0};
-                waitParams.gridDim              = dim3(1);
-                waitParams.blockDim             = dim3(1);
-                waitParams.func                 = (void*)kernel_wait_static;
-                void* waitArgs[4] = {&d_deps, &n_deps, &d_completion_flags_, &debug_};
-                waitParams.kernelParams         = waitArgs;
-                checkCudaErrors(cudaGraphAddKernelNode(&waitNode, sg, nullptr, 0, &waitParams));
-                ctx.task_wait_node[task] = waitNode;
-
-                for (auto& root : roots)
-                    MUSTARD_cudaGraphAddDependencies(sg, &waitNode, &root, 1);
+                prependWaitNode(sg, d_deps, n_deps, ctx, task);
             }
 
-            int  n_notify     = scheduler_.getNotifyCount(task);
-            int* d_notify_pes = scheduler_.getNotifyPEs(task);
-
-            cudaGraphNode_t      tail = getSubgraphTail(sg);
-            cudaGraphNode_t      signalNode;
-            cudaKernelNodeParams signalParams = {0};
-            signalParams.gridDim              = dim3(1);
-            signalParams.blockDim             = dim3(1);
-            signalParams.func                 = (void*)kernel_signal_static;
-            int   task_id_val                 = task;
-            void* signalArgs[5] = {&task_id_val, &d_completion_flags_, &d_notify_pes, &n_notify,
-                                   &debug_};
-            signalParams.kernelParams         = signalArgs;
-            checkCudaErrors(cudaGraphAddKernelNode(&signalNode, sg, &tail, 1, &signalParams));
+            int n_notify = scheduler_.getNotifyCount(task);
+            if (n_notify > 0)  // If other tasks (on other GPUs) are dependant on this Task
+            {
+                appendSignalNode(task, sg, n_notify);
+            }
         }
+    }
+
+    void appendSignalNode(int task, cudaGraph_t sg, int n_notify)
+    {
+        int* d_notify_pes = scheduler_.getNotifyPEs(task);
+
+        cudaGraphNode_t tail = getSubgraphTail(sg);
+        cudaGraphNode_t signalNode;
+        int             task_id_val = task;
+        void* signalArgs[5]         = {&task_id_val, &d_completion_flags_, &d_notify_pes, &n_notify,
+                                       &debug_};
+        auto  signalParams          = makeKernelParams((void*)kernel_signal_static, signalArgs);
+        checkCudaErrors(cudaGraphAddKernelNode(&signalNode, sg, &tail, 1, &signalParams));
+    }
+
+    void prependWaitNode(cudaGraph_t& sg, int*& d_deps, int& n_deps, mustard::InjectionContext& ctx,
+                         int task)
+    {
+        // obtain root node(s)
+        auto roots = getRootNodes(sg);
+
+        // construct wait node
+        cudaGraphNode_t waitNode;
+        void*           waitArgs[4] = {&d_deps, &n_deps, &d_completion_flags_, &debug_};
+        auto            waitParams  = makeKernelParams((void*)kernel_wait_static, waitArgs);
+
+        // replace position of original root nodes with wait-node
+        checkCudaErrors(cudaGraphAddKernelNode(&waitNode, sg, nullptr, 0, &waitParams));
+        ctx.task_wait_node[task] = waitNode;
+
+        // add old root(s) back into the DAG after wait-node
+        for (auto& root : roots) MUSTARD_cudaGraphAddDependencies(sg, &waitNode, &root, 1);
     }
 
    private:
@@ -184,10 +210,7 @@ class WaitTimeDecorator : public IInjector
             }
             else
             {
-                size_t numRoots;
-                cudaGraphGetRootNodes(sg, nullptr, &numRoots);
-                std::vector<cudaGraphNode_t> roots(numRoots);
-                cudaGraphGetRootNodes(sg, roots.data(), &numRoots);
+                auto roots = getRootNodes(sg);
                 checkCudaErrors(cudaGraphAddEventRecordNode(&computeStartNode, sg, nullptr, 0,
                                                             ctx.compute_start[task]));
                 for (auto& root : roots)
@@ -262,10 +285,10 @@ class WaitTimestampDecorator : public IInjector
         inner_->inject(tasks, ctx);
 
         int totalNodes = (int)ctx.task_wait_node.size();
-        checkCudaErrors(cudaMalloc(&ctx.d_wait_timestamps,
-                                   sizeof(unsigned long long) * totalNodes * 2));
-        checkCudaErrors(cudaMemset(ctx.d_wait_timestamps, 0,
-                                   sizeof(unsigned long long) * totalNodes * 2));
+        checkCudaErrors(
+            cudaMalloc(&ctx.d_wait_timestamps, sizeof(unsigned long long) * totalNodes * 2));
+        checkCudaErrors(
+            cudaMemset(ctx.d_wait_timestamps, 0, sizeof(unsigned long long) * totalNodes * 2));
 
         for (int task : tasks)
         {
@@ -275,28 +298,21 @@ class WaitTimestampDecorator : public IInjector
             cudaGraphNode_t waitNode = ctx.task_wait_node[task];
 
             // --- Wait-start timestamp (before spin-wait kernel) ---
-            cudaGraphNode_t      tsWaitStartNode;
-            cudaKernelNodeParams tsWaitStartParams = {0};
-            tsWaitStartParams.gridDim              = dim3(1);
-            tsWaitStartParams.blockDim             = dim3(1);
-            tsWaitStartParams.func                 = (void*)kernel_record_timestamp;
-            unsigned long long* wait_start_ptr     = ctx.d_wait_timestamps + task * 2 + 0;
-            void*               waitStartArgs[1]   = {&wait_start_ptr};
-            tsWaitStartParams.kernelParams         = waitStartArgs;
+            cudaGraphNode_t     tsWaitStartNode;
+            unsigned long long* wait_start_ptr   = ctx.d_wait_timestamps + task * 2 + 0;
+            void*               waitStartArgs[1] = {&wait_start_ptr};
+            auto                tsWaitStartParams =
+                makeKernelParams((void*)kernel_record_timestamp, waitStartArgs);
             // Insert as a new root (no deps), then make waitNode depend on it
             checkCudaErrors(
                 cudaGraphAddKernelNode(&tsWaitStartNode, sg, nullptr, 0, &tsWaitStartParams));
             MUSTARD_cudaGraphAddDependencies(sg, &tsWaitStartNode, &waitNode, 1);
 
             // --- Wait-end timestamp (after spin-wait kernel, before compute) ---
-            cudaGraphNode_t      tsWaitEndNode;
-            cudaKernelNodeParams tsWaitEndParams = {0};
-            tsWaitEndParams.gridDim              = dim3(1);
-            tsWaitEndParams.blockDim             = dim3(1);
-            tsWaitEndParams.func                 = (void*)kernel_record_timestamp;
-            unsigned long long* wait_end_ptr     = ctx.d_wait_timestamps + task * 2 + 1;
-            void*               waitEndArgs[1]   = {&wait_end_ptr};
-            tsWaitEndParams.kernelParams         = waitEndArgs;
+            cudaGraphNode_t     tsWaitEndNode;
+            unsigned long long* wait_end_ptr   = ctx.d_wait_timestamps + task * 2 + 1;
+            void*               waitEndArgs[1] = {&wait_end_ptr};
+            auto tsWaitEndParams = makeKernelParams((void*)kernel_record_timestamp, waitEndArgs);
             // Insert after waitNode, then rewire waitNode's existing children through tsWaitEndNode
             checkCudaErrors(
                 cudaGraphAddKernelNode(&tsWaitEndNode, sg, &waitNode, 1, &tsWaitEndParams));
@@ -347,24 +363,19 @@ class TimestampDecorator : public IInjector
         inner_->inject(tasks, ctx);
 
         int totalNodes = (int)ctx.task_wait_node.size();
-        checkCudaErrors(cudaMalloc(&ctx.d_timestamps,
-                                   sizeof(unsigned long long) * totalNodes * 2));
-        checkCudaErrors(cudaMemset(ctx.d_timestamps, 0,
-                                   sizeof(unsigned long long) * totalNodes * 2));
+        checkCudaErrors(cudaMalloc(&ctx.d_timestamps, sizeof(unsigned long long) * totalNodes * 2));
+        checkCudaErrors(
+            cudaMemset(ctx.d_timestamps, 0, sizeof(unsigned long long) * totalNodes * 2));
 
         for (int task : tasks)
         {
             cudaGraph_t sg = subgraphs_[task];
 
             // --- Compute-start timestamp (after wait, before compute) ---
-            cudaGraphNode_t      tsStartNode;
-            cudaKernelNodeParams tsStartParams = {0};
-            tsStartParams.gridDim              = dim3(1);
-            tsStartParams.blockDim             = dim3(1);
-            tsStartParams.func                 = (void*)kernel_record_timestamp;
-            unsigned long long* start_ptr      = ctx.d_timestamps + task * 2 + 0;
-            void*               startArgs[1]   = {&start_ptr};
-            tsStartParams.kernelParams         = startArgs;
+            cudaGraphNode_t     tsStartNode;
+            unsigned long long* start_ptr    = ctx.d_timestamps + task * 2 + 0;
+            void*               startArgs[1] = {&start_ptr};
+            auto tsStartParams = makeKernelParams((void*)kernel_record_timestamp, startArgs);
 
             if (ctx.task_wait_node[task] != nullptr)
             {
@@ -387,10 +398,7 @@ class TimestampDecorator : public IInjector
             else
             {
                 // No wait node: insert before all current roots
-                size_t numRoots;
-                cudaGraphGetRootNodes(sg, nullptr, &numRoots);
-                std::vector<cudaGraphNode_t> roots(numRoots);
-                cudaGraphGetRootNodes(sg, roots.data(), &numRoots);
+                auto roots = getRootNodes(sg);
                 checkCudaErrors(
                     cudaGraphAddKernelNode(&tsStartNode, sg, nullptr, 0, &tsStartParams));
                 for (auto& root : roots)
@@ -404,14 +412,10 @@ class TimestampDecorator : public IInjector
             std::vector<cudaGraphNode_t> parents(numParents);
             MUSTARD_cudaGraphNodeGetDependencies(signalNode, parents.data(), &numParents);
 
-            cudaGraphNode_t      tsEndNode;
-            cudaKernelNodeParams tsEndParams = {0};
-            tsEndParams.gridDim              = dim3(1);
-            tsEndParams.blockDim             = dim3(1);
-            tsEndParams.func                 = (void*)kernel_record_timestamp;
-            unsigned long long* end_ptr      = ctx.d_timestamps + task * 2 + 1;
-            void*               endArgs[1]   = {&end_ptr};
-            tsEndParams.kernelParams         = endArgs;
+            cudaGraphNode_t     tsEndNode;
+            unsigned long long* end_ptr    = ctx.d_timestamps + task * 2 + 1;
+            void*               endArgs[1] = {&end_ptr};
+            auto tsEndParams = makeKernelParams((void*)kernel_record_timestamp, endArgs);
 
             checkCudaErrors(
                 cudaGraphAddKernelNode(&tsEndNode, sg, parents.data(), numParents, &tsEndParams));

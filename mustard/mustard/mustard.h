@@ -135,9 +135,29 @@ __global__ void kernel_signal_static(int task_id, int* d_completion_flags, int* 
     {
         if (debug)
             printf("[signal] task %d -> PE %d flag[%d]\n", task_id, d_notify_pes[i], task_id);
+
         nvshmem_int_put(&d_completion_flags[task_id], &one, 1, d_notify_pes[i]);
     }
     if (debug) printf("[signal] task %d: done\n", task_id);
+}
+
+__global__ void kernel_signal_static_demo(int task_id, int* d_completion_flags, int* d_notify_pes,
+                                          int n_notify_pes, int debug)
+{
+    int one = 1;
+    nvshmem_fence();
+    for (int i = 0; i < n_notify_pes; i++)
+    {
+        nvshmem_int_put(&d_completion_flags[task_id], &one, 1, d_notify_pes[i]);
+    }
+}
+
+__global__ void kernel_wait_static_demo(int* d_deps, int n_deps, int* d_completion_flags, int debug)
+{
+    for (int i = 0; i < n_deps; i++)
+    {
+        nvshmem_int_wait_until(&d_completion_flags[d_deps[i]], NVSHMEM_CMP_EQ, 1);
+    }
 }
 
 __global__ void kernel_wait_static(int* d_deps, int n_deps, int* d_completion_flags, int debug)
@@ -460,6 +480,5 @@ class TiledGraphCreator
         }
     }
 };
-
 
 }  // namespace mustard

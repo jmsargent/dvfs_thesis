@@ -25,45 +25,13 @@ class StaticRoundRobinScheduler
           iter_(0)
     {
         // Round-robin task assignment
-        pe_tasks_.resize(nPEs);
-        task_pe_.resize(totalNodes);
-        for (int i = 0; i < totalNodes; i++)
-        {
-            pe_tasks_[i % nPEs].push_back(i);
-            task_pe_[i] = i % nPEs;
-        }
+        assignTasksToPEs(nPEs, totalNodes);
 
         // Topological sort of this PE's tasks respecting same-PE dependencies
-        std::set<int> topo_done;
-        while (my_tasks_sorted_.size() < pe_tasks_[myPE].size())
-        {
-            bool progress = false;
-            for (int task : pe_tasks_[myPE])
-            {
-                if (topo_done.count(task)) continue;
-                bool ready = true;
-                for (int dep : subgraphDependencies[task])
-                {
-                    if (task_pe_[dep] == myPE && !topo_done.count(dep))
-                    {
-                        ready = false;
-                        break;
-                    }
-                }
-                if (ready)
-                {
-                    my_tasks_sorted_.push_back(task);
-                    topo_done.insert(task);
-                    progress = true;
-                }
-            }
-            if (!progress) break;
-        }
+        localTopologicalSort(myPE, subgraphDependencies);
 
         // Build reverse dependency map
-        dependents_.resize(totalNodes);
-        for (int j = 0; j < totalNodes; j++)
-            for (int dep : subgraphDependencies[j]) dependents_[dep].push_back(j);
+        buildDependantsMap(totalNodes, subgraphDependencies);
 
         // Allocate per-task device arrays for deps and notify PEs
         for (int task : pe_tasks_[myPE])
@@ -89,6 +57,54 @@ class StaticRoundRobinScheduler
                                            sizeof(int) * notify_vec.size(),
                                            cudaMemcpyHostToDevice));
             }
+        }
+    }
+
+    void buildDependantsMap(int                                  totalNodes,
+                            const std::vector<std::vector<int>>& subgraphDependencies)
+    {
+        dependents_.resize(totalNodes);
+        for (int j = 0; j < totalNodes; j++)
+            for (int dep : subgraphDependencies[j]) dependents_[dep].push_back(j);
+    }
+
+    void localTopologicalSort(int myPE, const std::vector<std::vector<int>>& subgraphDependencies)
+    {
+        std::set<int> topo_done;
+        while (my_tasks_sorted_.size() < pe_tasks_[myPE].size())
+        {
+            bool progress = false;
+            for (int task : pe_tasks_[myPE])
+            {
+                if (topo_done.count(task)) continue;
+                bool ready = true;
+                for (int dep : subgraphDependencies[task])
+                {
+                    if (task_pe_[dep] == myPE && !topo_done.count(dep))
+                    {
+                        ready = false;
+                        break;
+                    }
+                }
+                if (ready)
+                {
+                    my_tasks_sorted_.push_back(task);
+                    topo_done.insert(task);
+                    progress = true;
+                }
+            }
+            if (!progress) break;
+        }
+    }
+
+    void assignTasksToPEs(int nPEs, int totalNodes)
+    {
+        pe_tasks_.resize(nPEs);
+        task_pe_.resize(totalNodes);
+        for (int i = 0; i < totalNodes; i++)
+        {
+            pe_tasks_[i % nPEs].push_back(i);
+            task_pe_[i] = i % nPEs;
         }
     }
 
