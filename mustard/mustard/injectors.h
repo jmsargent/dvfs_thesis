@@ -118,7 +118,7 @@ class SubgraphInjector : public IInjector
         {
             cudaGraph_t sg     = subgraphs_[task];
             int         n_deps = scheduler_.getDepCount(task);
-            int*        d_deps = scheduler_.getTaskDeps(task);
+            int*        d_deps = scheduler_.getDeviceDeps(task);
 
             if (n_deps > 0)  // If there are dependencies on nodes on other GPUs
             {
@@ -135,7 +135,7 @@ class SubgraphInjector : public IInjector
 
     void appendSignalNode(int task, cudaGraph_t sg, int n_notify)
     {
-        int* d_notify_pes = scheduler_.getNotifyPEs(task);
+        int* d_notify_pes = scheduler_.getDeviceNotifyPEs(task);
 
         cudaGraphNode_t tail = getSubgraphTail(sg);
         cudaGraphNode_t signalNode;

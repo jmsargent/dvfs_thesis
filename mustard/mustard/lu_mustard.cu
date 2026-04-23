@@ -18,6 +18,7 @@
 #include "gen.h"
 #include "mustard.h"
 #include "injectors.h"
+#include "allocator.h"
 #include "pe_writer.h"
 #include "verify.h"
 #include "time_utils.cuh"
@@ -846,9 +847,17 @@ void tiledLUStatic(bool verify, bool dot)
     int *d_completion_flags = (int *)nvshmem_malloc(sizeof(int) * totalNodes);
     checkCudaErrors(cudaMemset(d_completion_flags, 0, sizeof(int) * totalNodes));
 
-    // Static round-robin task assignment, topo sort, and device dep/notify arrays
     auto scheduler = std::make_unique<mustard::StaticRoundRobinScheduler>(
         nPEs, myPE, totalNodes, tiledLUGraphCreator->subgraphDependencies);
+
+    mustard::TaskAllocator alloc;
+    for (int task : scheduler->getMyTasksOrdered())
+    {
+        const auto& d = scheduler->getDeps(task);
+        scheduler->setTaskDeps(task, alloc.allocate(d), (int)d.size());
+        const auto& n = scheduler->getNotifyPEs(task);
+        scheduler->setTaskNotifyPEs(task, alloc.allocate(n), (int)n.size());
+    }
 
     const std::vector<int> &my_tasks_sorted = scheduler->getMyTasksOrdered();
 
@@ -1075,7 +1084,6 @@ void tiledLUStatic(bool verify, bool dot)
         free(h_U);
     }
 
-    // Cleanup (scheduler destructor frees d_task_deps and d_task_notify_pes)
     delete[] h_subgraphsExec;
     nvshmem_free(d_completion_flags);
     nvshmem_free(d_matrices);
