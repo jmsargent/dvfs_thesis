@@ -50,28 +50,27 @@ class StaticRoundRobinScheduler
 
     void topologicalSortDeviceTasks(int myPE, const std::vector<std::vector<int>>& deps)
     {
-        std::unordered_map<int, int> in_degree;
-        for (int task : tasks_per_pe_[myPE])
-        {
-            in_degree[task] = 0;
+        // Global Kahn's over all tasks so that cross-PE transitive deps are respected.
+        // A task on another PE may depend on a same-PE task through a cross-PE chain;
+        // restricting in_degree to same-PE direct edges lets those "hidden" dependencies
+        // go undetected and can place a task before its transitive same-PE predecessor
+        // on the same GPU stream, causing a spin-wait deadlock.
+        std::vector<int> in_degree(totalNodes_, 0);
+        for (int task = 0; task < totalNodes_; task++)
             for (int dep : deps[task])
-                if (task_to_pe_[dep] == myPE) in_degree[task]++;
-        }
+                in_degree[task]++;
 
         std::queue<int> ready;
-        for (int task : tasks_per_pe_[myPE])
+        for (int task = 0; task < totalNodes_; task++)
             if (in_degree[task] == 0) ready.push(task);
 
         while (!ready.empty())
         {
             int task = ready.front();
             ready.pop();
-            sorted_pe_tasks_.push_back(task);
+            if (task_to_pe_[task] == myPE) sorted_pe_tasks_.push_back(task);
             for (int dependent : dependents_[task])
-            {
-                if (task_to_pe_[dependent] != myPE) continue;
                 if (--in_degree[dependent] == 0) ready.push(dependent);
-            }
         }
     }
 

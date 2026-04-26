@@ -130,7 +130,7 @@ __global__ void kernel_signal_static(int task_id, int* d_completion_flags, int* 
 {
     int one = 1;
     if (debug) printf("[signal] task %d: signaling %d PEs\n", task_id, n_notify_pes);
-    nvshmem_fence();
+    nvshmem_quiet();
     for (int i = 0; i < n_notify_pes; i++)
     {
         if (debug)
