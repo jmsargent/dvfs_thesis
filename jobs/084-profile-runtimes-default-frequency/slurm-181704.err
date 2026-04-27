@@ -626,3 +626,87 @@ pynvml.NVMLError_Uninitialized: Uninitialized
   File "/data/users/sargent/dvfs_thesis/venv_hpc/lib/python3.12/site-packages/pynvml.py", line 1083, in _nvmlCheckReturn
     raise NVMLError(ret)
 pynvml.NVMLError_Uninitialized: Uninitialized
+Traceback (most recent call last):
+  File "/data/users/chjing/dvfs_thesis/chens_code/EnergyMonitor.py", line 283, in main
+    monitor_instance.monitor_continuous(
+  File "/data/users/chjing/dvfs_thesis/chens_code/EnergyMonitor.py", line 166, in monitor_continuous
+    time.sleep(interval)
+  File "/data/users/chjing/dvfs_thesis/chens_code/EnergyMonitor.py", line 244, in signal_handler
+    sys.exit(0)
+SystemExit: 0
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/data/users/chjing/dvfs_thesis/chens_code/EnergyMonitor.py", line 305, in <module>
+    main()
+  File "/data/users/chjing/dvfs_thesis/chens_code/EnergyMonitor.py", line 291, in main
+    pynvml.nvmlShutdown()
+  File "/data/users/sargent/dvfs_thesis/venv_hpc/lib/python3.12/site-packages/pynvml.py", line 2970, in nvmlShutdown
+    _nvmlCheckReturn(ret)
+  File "/data/users/sargent/dvfs_thesis/venv_hpc/lib/python3.12/site-packages/pynvml.py", line 1083, in _nvmlCheckReturn
+    raise NVMLError(ret)
+pynvml.NVMLError_Uninitialized: Uninitialized
+Traceback (most recent call last):
+  File "/data/users/chjing/dvfs_thesis/chens_code/EnergyMonitor.py", line 283, in main
+    monitor_instance.monitor_continuous(
+  File "/data/users/chjing/dvfs_thesis/chens_code/EnergyMonitor.py", line 166, in monitor_continuous
+    time.sleep(interval)
+  File "/data/users/chjing/dvfs_thesis/chens_code/EnergyMonitor.py", line 244, in signal_handler
+    sys.exit(0)
+SystemExit: 0
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/data/users/chjing/dvfs_thesis/chens_code/EnergyMonitor.py", line 305, in <module>
+    main()
+  File "/data/users/chjing/dvfs_thesis/chens_code/EnergyMonitor.py", line 291, in main
+    pynvml.nvmlShutdown()
+  File "/data/users/sargent/dvfs_thesis/venv_hpc/lib/python3.12/site-packages/pynvml.py", line 2970, in nvmlShutdown
+    _nvmlCheckReturn(ret)
+  File "/data/users/sargent/dvfs_thesis/venv_hpc/lib/python3.12/site-packages/pynvml.py", line 1083, in _nvmlCheckReturn
+    raise NVMLError(ret)
+pynvml.NVMLError_Uninitialized: Uninitialized
+Traceback (most recent call last):
+  File "/data/users/chjing/dvfs_thesis/chens_code/EnergyMonitor.py", line 283, in main
+    monitor_instance.monitor_continuous(
+  File "/data/users/chjing/dvfs_thesis/chens_code/EnergyMonitor.py", line 166, in monitor_continuous
+    time.sleep(interval)
+  File "/data/users/chjing/dvfs_thesis/chens_code/EnergyMonitor.py", line 244, in signal_handler
+    sys.exit(0)
+SystemExit: 0
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/data/users/chjing/dvfs_thesis/chens_code/EnergyMonitor.py", line 305, in <module>
+    main()
+  File "/data/users/chjing/dvfs_thesis/chens_code/EnergyMonitor.py", line 291, in main
+    pynvml.nvmlShutdown()
+  File "/data/users/sargent/dvfs_thesis/venv_hpc/lib/python3.12/site-packages/pynvml.py", line 2970, in nvmlShutdown
+    _nvmlCheckReturn(ret)
+  File "/data/users/sargent/dvfs_thesis/venv_hpc/lib/python3.12/site-packages/pynvml.py", line 1083, in _nvmlCheckReturn
+    raise NVMLError(ret)
+pynvml.NVMLError_Uninitialized: Uninitialized
+Traceback (most recent call last):
+  File "/data/users/chjing/dvfs_thesis/chens_code/EnergyMonitor.py", line 283, in main
+    monitor_instance.monitor_continuous(
+  File "/data/users/chjing/dvfs_thesis/chens_code/EnergyMonitor.py", line 166, in monitor_continuous
+    time.sleep(interval)
+  File "/data/users/chjing/dvfs_thesis/chens_code/EnergyMonitor.py", line 244, in signal_handler
+    sys.exit(0)
+SystemExit: 0
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/data/users/chjing/dvfs_thesis/chens_code/EnergyMonitor.py", line 305, in <module>
+    main()
+  File "/data/users/chjing/dvfs_thesis/chens_code/EnergyMonitor.py", line 291, in main
+    pynvml.nvmlShutdown()
+  File "/data/users/sargent/dvfs_thesis/venv_hpc/lib/python3.12/site-packages/pynvml.py", line 2970, in nvmlShutdown
+    _nvmlCheckReturn(ret)
+  File "/data/users/sargent/dvfs_thesis/venv_hpc/lib/python3.12/site-packages/pynvml.py", line 1083, in _nvmlCheckReturn
+    raise NVMLError(ret)
+pynvml.NVMLError_Uninitialized: Uninitialized
