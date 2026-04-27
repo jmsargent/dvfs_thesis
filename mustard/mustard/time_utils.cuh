@@ -9,9 +9,9 @@
 // Print a pre-captured system_clock time_point as a Unix timestamp.
 // label     - descriptive string printed before the timestamp
 // precision - number of decimal places (1–9; capped at nanoseconds)
-inline void print_timestamp(const std::string &label,
-                            std::chrono::system_clock::time_point tp,
-                            int precision = 7)
+// fp        - output file (defaults to stdout)
+inline void print_timestamp(const std::string& label, std::chrono::system_clock::time_point tp,
+                            int precision = 7, FILE* fp = stdout)
 {
     auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(tp.time_since_epoch()).count();
 
@@ -20,18 +20,17 @@ inline void print_timestamp(const std::string &label,
     int64_t frac    = frac_ns;
     for (int i = 0; i < shift; i++) frac /= 10;
 
-    printf("%s: %lld.%0*lld\n", label.c_str(),
-           (long long)(ns / 1000000000LL),
-           precision,
-           (long long)frac);
+    fprintf(fp, "%s: %lld.%0*lld\n", label.c_str(), (long long)(ns / 1000000000LL), precision,
+            (long long)frac);
 }
 
 // Print the current wall-clock time as a Unix timestamp.
 // label     - descriptive string printed before the timestamp
 // precision - number of decimal places (1–9; capped at nanoseconds)
-inline void print_timestamp(const std::string &label, int precision = 7)
+// fp        - output file (defaults to stdout)
+inline void print_timestamp(const std::string& label, int precision = 7, FILE* fp = stdout)
 {
-    print_timestamp(label, std::chrono::system_clock::now(), precision);
+    print_timestamp(label, std::chrono::system_clock::now(), precision, fp);
 }
 
 // ---- GPU timer calibration -----------------------------------------------
@@ -86,7 +85,8 @@ inline int64_t globaltimer_to_unix_ns(unsigned long long ts, const CalibrationRe
 
 // Print a raw __globaltimer() value as a Unix timestamp string.
 inline void print_globaltimer_timestamp(const std::string& label, unsigned long long ts,
-                                        const CalibrationRef& ref, int precision = 7)
+                                        const CalibrationRef& ref, int precision = 7,
+                                        FILE* fp = stdout)
 {
     int64_t unix_ns = globaltimer_to_unix_ns(ts, ref);
     int64_t frac_ns = unix_ns % 1000000000LL;
@@ -94,8 +94,8 @@ inline void print_globaltimer_timestamp(const std::string& label, unsigned long 
     int     shift = 9 - precision;
     int64_t frac  = frac_ns;
     for (int i = 0; i < shift; i++) frac /= 10;
-    printf("%s: %lld.%0*lld\n", label.c_str(),
-           (long long)(unix_ns / 1000000000LL), precision, (long long)frac);
+    fprintf(fp, "%s: %lld.%0*lld\n", label.c_str(), (long long)(unix_ns / 1000000000LL), precision,
+            (long long)frac);
 }
 
 }  // namespace gpu_clock

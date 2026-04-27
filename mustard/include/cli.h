@@ -17,6 +17,7 @@ struct MustardConfig
     int         workspace      = 256;  // cublas workspace in kb
     int         smLimit        = 20;
     int         runs           = 1;
+    int         repeat         = 1;
     bool        staticMultiGPU = false;
     int         debugKernels   = 0;
     std::string invocationPath = "";
@@ -33,6 +34,8 @@ inline void printCommonUsage()
               << "    --sm, --smLimit=<int> SM limit per kernel (1-108)             [default: 20]\n"
               << "    --ws, --workspace=<int> cuBLAS workspace in kB (1-1048576)   [default: 256]\n"
               << "    -r, --runs=<int>     Number of timing runs                    [default: 1]\n"
+              << "    --repeat=<int>       Repeat each compute kernel N times (no   [default: 1]\n"
+              << "                         save/restore — result is incorrect)\n"
               << "    -v, --verbose        Enable verbose output\n"
               << "    --verify             Verify result correctness\n"
               << "    --dot                Dump execution graph in DOT format\n"
@@ -131,6 +134,13 @@ inline bool parseCommonArgs(argh::parser& cmdl, MustardConfig& cfg)
     {
         std::cerr << "Error: Must provide a valid number of runs! Got '"
                   << cmdl({"run", "r", "R"}).str() << "'" << std::endl;
+        return false;
+    }
+
+    if (!(cmdl({"repeat", "rep"}, cfg.repeat) >> cfg.repeat) || cfg.repeat < 1)
+    {
+        std::cerr << "Error: Must provide a valid repeat count! Got '"
+                  << cmdl({"repeat", "rep"}).str() << "'" << std::endl;
         return false;
     }
 

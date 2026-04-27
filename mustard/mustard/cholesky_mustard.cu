@@ -17,6 +17,7 @@
 #include "argh.h"
 #include "cli.h"
 #include "gen.h"
+#include "cholesky_graph_builder.h"
 #include "injectors.h"
 #include "mustard.h"
 #include "pe_writer.h"
@@ -33,6 +34,10 @@ static int&          verbose   = cfg.verbose;
 static int&          workspace = cfg.workspace;
 static int&          smLimit   = cfg.smLimit;
 static int&          runs      = cfg.runs;
+static int&          repeat    = cfg.repeat;
+// When --output is set, all diagnostic output goes here instead of stdout so
+// it cannot interleave with the CSV written by PEWriter.
+static FILE*         g_log     = stdout;
 
 void trivialCholesky(bool verify)
 {
@@ -85,7 +90,7 @@ void trivialCholesky(bool verify)
         checkCudaErrors(cudaDeviceSynchronize());
         checkCudaErrors(cudaMemset(d_workspace, 0, workspaceInBytesOnDevice));
         float time = clock.getTimeInSeconds();
-        printf("device %d | %d run | time (s): %4.4f\n", myPE, i, time);
+        fprintf(g_log, "device %d | %d run | time (s): %4.4f\n", myPE, i, time);
         totalTime += time;
     }
 
@@ -456,7 +461,7 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
                 checkCudaErrors(cudaDeviceSynchronize());
             }
             float time = clock.getTimeInSeconds();
-            printf("device %d | %d run | time (s): %4.4f\n", myPE, i, time);
+            fprintf(g_log, "device %d | %d run | time (s): %4.4f\n", myPE, i, time);
             totalTime += time;
         }
         if (verbose) std::cout << "Done" << std::endl;
@@ -487,7 +492,7 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
             clock.end(s);
             checkCudaErrors(cudaDeviceSynchronize());
             float time = clock.getTimeInSeconds();
-            printf("device %d | %d run | time (s): %4.4f\n", myPE, i, time);
+            fprintf(g_log, "device %d | %d run | time (s): %4.4f\n", myPE, i, time);
             totalTime += time;
         }
     }
@@ -545,9 +550,6 @@ void tiledCholeskyStatic(bool verify, bool dot)
     checkCudaErrors(cusolverDnCreateParams(&cusolverDnParams));
     checkCudaErrors(cublasCreate(&cublasHandle));
 
-    double one      = 1.0;
-    double minusOne = -1.0;
-
     int workspaceInBytesOnDevice;
     checkCudaErrors(cusolverDnDpotrf_bufferSize(cusolverDnHandle, CUBLAS_FILL_MODE_LOWER, B,
                                                 d_matrix, N, &workspaceInBytesOnDevice));
@@ -583,126 +585,16 @@ void tiledCholeskyStatic(bool verify, bool dot)
     checkCudaErrors(cudaStreamCreate(&s));
     checkCudaErrors(cusolverDnSetStream(cusolverDnHandle, s));
     checkCudaErrors(cublasSetStream(cublasHandle, s));
-    checkCudaErrors(cublasSetWorkspace(cublasHandle, d_workspace_cublas[0], cublasWorkspaceSize));
-
-    auto tiledCholeskyGraphCreator =
-        std::make_unique<mustard::TiledGraphCreator>(s, graph, true, totalNodes);
-
-    // Graph construction — verbatim copy of the subgraph path in tiledCholesky
-    for (int k = 0; k < T; k++)
-    {
-        checkCudaErrors(
-            cublasSetWorkspace(cublasHandle, d_workspace_cublas[0], cublasWorkspaceSize));
-        tiledCholeskyGraphCreator->beginCaptureOperation(
-            std::make_pair(k, k), {std::make_pair(k, k)},
-            "POTRF(" + std::to_string(k) + "," + std::to_string(k) + ")");
-        mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(smLimit, d_flags);
-        if (myPE != 0)
-            cudaMemcpy2DAsync(getMatrixBlock(d_matrix, k, k), sizeof(double) * N,
-                              getMatrixBlock(d_matrix_remote, k, k), sizeof(double) * N,
-                              sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-        checkCudaErrors(cusolverDnDpotrf(cusolverDnHandle, CUBLAS_FILL_MODE_LOWER, B,
-                                         getMatrixBlock(d_matrix, k, k), N, d_workspace_cusolver,
-                                         workspaceInBytesOnDevice, d_info));
-        if (myPE != 0)
-            cudaMemcpy2DAsync(getMatrixBlock(d_matrix_remote, k, k), sizeof(double) * N,
-                              getMatrixBlock(d_matrix, k, k), sizeof(double) * N,
-                              sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-        mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(-smLimit, d_flags);
-        tiledCholeskyGraphCreator->endCaptureOperation();
-
-        for (int i = k + 1; i < T; i++)
-        {
-            checkCudaErrors(
-                cublasSetWorkspace(cublasHandle, d_workspace_cublas[i], cublasWorkspaceSize));
-            tiledCholeskyGraphCreator->beginCaptureOperation(
-                std::make_pair(i, k), {std::make_pair(k, k), std::make_pair(i, k)},
-                "TRSM(" + std::to_string(i) + "," + std::to_string(k) + ")");
-            mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(smLimit, d_flags);
-            if (myPE != 0 && k != 0)
-                cudaMemcpy2DAsync(getMatrixBlock(d_matrix, i, k), sizeof(double) * N,
-                                  getMatrixBlock(d_matrix_remote, i, k), sizeof(double) * N,
-                                  sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-            if (myPE != 0)
-                cudaMemcpy2DAsync(getMatrixBlock(d_matrix, k, k), sizeof(double) * N,
-                                  getMatrixBlock(d_matrix_remote, k, k), sizeof(double) * N,
-                                  sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-            checkCudaErrors(cublasDtrsm(cublasHandle, CUBLAS_SIDE_RIGHT, CUBLAS_FILL_MODE_LOWER,
-                                        CUBLAS_OP_T, CUBLAS_DIAG_NON_UNIT, B, B, &one,
-                                        getMatrixBlock(d_matrix, k, k), N,
-                                        getMatrixBlock(d_matrix, i, k), N));
-            if (myPE != 0)
-                cudaMemcpy2DAsync(getMatrixBlock(d_matrix_remote, i, k), sizeof(double) * N,
-                                  getMatrixBlock(d_matrix, i, k), sizeof(double) * N,
-                                  sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-            mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(-smLimit, d_flags);
-            tiledCholeskyGraphCreator->endCaptureOperation();
-        }
-
-        for (int i = k + 1; i < T; i++)
-        {
-            checkCudaErrors(
-                cublasSetWorkspace(cublasHandle, d_workspace_cublas[i + T], cublasWorkspaceSize));
-            tiledCholeskyGraphCreator->beginCaptureOperation(
-                std::make_pair(i, i), {std::make_pair(i, i), std::make_pair(i, k)},
-                "SYRK(" + std::to_string(i) + "," + std::to_string(i) + "," + std::to_string(k) +
-                    ")");
-            mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(smLimit, d_flags);
-            if (myPE != 0)
-                cudaMemcpy2DAsync(getMatrixBlock(d_matrix, i, k), sizeof(double) * N,
-                                  getMatrixBlock(d_matrix_remote, i, k), sizeof(double) * N,
-                                  sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-            if (myPE != 0)
-                cudaMemcpy2DAsync(getMatrixBlock(d_matrix, i, i), sizeof(double) * N,
-                                  getMatrixBlock(d_matrix_remote, i, i), sizeof(double) * N,
-                                  sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-            checkCudaErrors(cublasDsyrk(cublasHandle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, B, B,
-                                        &minusOne, getMatrixBlock(d_matrix, i, k), N, &one,
-                                        getMatrixBlock(d_matrix, i, i), N));
-            if (myPE != 0)
-                cudaMemcpy2DAsync(getMatrixBlock(d_matrix_remote, i, i), sizeof(double) * N,
-                                  getMatrixBlock(d_matrix, i, i), sizeof(double) * N,
-                                  sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-            mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(-smLimit, d_flags);
-            tiledCholeskyGraphCreator->endCaptureOperation();
-
-            for (int j = i + 1; j < T; j++)
-            {
-                checkCudaErrors(cublasSetWorkspace(
-                    cublasHandle, d_workspace_cublas[2 * T + (i - 1) * T + (j - 1)],
-                    cublasWorkspaceSize));
-                tiledCholeskyGraphCreator->beginCaptureOperation(
-                    std::make_pair(j, i),
-                    {std::make_pair(j, i), std::make_pair(j, k), std::make_pair(i, k)},
-                    "GEMM(" + std::to_string(j) + "," + std::to_string(i) + "," +
-                        std::to_string(k) + ")");
-                mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(smLimit, d_flags);
-                if (myPE != 0)
-                {
-                    cudaMemcpy2DAsync(getMatrixBlock(d_matrix, i, k), sizeof(double) * N,
-                                      getMatrixBlock(d_matrix_remote, i, k), sizeof(double) * N,
-                                      sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-                    cudaMemcpy2DAsync(getMatrixBlock(d_matrix, j, k), sizeof(double) * N,
-                                      getMatrixBlock(d_matrix_remote, j, k), sizeof(double) * N,
-                                      sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-                    cudaMemcpy2DAsync(getMatrixBlock(d_matrix, j, i), sizeof(double) * N,
-                                      getMatrixBlock(d_matrix_remote, j, i), sizeof(double) * N,
-                                      sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-                }
-                checkCudaErrors(cublasGemmEx(cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, B, B, B,
-                                             &minusOne, getMatrixBlock(d_matrix, j, k), CUDA_R_64F,
-                                             N, getMatrixBlock(d_matrix, i, k), CUDA_R_64F, N, &one,
-                                             getMatrixBlock(d_matrix, j, i), CUDA_R_64F, N,
-                                             CUBLAS_COMPUTE_64F, CUBLAS_GEMM_DEFAULT));
-                if (myPE != 0)
-                    cudaMemcpy2DAsync(getMatrixBlock(d_matrix_remote, j, i), sizeof(double) * N,
-                                      getMatrixBlock(d_matrix, j, i), sizeof(double) * N,
-                                      sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-                mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(-smLimit, d_flags);
-                tiledCholeskyGraphCreator->endCaptureOperation();
-            }
-        }
-    }
+    TiledCholeskyBuildContext buildCtx{s, cusolverDnHandle, cublasHandle, d_matrix, d_matrix_remote,
+                                       d_workspace_cusolver, d_workspace_cublas, d_info, d_flags,
+                                       workspaceInBytesOnDevice, cublasWorkspaceSize,
+                                       N, B, T, smLimit, myPE, totalNodes};
+    auto builder = (repeat > 1)
+        ? std::unique_ptr<TiledCholeskyGraphBuilder>(
+              new RepeatingTiledCholeskyGraphBuilder(buildCtx, graph, repeat))
+        : std::make_unique<TiledCholeskyGraphBuilder>(buildCtx, graph);
+    builder->build();
+    auto& tiledCholeskyGraphCreator = builder->creator;
 
     checkCudaErrors(cudaDeviceSynchronize());
     printf("device %d | tiledCholeskyStatic: graph construction done\n", myPE);
@@ -911,7 +803,7 @@ void tiledCholeskyStatic(bool verify, bool dot)
         nvshmem_barrier_all();
 
         double time = std::chrono::duration<double>(t_end - t_start).count();
-        printf("device %d | %d run | time (s): %4.4f\n", myPE, i, time);
+        fprintf(g_log, "device %d | %d run | time (s): %4.4f\n", myPE, i, time);
         totalTime += time;
     }
     printf("Total time used (s): %4.4f\n", totalTime);
@@ -1001,9 +893,6 @@ void tiledCholeskyStaticOneGraph(bool verify, bool dot)
     checkCudaErrors(cusolverDnCreateParams(&cusolverDnParams));
     checkCudaErrors(cublasCreate(&cublasHandle));
 
-    double one      = 1.0;
-    double minusOne = -1.0;
-
     int workspaceInBytesOnDevice;
     checkCudaErrors(cusolverDnDpotrf_bufferSize(cusolverDnHandle, CUBLAS_FILL_MODE_LOWER, B,
                                                 d_matrix, N, &workspaceInBytesOnDevice));
@@ -1039,126 +928,16 @@ void tiledCholeskyStaticOneGraph(bool verify, bool dot)
     checkCudaErrors(cudaStreamCreate(&s));
     checkCudaErrors(cusolverDnSetStream(cusolverDnHandle, s));
     checkCudaErrors(cublasSetStream(cublasHandle, s));
-    checkCudaErrors(cublasSetWorkspace(cublasHandle, d_workspace_cublas[0], cublasWorkspaceSize));
-
-    auto tiledCholeskyGraphCreator =
-        std::make_unique<mustard::TiledGraphCreator>(s, graph, true, totalNodes);
-
-    // Graph construction — verbatim copy of the subgraph path in tiledCholesky
-    for (int k = 0; k < T; k++)
-    {
-        checkCudaErrors(
-            cublasSetWorkspace(cublasHandle, d_workspace_cublas[0], cublasWorkspaceSize));
-        tiledCholeskyGraphCreator->beginCaptureOperation(
-            std::make_pair(k, k), {std::make_pair(k, k)},
-            "POTRF(" + std::to_string(k) + "," + std::to_string(k) + ")");
-        mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(smLimit, d_flags);
-        if (myPE != 0)
-            cudaMemcpy2DAsync(getMatrixBlock(d_matrix, k, k), sizeof(double) * N,
-                              getMatrixBlock(d_matrix_remote, k, k), sizeof(double) * N,
-                              sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-        checkCudaErrors(cusolverDnDpotrf(cusolverDnHandle, CUBLAS_FILL_MODE_LOWER, B,
-                                         getMatrixBlock(d_matrix, k, k), N, d_workspace_cusolver,
-                                         workspaceInBytesOnDevice, d_info));
-        if (myPE != 0)
-            cudaMemcpy2DAsync(getMatrixBlock(d_matrix_remote, k, k), sizeof(double) * N,
-                              getMatrixBlock(d_matrix, k, k), sizeof(double) * N,
-                              sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-        mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(-smLimit, d_flags);
-        tiledCholeskyGraphCreator->endCaptureOperation();
-
-        for (int i = k + 1; i < T; i++)
-        {
-            checkCudaErrors(
-                cublasSetWorkspace(cublasHandle, d_workspace_cublas[i], cublasWorkspaceSize));
-            tiledCholeskyGraphCreator->beginCaptureOperation(
-                std::make_pair(i, k), {std::make_pair(k, k), std::make_pair(i, k)},
-                "TRSM(" + std::to_string(i) + "," + std::to_string(k) + ")");
-            mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(smLimit, d_flags);
-            if (myPE != 0 && k != 0)
-                cudaMemcpy2DAsync(getMatrixBlock(d_matrix, i, k), sizeof(double) * N,
-                                  getMatrixBlock(d_matrix_remote, i, k), sizeof(double) * N,
-                                  sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-            if (myPE != 0)
-                cudaMemcpy2DAsync(getMatrixBlock(d_matrix, k, k), sizeof(double) * N,
-                                  getMatrixBlock(d_matrix_remote, k, k), sizeof(double) * N,
-                                  sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-            checkCudaErrors(cublasDtrsm(cublasHandle, CUBLAS_SIDE_RIGHT, CUBLAS_FILL_MODE_LOWER,
-                                        CUBLAS_OP_T, CUBLAS_DIAG_NON_UNIT, B, B, &one,
-                                        getMatrixBlock(d_matrix, k, k), N,
-                                        getMatrixBlock(d_matrix, i, k), N));
-            if (myPE != 0)
-                cudaMemcpy2DAsync(getMatrixBlock(d_matrix_remote, i, k), sizeof(double) * N,
-                                  getMatrixBlock(d_matrix, i, k), sizeof(double) * N,
-                                  sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-            mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(-smLimit, d_flags);
-            tiledCholeskyGraphCreator->endCaptureOperation();
-        }
-
-        for (int i = k + 1; i < T; i++)
-        {
-            checkCudaErrors(
-                cublasSetWorkspace(cublasHandle, d_workspace_cublas[i + T], cublasWorkspaceSize));
-            tiledCholeskyGraphCreator->beginCaptureOperation(
-                std::make_pair(i, i), {std::make_pair(i, i), std::make_pair(i, k)},
-                "SYRK(" + std::to_string(i) + "," + std::to_string(i) + "," + std::to_string(k) +
-                    ")");
-            mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(smLimit, d_flags);
-            if (myPE != 0)
-                cudaMemcpy2DAsync(getMatrixBlock(d_matrix, i, k), sizeof(double) * N,
-                                  getMatrixBlock(d_matrix_remote, i, k), sizeof(double) * N,
-                                  sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-            if (myPE != 0)
-                cudaMemcpy2DAsync(getMatrixBlock(d_matrix, i, i), sizeof(double) * N,
-                                  getMatrixBlock(d_matrix_remote, i, i), sizeof(double) * N,
-                                  sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-            checkCudaErrors(cublasDsyrk(cublasHandle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, B, B,
-                                        &minusOne, getMatrixBlock(d_matrix, i, k), N, &one,
-                                        getMatrixBlock(d_matrix, i, i), N));
-            if (myPE != 0)
-                cudaMemcpy2DAsync(getMatrixBlock(d_matrix_remote, i, i), sizeof(double) * N,
-                                  getMatrixBlock(d_matrix, i, i), sizeof(double) * N,
-                                  sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-            mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(-smLimit, d_flags);
-            tiledCholeskyGraphCreator->endCaptureOperation();
-
-            for (int j = i + 1; j < T; j++)
-            {
-                checkCudaErrors(cublasSetWorkspace(
-                    cublasHandle, d_workspace_cublas[2 * T + (i - 1) * T + (j - 1)],
-                    cublasWorkspaceSize));
-                tiledCholeskyGraphCreator->beginCaptureOperation(
-                    std::make_pair(j, i),
-                    {std::make_pair(j, i), std::make_pair(j, k), std::make_pair(i, k)},
-                    "GEMM(" + std::to_string(j) + "," + std::to_string(i) + "," +
-                        std::to_string(k) + ")");
-                mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(smLimit, d_flags);
-                if (myPE != 0)
-                {
-                    cudaMemcpy2DAsync(getMatrixBlock(d_matrix, i, k), sizeof(double) * N,
-                                      getMatrixBlock(d_matrix_remote, i, k), sizeof(double) * N,
-                                      sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-                    cudaMemcpy2DAsync(getMatrixBlock(d_matrix, j, k), sizeof(double) * N,
-                                      getMatrixBlock(d_matrix_remote, j, k), sizeof(double) * N,
-                                      sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-                    cudaMemcpy2DAsync(getMatrixBlock(d_matrix, j, i), sizeof(double) * N,
-                                      getMatrixBlock(d_matrix_remote, j, i), sizeof(double) * N,
-                                      sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-                }
-                checkCudaErrors(cublasGemmEx(cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, B, B, B,
-                                             &minusOne, getMatrixBlock(d_matrix, j, k), CUDA_R_64F,
-                                             N, getMatrixBlock(d_matrix, i, k), CUDA_R_64F, N, &one,
-                                             getMatrixBlock(d_matrix, j, i), CUDA_R_64F, N,
-                                             CUBLAS_COMPUTE_64F, CUBLAS_GEMM_DEFAULT));
-                if (myPE != 0)
-                    cudaMemcpy2DAsync(getMatrixBlock(d_matrix_remote, j, i), sizeof(double) * N,
-                                      getMatrixBlock(d_matrix, j, i), sizeof(double) * N,
-                                      sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
-                mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(-smLimit, d_flags);
-                tiledCholeskyGraphCreator->endCaptureOperation();
-            }
-        }
-    }
+    TiledCholeskyBuildContext buildCtx{s, cusolverDnHandle, cublasHandle, d_matrix, d_matrix_remote,
+                                       d_workspace_cusolver, d_workspace_cublas, d_info, d_flags,
+                                       workspaceInBytesOnDevice, cublasWorkspaceSize,
+                                       N, B, T, smLimit, myPE, totalNodes};
+    auto builder = (repeat > 1)
+        ? std::unique_ptr<TiledCholeskyGraphBuilder>(
+              new RepeatingTiledCholeskyGraphBuilder(buildCtx, graph, repeat))
+        : std::make_unique<TiledCholeskyGraphBuilder>(buildCtx, graph);
+    builder->build();
+    auto& tiledCholeskyGraphCreator = builder->creator;
 
     checkCudaErrors(cudaDeviceSynchronize());
     printf("device %d | tiledCholeskyStaticOneGraph: graph construction done\n", myPE);
@@ -1361,7 +1140,7 @@ void tiledCholeskyStaticOneGraph(bool verify, bool dot)
         nvshmem_barrier_all();
 
         double time = std::chrono::duration<double>(t_end - t_start).count();
-        printf("device %d | %d run | time (s): %4.4f\n", myPE, i, time);
+        fprintf(g_log, "device %d | %d run | time (s): %4.4f\n", myPE, i, time);
         totalTime += time;
     }
     printf("Total time used (s): %4.4f\n", totalTime);
@@ -1456,10 +1235,17 @@ int main(int argc, char** argv)
     auto init_end = std::chrono::high_resolution_clock::now();
 
     myPE = cfg.myPE;
-    if (myPE == 0) print_timestamp("Program start timestamp", wall_start);
+    if (!cfg.outputPrefix.empty())
+    {
+        char logname[512];
+        snprintf(logname, sizeof(logname), "%s_pe%d.log", cfg.outputPrefix.c_str(), myPE);
+        FILE* f = fopen(logname, "w");
+        if (f) g_log = f;
+    }
+    if (myPE == 0) print_timestamp("Program start timestamp", wall_start, 7, g_log);
     double init_time = std::chrono::duration<double>(init_end - init_start).count();
-    printf("device %d | NVSHMEM init time (s): %4.4f\n", myPE, init_time);
-    fflush(stdout);
+    fprintf(g_log, "device %d | NVSHMEM init time (s): %4.4f\n", myPE, init_time);
+    fflush(g_log);
 
     if (!(cmdl["tiled"] || cmdl["subgraph"] || cmdl["static-multigpu"] || cmdl["one-graph-per-pe"]))
         T = 1;
