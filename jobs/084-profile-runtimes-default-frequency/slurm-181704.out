@@ -44,3 +44,21 @@ device 3 | Setup time (s): 3.2944
 device 0 | Setup time (s): 3.2962
 device 1 | Setup time (s): 3.3122
 lu tiledStatic start_time: 1777306246.7081266
+lu tiledStatic end_time: 1777306247.8773099
+device 0 | 0 run | time (s): 1.1692
+device 2 | 0 run | time (s): 1.1721
+device 3 | 0 run | time (s): 1.1743
+device 1 | 0 run | time (s): 1.1721
+lu tiledStatic start_time: 1777306248.0453354
+lu tiledStatic end_time: 1777306249.2366104
+device 0 | 1 run | time (s): 1.1913
+device 2 | 1 run | time (s): 1.1946
+device 3 | 1 run | time (s): 1.1969
+device 1 | 1 run | time (s): 1.1926
+lu tiledStatic start_time: 1777306249.4425970
+lu tiledStatic end_time: 1777306250.6237421
+device 0 | 2 run | time (s): 1.1811
+device 2 | 2 run | time (s): 1.1840
+device 3 | 2 run | time (s): 1.1863
+device 1 | 2 run | time (s): 1.1820
+lu tiledStatic start_time: 1777306250.8252368
