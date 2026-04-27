@@ -1,17 +1,13 @@
 {
-  "git_sha": "3d7968d8404c78240b7ec933f13408e0825db0d2",
-  "id": "084-profile-runtimes-per-frequency-improved",
-  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/084-profile-runtimes-per-frequency-improved",
-  "last_update_at": "2026-04-15T19:33:30+02:00",
-  "log_err": "/data/users/chjing/dvfs_thesis/jobs/084-profile-runtimes-per-frequency-improved/slurm-174558.err",
-  "log_out": "/data/users/chjing/dvfs_thesis/jobs/084-profile-runtimes-per-frequency-improved/slurm-174558.out",
-  "queued_at": "2026-04-15T19:33:21+02:00",
-  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/084-profile-runtimes-per-frequency-improved/run.sbatch",
-  "slurm_info": {
-    "raw_state": "PENDING",
-    "source": "squeue"
-  },
-  "slurm_job_id": 174558,
-  "state": "PENDING",
-  "submitted_at": "2026-04-15T19:33:21+02:00"
+  "git_sha": "1923ec2b848d03c0c69d1f0e9d7b11a14525d2e2",
+  "id": "084-profile-runtimes-default-frequency",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/084-profile-runtimes-default-frequency",
+  "last_update_at": "2026-04-27T18:10:34+02:00",
+  "log_err": "/data/users/chjing/dvfs_thesis/jobs/084-profile-runtimes-default-frequency/slurm-181704.err",
+  "log_out": "/data/users/chjing/dvfs_thesis/jobs/084-profile-runtimes-default-frequency/slurm-181704.out",
+  "queued_at": "2026-04-27T18:10:30+02:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/084-profile-runtimes-default-frequency/run.sbatch",
+  "slurm_job_id": 181704,
+  "state": "SUBMITTED",
+  "submitted_at": "2026-04-27T18:10:31+02:00"
 }
