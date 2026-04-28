@@ -2,16 +2,16 @@
   "git_sha": "6f51115b9ba484449f619146625ebbc2859e3e07",
   "id": "088-Profile-runtimes-each-frequency",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/088-Profile-runtimes-each-frequency",
-  "last_update_at": "2026-04-27T18:46:44+02:00",
+  "last_update_at": "2026-04-28T15:34:35+02:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/088-Profile-runtimes-each-frequency/slurm-181759.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/088-Profile-runtimes-each-frequency/slurm-181759.out",
   "queued_at": "2026-04-27T18:46:34+02:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/088-Profile-runtimes-each-frequency/run.sbatch",
   "slurm_info": {
-    "raw_state": "PENDING",
+    "raw_state": "RUNNING",
     "source": "squeue"
   },
   "slurm_job_id": 181759,
-  "state": "PENDING",
+  "state": "RUNNING",
   "submitted_at": "2026-04-27T18:46:35+02:00"
 }
