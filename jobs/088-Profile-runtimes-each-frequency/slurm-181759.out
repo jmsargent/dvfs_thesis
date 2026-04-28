@@ -1,0 +1,8 @@
+All assigned GPUs: 0,1,2,3,4,5,6,7
+Using GPUs (single NUMA): 0,1,2,3
+====================================================
+START_EXPERIMENT: BENCH=lu_mustard_FREQ=2040_TILE=16_N=9600_R=5
+====================================================
+Setting GPUs to 2040MHz...
+Attempting to set GPU freq to 2040 MHz (using default memory freq 6251 MHz)...
+Successfully set GPU frequency.
