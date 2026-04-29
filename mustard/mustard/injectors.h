@@ -103,7 +103,7 @@ class IInjector
 class SubgraphInjector : public IInjector
 {
    public:
-    SubgraphInjector(cudaGraph_t* subgraphs, const StaticRoundRobinScheduler& scheduler,
+    SubgraphInjector(cudaGraph_t* subgraphs, const StaticScheduler& scheduler,
                      int* d_completion_flags, int debug)
         : subgraphs_(subgraphs),
           scheduler_(scheduler),
@@ -167,7 +167,7 @@ class SubgraphInjector : public IInjector
 
    private:
     cudaGraph_t*                     subgraphs_;
-    const StaticRoundRobinScheduler& scheduler_;
+    const StaticScheduler& scheduler_;
     int*                             d_completion_flags_;
     int                              debug_;
 };

@@ -203,6 +203,33 @@ cg_mustard/fast:
 	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cg_mustard.dir/build.make mustard/CMakeFiles/cg_mustard.dir/build
 .PHONY : cg_mustard/fast
 
+StridedPanel.o: StridedPanel.cpp.o
+.PHONY : StridedPanel.o
+
+# target to build an object file
+StridedPanel.cpp.o:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cholesky_mustard.dir/build.make mustard/CMakeFiles/cholesky_mustard.dir/StridedPanel.cpp.o
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/lu_mustard.dir/build.make mustard/CMakeFiles/lu_mustard.dir/StridedPanel.cpp.o
+.PHONY : StridedPanel.cpp.o
+
+StridedPanel.i: StridedPanel.cpp.i
+.PHONY : StridedPanel.i
+
+# target to preprocess a source file
+StridedPanel.cpp.i:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cholesky_mustard.dir/build.make mustard/CMakeFiles/cholesky_mustard.dir/StridedPanel.cpp.i
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/lu_mustard.dir/build.make mustard/CMakeFiles/lu_mustard.dir/StridedPanel.cpp.i
+.PHONY : StridedPanel.cpp.i
+
+StridedPanel.s: StridedPanel.cpp.s
+.PHONY : StridedPanel.s
+
+# target to generate assembly for a file
+StridedPanel.cpp.s:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cholesky_mustard.dir/build.make mustard/CMakeFiles/cholesky_mustard.dir/StridedPanel.cpp.s
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/lu_mustard.dir/build.make mustard/CMakeFiles/lu_mustard.dir/StridedPanel.cpp.s
+.PHONY : StridedPanel.cpp.s
+
 cg_mustard.o: cg_mustard.cu.o
 .PHONY : cg_mustard.o
 
@@ -361,6 +388,9 @@ help:
 	@echo "... p_lu_mustard"
 	@echo "... pingpong_mustard"
 	@echo "... test_timer"
+	@echo "... StridedPanel.o"
+	@echo "... StridedPanel.i"
+	@echo "... StridedPanel.s"
 	@echo "... cg_mustard.o"
 	@echo "... cg_mustard.i"
 	@echo "... cg_mustard.s"

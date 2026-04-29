@@ -18,6 +18,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(MUSTARD_CUDA_MIN_VERSION "12.3" CACHE STRING "Minimum required CUDA toolkit version")
 set(MUSTARD_CUDA_ARCHITECTURES "native" CACHE STRING "CUDA architectures to build for (e.g. 80, 80;90, native)")
 
+
 find_package(CUDAToolkit ${MUSTARD_CUDA_MIN_VERSION} REQUIRED)
 enable_language(CUDA)
 set(CMAKE_CUDA_STANDARD 17)
@@ -61,5 +62,14 @@ if(MUSTARD_BUILD_BASELINES)
         add_subdirectory(baselines/slate)
     endif()
 endif()
+
+# This tells the IDE where the headers are on the cluster's host disk
+if(NOT DEFINED ENV{SINGULARITY_CONTAINER})
+    set(HOST_INCLUDE_DIR "$ENV{HOME}/.local/include")
+    include_directories("${HOST_INCLUDE_DIR}/cuda")
+    include_directories("${HOST_INCLUDE_DIR}/nvshmem")
+    include_directories("${HOST_INCLUDE_DIR}/ompi")
+endif()
+
 
 add_subdirectory(mustard)

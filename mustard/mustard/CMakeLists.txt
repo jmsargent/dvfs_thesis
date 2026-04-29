@@ -2,11 +2,16 @@ add_executable(test_timer test_timer.cu)
 set_target_properties(test_timer PROPERTIES CUDA_SEPARABLE_COMPILATION OFF)
 target_link_libraries(test_timer CUDA::cudart)
 
-add_executable(cholesky_mustard cholesky_mustard.cu)
+add_executable(cholesky_mustard cholesky_mustard.cu
+        StridedPanel.cpp
+        StridedPanel.h)
 add_executable(pingpong_mustard pingpong_mustard.cu)
-add_executable(lu_mustard lu_mustard.cu)
+add_executable(lu_mustard lu_mustard.cu
+        StridedPanel.cpp
+        StridedPanel.h)
 add_executable(p_lu_mustard lu_mustard_p.cu)
 add_executable(cg_mustard cg_mustard.cu)
+
 
 find_package(NVSHMEM REQUIRED)
 find_package(MPI REQUIRED)

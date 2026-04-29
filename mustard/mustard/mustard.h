@@ -214,6 +214,8 @@ class TiledGraphCreator
         }
     }
 
+    void skip(int n = 1) { index_counter += n; }
+
     void endCaptureOperation()
     {
         assert(this->lastModifiedTile.first != -1 && this->lastModifiedTile.second != -1);
@@ -261,6 +263,21 @@ class TiledGraphCreator
             out << i << ": " << subgraphOpNames[i] << "\n";
         }
         out.close();
+    }
+
+    // Register a task that lives on another PE: track tile→index mapping and
+    // compute dependencies without allocating a cudaGraph_t.
+    void phantomOperation(MatrixTile                        tileToWrite,
+                          std::initializer_list<MatrixTile> tilesToRead,
+                          const std::string&                opName = "")
+    {
+        auto tiles = std::vector<MatrixTile>(tilesToRead);
+        tiles.push_back(tileToWrite);
+        subgraphDependencies[index_counter] = getSubgraphDependencies(tiles);
+        subgraphOpNames[index_counter]      = opName;
+        subgraphs[index_counter]            = nullptr;
+        tileIndexByMap[tileToWrite]         = index_counter;
+        index_counter++;
     }
 
     void insertDependencyKernel(int src, int dst, BrokerWorkDistributor queue, int* d_dependencies)
