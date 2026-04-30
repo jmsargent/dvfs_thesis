@@ -4,13 +4,89 @@
 #include <cuda_runtime.h>
 #include <cusolverDn.h>
 
+#include <cassert>
+#include <functional>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
+#include <vector>
 
 #include "StridedPanel.h"
 #include "mustard.h"
 #include "utils.h"
+
+class HasLocation
+{
+   public:
+    virtual void setCoordinate(std::vector<int> coords) = 0;
+    virtual ~HasLocation()                              = default;
+};
+
+template <typename Ops>
+class DAGBuilder
+{
+    struct Node
+    {
+        int                   owner;
+        std::function<void()> op;
+        std::vector<int>      waitTaskIds;
+        std::vector<int>      signalPEs;
+    };
+
+    std::vector<Node>           nodes_;
+    int                         myPE_;
+    mustard::TiledGraphCreator& creator_;
+    Ops&                        ops_;
+
+   public:
+    class NodeRef
+    {
+        Node& node_;
+
+       public:
+        NodeRef(Node& n) : node_(n) {}
+        NodeRef& waitsFor(std::vector<int> ids) { node_.waitTaskIds = std::move(ids); return *this; }
+        NodeRef& signals(std::vector<int> pes)  { node_.signalPEs   = std::move(pes);  return *this; }
+    };
+
+    class NodeBuilder
+    {
+        DAGBuilder&      dag_;
+        std::vector<int> coords_;
+
+       public:
+        NodeBuilder(DAGBuilder& dag, std::vector<int> coords)
+            : dag_(dag), coords_(std::move(coords)) {}
+
+        template <typename F>
+        NodeRef add(int owner, F&& f)
+        {
+            auto& ops = dag_.ops_;
+            auto  c   = coords_;
+            dag_.nodes_.push_back({owner, [&ops, c, f = std::forward<F>(f)]() mutable {
+                ops.setCoordinate(c);
+                f(ops);
+            }, {}, {}});
+            return NodeRef(dag_.nodes_.back());
+        }
+    };
+
+    DAGBuilder(int myPE, mustard::TiledGraphCreator& creator, Ops& ops)
+        : myPE_(myPE), creator_(creator), ops_(ops) {}
+
+    template <typename... Args>
+    NodeBuilder at(Args... args)
+    {
+        return NodeBuilder(*this, {args...});
+    }
+
+    void buildFor()
+    {
+        // idk if want to change this to phantom operation , then we could somehow point to the creator whenever there is a dependency
+        for (auto& n : nodes_) n.owner == myPE_ ? n.op() : creator_.skip();
+    }
+};
 
 class PanelGraph
 {
@@ -54,8 +130,6 @@ class PanelGraph
         return deps;
     }
 
-    // Returns task-index → panel mapping matching the capture loop order.
-    // POTRF(k,k) and TRSM(i,k) belong to panel k; SYRK/GEMM updating column i belong to panel i.
     static std::vector<int> buildTaskToPanel(int T)
     {
         std::vector<int> v;
@@ -84,37 +158,6 @@ class PanelGraph
    protected:
     cudaStream_t s_;
 };
-
-/*
-    potrf(k):    reads [(k,k)]  writes [(k,k)]
-    trsm(i,k):   reads [(k,k), (i,k)]  writes [(i,k)]
-    syrk(i,k):   reads [(i,k), (i,i)]  writes [(i,i)]
-    gemm(j,i,k): reads [(j,k), (i,k), (j,i)]  writes [(j,i)]
-
-    on remote:
-
-    for k = 0 to T-1:
-        copyFromRemote(k,k)
-        potrf(k, k)
-
-        for i = k+1 to T-1:
-            copyFromRemote(i,k)
-            trsm(i, k)
-
-        for i = k+1 to T-1:
-            copyFromRemote(i,i)
-            syrk(i, k)
-            copyToRemote(i,i)
-
-            for j = i+1 to T-1:
-                copyFromRemote(j,i)
-                gemm(j, i, k)
-                copyToRemote(j,i)
-
-
-    Each PE owns matrix columns nr: myPE,mePE+2*NPEs,...
-    Each PE owns scratchpad
-*/
 
 // owns panels, cublas/cusolver handles, and all workspace memory
 class CholeskyCudaOperations
@@ -208,39 +251,48 @@ class CholeskyCudaOperations
     double              one_, minusOne_;
 };
 
-class CholeskyPanelGraph : public PanelGraph
+class CholeskyPanelGraph : public PanelGraph, public HasLocation
 {
    public:
     CholeskyPanelGraph(cudaStream_t s, cudaGraph_t graph, int totalNodes, size_t T, int myPE,
                        int nPEs, CholeskyCudaOperations& ops, mustard::OccupancyTracker& occupancy)
-        : PanelGraph(s, graph, totalNodes), T_(T), myPE_(myPE), nPEs_(nPEs), ops_(ops),
+        : PanelGraph(s, graph, totalNodes),
+          T_(T),
+          myPE_(myPE),
+          nPEs_(nPEs),
+          ops_(ops),
           occupancy_(occupancy)
     {
     }
 
+    void setCoordinate(std::vector<int> c) override { coords_ = std::move(c); }
+
     void assemble() override
     {
-        for (int k = 0; k < (int)T_; k++)
+        // These dependencies are wierd, lol
+        DAGBuilder<CholeskyPanelGraph> dag(myPE_, *creator, *this);
+        
+        for (int pivotColumn = 0; pivotColumn < (int)T_; pivotColumn++)
         {
-            if (k % nPEs_ == myPE_)
-            {
-                assemblePOTRFNode(k);
-                for (int i = k + 1; i < (int)T_; i++) assembleTRSMNode(i, k);
-            }
-            else
-                creator->skip(T_ - k);  // 1 POTRF + (T-k-1) TRSMs
+            dag.at(pivotColumn).add(pivotColumn % nPEs_, [](auto& ops) { ops.potrf(); });
 
-            for (int i = k + 1; i < (int)T_; i++)
+            for (int column = pivotColumn + 1; column < (int)T_; column++)
+                dag.at(column, pivotColumn).add(pivotColumn % nPEs_, [](auto& ops) { ops.trsm(); })
+                   .signals(signalPEs(column, pivotColumn));
+
+            for (int column = pivotColumn + 1; column < (int)T_; column++)
             {
-                if (i % nPEs_ == myPE_)
-                {
-                    assembleSYRKNode(i, k);
-                    for (int j = i + 1; j < (int)T_; j++) assembleGEMMNode(j, i, k);
-                }
-                else
-                    creator->skip(T_ - i);  // 1 SYRK + (T-i-1) GEMMs
+                dag.at(column, pivotColumn)
+                   .add(column % nPEs_, [](auto& ops) { ops.syrk(); })
+                   .waitsFor(writeAt(column, pivotColumn));
+
+                for (int row = column + 1; row < (int)T_; row++)
+                    dag.at(row, column, pivotColumn)
+                       .add(column % nPEs_, [](auto& ops) { ops.gemm(); })
+                       .waitsFor(writeAt(row, column, pivotColumn));
             }
         }
+        dag.buildFor();
     }
 
    private:
@@ -248,6 +300,36 @@ class CholeskyPanelGraph : public PanelGraph
     int                        myPE_, nPEs_;
     CholeskyCudaOperations&    ops_;
     mustard::OccupancyTracker& occupancy_;
+    std::vector<int>           coords_;
+
+    void potrf()
+    {
+        assert(coords_.size() == 1 && "potrf: expected 1 coordinate from at()");
+        int k = coords_[0];
+        captureNode({k, k}, {{k, k}}, opName("POTRF", k), false, [&] { ops_.doPOTRF(k); });
+    }
+
+    void trsm()
+    {
+        assert(coords_.size() == 2 && "trsm: expected 2 coordinates from at()");
+        int i = coords_[0], k = coords_[1];
+        captureNode({i, k}, {{k, k}, {i, k}}, opName("TRSM", i, k), true, [&] { ops_.doTRSM(i, k); });
+    }
+
+    void syrk()
+    {
+        assert(coords_.size() == 2 && "syrk: expected 2 coordinates from at()");
+        int i = coords_[0], k = coords_[1];
+        captureNode({i, i}, {{i, i}, {i, k}}, opName("SYRK", i, i, k), true, [&] { ops_.doSYRK(i, k); });
+    }
+
+    void gemm()
+    {
+        assert(coords_.size() == 3 && "gemm: expected 3 coordinates from at()");
+        int j = coords_[0], i = coords_[1], k = coords_[2];
+        captureNode({j, i}, {{j, i}, {j, k}, {i, k}}, opName("GEMM", j, i, k), true,
+                    [&] { ops_.doGEMM(j, i, k); });
+    }
 
     template <typename F>
     void captureNode(std::pair<int, int> write, std::vector<std::pair<int, int>> reads,
@@ -261,26 +343,31 @@ class CholeskyPanelGraph : public PanelGraph
         creator->endCaptureOperation();
     }
 
-    void assemblePOTRFNode(int k)
+    int trsmFlagIdx(int column, int pivotColumn)
     {
-        captureNode({k, k}, {{k, k}}, opName("POTRF", k, k), false, [&] { ops_.doPOTRF(k); });
+        return pivotColumn * (2 * (int)T_ - pivotColumn - 1) / 2 + (column - pivotColumn - 1);
     }
 
-    void assembleTRSMNode(int i, int k)
+    std::vector<int> signalPEs(int column, int pivotColumn)
     {
-        captureNode({i, k}, {{k, k}, {i, k}}, opName("TRSM", i, k), true,
-                    [&] { ops_.doTRSM(i, k); });
+        std::set<int> pes;
+        if (column % nPEs_ != pivotColumn % nPEs_)
+            pes.insert(column % nPEs_);
+        for (int p = pivotColumn + 1; p < column; p++)
+            if (p % nPEs_ != pivotColumn % nPEs_)
+                pes.insert(p % nPEs_);
+        return {pes.begin(), pes.end()};
     }
 
-    void assembleSYRKNode(int i, int k)
+    std::vector<int> writeAt(int column, int pivotColumn)
     {
-        captureNode({i, i}, {{i, i}, {i, k}}, opName("SYRK", i, i, k), true,
-                    [&] { ops_.doSYRK(i, k); });
+        if (pivotColumn % nPEs_ == column % nPEs_) return {};
+        return {trsmFlagIdx(column, pivotColumn)};
     }
 
-    void assembleGEMMNode(int j, int i, int k)
+    std::vector<int> writeAt(int row, int column, int pivotColumn)
     {
-        captureNode({j, i}, {{j, i}, {j, k}, {i, k}}, opName("GEMM", j, i, k), true,
-                    [&] { ops_.doGEMM(j, i, k); });
+        if (pivotColumn % nPEs_ == column % nPEs_) return {};
+        return {trsmFlagIdx(column, pivotColumn), trsmFlagIdx(row, pivotColumn)};
     }
 };

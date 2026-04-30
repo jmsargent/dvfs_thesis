@@ -1,7 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-df = pd.read_csv('/data/users/sargent/dvfs_thesis/local_jobs/L25-cholesky/180371/timings_pe0.csv')
+df = pd.read_csv('/data/users/sargent/dvfs_thesis/local_jobs/L26-cholesky/timings_pe0.csv')
 df = df.head(10)
 
 min_ts = df['start_ts'].min()

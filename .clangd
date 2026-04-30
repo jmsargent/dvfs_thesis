@@ -1,0 +1,23 @@
+CompileFlags:
+  Compiler: /usr/bin/g++
+  Remove:
+    - -forward-unknown-to-host-compiler
+    - --expt-extended-lambda
+    - --expt-relaxed-constexpr
+    - -use_fast_math
+    - --generate-code*
+    - -rdc*
+    - -x
+    - cu
+    - -Xcompiler
+  Add:
+    - -I/data/users/sargent/.local/include/cuda
+    - -I/data/users/sargent/.local/include/nvshmem
+    - -I/data/users/sargent/.local/include/ompi
+    - -D_FORCE_INLINES
+    - -DVERBOSE
+    - -D__CUDACC__
+    - -D__CUDA_ARCH__=890
+    - -D__NVCC__
+    - -x
+    - c++

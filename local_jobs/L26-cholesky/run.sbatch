@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --job-name=mustard
-#SBATCH --output=local_jobs/L25-cholesky/result_%j.out
+#SBATCH --output=local_jobs/L26-cholesky/result_%j.out
 #SBATCH --ntasks=4
 #SBATCH --cpus-per-task=1
-#SBATCH --gres=gpu:L4:4
-#SBATCH --nodelist=europa
+#SBATCH --gres=gpu:L4:7
+#SBATCH --nodelist=ganymede
 #NOTSBATCH --exclusive
 
 CONTAINER_PATH="/data/users/sargent/dvfs_thesis/containers/container.sif"
@@ -46,51 +46,29 @@ echo ""
 BENCH="cholesky_mustard"
 EXECUTABLE_PATH="${BIN_DIR}/${BENCH}"
 
-N_SIZE=144000
-# N_SIZE=2400
+N_SIZE=40000
 TILE=16
 RUNS=1
-REPEAT=45
-OUTPUT_CSV="/data/users/sargent/dvfs_thesis/local_jobs/L25-cholesky/timings"
+OUTPUT_CSV="/data/users/sargent/dvfs_thesis/local_jobs/L26-cholesky/timings"
 
 NVSHMEM_LIB=/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib
 CONTAINER_LD=/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/nvshmem/lib:/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/nccl/lib:/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/math_libs/lib64:/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/compilers/lib:/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/lib64:/.singularity.d/libs
 
-
-# echo "=== Benchmark 1: static-multigpu ==="
-# APPTAINERENV_LD_LIBRARY_PATH="${NVSHMEM_LIB}:${CONTAINER_LD}" \
-# timeout 300 apptainer exec --nv --bind /dev/shm,/data "$CONTAINER_PATH" mpirun -np 4 \
-#             --bind-to core \
-#             -x LD_LIBRARY_PATH \
-#             -x CUDA_VISIBLE_DEVICES="$CLEAN_GPUS" \
-#             -x NVSHMEM_BOOTSTRAP=MPI \
-#             -x NVSHMEM_REMOTE_TRANSPORT=none \
-#             -x NVSHMEM_DISABLE_CUDA_VMM=1 \
-#             -x NVSHMEM_DEBUG_FILE="${PROJECT_DIR}/local_jobs/L25-cholesky/nvshmem_debug" \
-#             -x NVSHMEM_DISABLE_GDRCOPY=1 \
-#             -x UCX_TLS=sm,cuda_copy,self \
-#             -x UCX_NET_DEVICES=all \
-#             -mca pml ob1 \
-#             -mca btl self,vader \
-#             -mca coll_hcoll_enable 0 \
-#             "$EXECUTABLE_PATH" -n="$N_SIZE" -t="$TILE" --static-multigpu -r="$RUNS" --verify --measure=wait_start_ts,start_ts,end_ts 
-# echo ""
-
-# ── Benchmark 2: one-graph-per-pe (supergraph, single launch per PE) ─────────
-echo "=== Benchmark 2: one-graph-per-pe ==="
+echo "=== Benchmark: panel ==="
 APPTAINERENV_LD_LIBRARY_PATH="${NVSHMEM_LIB}:${CONTAINER_LD}" \
-timeout 300 apptainer exec --nv --bind /dev/shm,/data "$CONTAINER_PATH" mpirun -np 4 \
+apptainer exec --nv --bind /dev/shm,/data "$CONTAINER_PATH" mpirun -np 4 \
             --bind-to core \
             -x LD_LIBRARY_PATH \
             -x CUDA_VISIBLE_DEVICES="$CLEAN_GPUS" \
             -x NVSHMEM_BOOTSTRAP=MPI \
             -x NVSHMEM_REMOTE_TRANSPORT=none \
             -x NVSHMEM_DISABLE_CUDA_VMM=1 \
-            -x NVSHMEM_DEBUG_FILE="${PROJECT_DIR}/local_jobs/L25-cholesky/nvshmem_debug" \
+            -x NVSHMEM_SYMMETRIC_SIZE=14G \
+            -x NVSHMEM_DEBUG_FILE="${PROJECT_DIR}/local_jobs/L26-cholesky/nvshmem_debug" \
             -x NVSHMEM_DISABLE_GDRCOPY=1 \
             -x UCX_TLS=sm,cuda_copy,self \
             -x UCX_NET_DEVICES=all \
             -mca pml ob1 \
             -mca btl self,vader \
             -mca coll_hcoll_enable 0 \
-            "$EXECUTABLE_PATH" -n="$N_SIZE" -t="$TILE" --one-graph-per-pe -r="$RUNS" --measure=wait_start_ts,start_ts,end_ts --verify --repeat="$REPEAT" --output="$OUTPUT_CSV"
+            "$EXECUTABLE_PATH" -n="$N_SIZE" -t="$TILE" --panel -r="$RUNS" --measure=wait_start_ts,start_ts,end_ts --output="$OUTPUT_CSV"
