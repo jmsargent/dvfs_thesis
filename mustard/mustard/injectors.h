@@ -23,43 +23,150 @@ inline cudaKernelNodeParams makeKernelParams(void* func, void** args)
     return p;
 }
 
-inline std::vector<cudaGraphNode_t> getRootNodes(cudaGraph_t g)
-{
-    size_t numRoots;
-    cudaGraphGetRootNodes(g, nullptr, &numRoots);
-    std::vector<cudaGraphNode_t> roots(numRoots);
-    cudaGraphGetRootNodes(g, roots.data(), &numRoots);
-    return roots;
-}
 
-inline cudaGraphNode_t getSubgraphTail(cudaGraph_t g)
+class GraphInjector
 {
-    size_t numEdges;
-    MUSTARD_cudaGraphGetEdges(g, nullptr, nullptr, &numEdges);
-    if (numEdges == 0)
+   public:
+    GraphInjector(cudaGraph_t sg) : sg_(sg) {}
+
+    cudaGraph_t graph() const { return sg_; }
+
+    // --- structural queries ---
+
+    std::vector<cudaGraphNode_t> rootNodes()
     {
-        size_t          numNodes = 1;
+        return cudaGraphGetRootNodes(sg_);
+    }
+
+    // The tail node is the node with no outgoing edges
+    // There can be multiple tail nodes
+    cudaGraphNode_t tailNode()
+    {
+        // If there are no edges in graph => there is only one node
+        auto nodes = cudaGraphGetNodes(sg_);
+        if (nodes.size() == 1) return nodes.front();
+
+        auto [from, to] = cudaGraphGetEdges(sg_);
+        std::set<cudaGraphNode_t> hasOutgoing(from.begin(), from.end());
+        
+        for (auto& n : nodes)
+            if (!hasOutgoing.count(n)) return n;
+        
+        
+        return nodes.back();
+    }
+
+    // --- kernel node operations ---
+
+    // Before:  original_node1 -> ...           After:  new_node -> original_node1 -> ...
+    //          original_node2 -> ...                            -> original_node2 -> ...
+    cudaGraphNode_t prependNode(const cudaKernelNodeParams& params)
+    {
+        auto            roots = rootNodes();
         cudaGraphNode_t node;
-        cudaGraphGetNodes(g, &node, &numNodes);
+        checkCudaErrors(cudaGraphAddKernelNode(&node, sg_, nullptr, 0, &params));
+        for (auto& root : roots) MUSTARD_cudaGraphAddDependencies(sg_, &node, &root, 1);
         return node;
     }
-    std::vector<cudaGraphNode_t> from(numEdges), to(numEdges);
-    MUSTARD_cudaGraphGetEdges(g, from.data(), to.data(), &numEdges);
-    std::map<cudaGraphNode_t, bool> hasOutgoing;
-    std::set<cudaGraphNode_t>       noOutgoing;
-    for (size_t e = 0; e < numEdges; e++)
+
+    // Before:  ... -> original_node1           After:  ... -> original_node1 -> new_node
+    cudaGraphNode_t appendNode(const cudaKernelNodeParams& params)
     {
-        hasOutgoing[from[e]] = true;
-        noOutgoing.erase(from[e]);
-        if (!hasOutgoing[to[e]]) noOutgoing.insert(to[e]);
+        cudaGraphNode_t tail = tailNode();
+        cudaGraphNode_t node;
+        checkCudaErrors(cudaGraphAddKernelNode(&node, sg_, &tail, 1, &params));
+        return node;
     }
-    if (noOutgoing.size() == 1) return *noOutgoing.begin();
-    size_t numNodes = 0;
-    cudaGraphGetNodes(g, nullptr, &numNodes);
-    std::vector<cudaGraphNode_t> nodes(numNodes);
-    cudaGraphGetNodes(g, nodes.data(), &numNodes);
-    return nodes.back();
-}
+
+    // Before:  original_node1 -> original_node2 -> ...
+    //                         -> original_node3 -> ...
+    //
+    // After:   original_node1 -> new_node -> original_node2 -> ...
+    //                                     -> original_node3 -> ...
+    cudaGraphNode_t insertAfterNode(cudaGraphNode_t             original_node1,
+                                    const cudaKernelNodeParams& params)
+    {
+        cudaGraphNode_t node;
+        checkCudaErrors(cudaGraphAddKernelNode(&node, sg_, &original_node1, 1, &params));
+        auto children = cudaGraphNodeGetDependentNodes(original_node1);
+        for (auto& child : children)
+        {
+            if (child == node) continue;
+            MUSTARD_cudaGraphAddDependencies(sg_, &node, &child, 1);
+            MUSTARD_cudaGraphRemoveDependencies(sg_, &original_node1, &child, 1);
+        }
+        return node;
+    }
+
+    // Before:  original_node1 -> original_node3 -> ...
+    //          original_node2 ->
+    //
+    // After:   original_node1 -> new_node -> original_node3 -> ...
+    //          original_node2 ->
+    cudaGraphNode_t insertBeforeNode(cudaGraphNode_t             original_node3,
+                                     const cudaKernelNodeParams& params)
+    {
+        auto            parents = cudaGraphNodeGetDependencies(original_node3);
+        cudaGraphNode_t node;
+        checkCudaErrors(cudaGraphAddKernelNode(&node, sg_, parents.data(), parents.size(), &params));
+        for (auto& parent : parents)
+            MUSTARD_cudaGraphRemoveDependencies(sg_, &parent, &original_node3, 1);
+        MUSTARD_cudaGraphAddDependencies(sg_, &node, &original_node3, 1);
+        return node;
+    }
+
+    // --- event record node operations (same structure as kernel variants above) ---
+
+    // Before:  original_node1 -> ...           After:  new_node -> original_node1 -> ...
+    //          original_node2 -> ...                            -> original_node2 -> ...
+    cudaGraphNode_t prependEventNode(cudaEvent_t event)
+    {
+        auto            roots = rootNodes();
+        cudaGraphNode_t node;
+        checkCudaErrors(cudaGraphAddEventRecordNode(&node, sg_, nullptr, 0, event));
+        for (auto& root : roots) MUSTARD_cudaGraphAddDependencies(sg_, &node, &root, 1);
+        return node;
+    }
+
+    // Before:  original_node1 -> original_node2 -> ...
+    //                         -> original_node3 -> ...
+    //
+    // After:   original_node1 -> new_node -> original_node2 -> ...
+    //                                     -> original_node3 -> ...
+    cudaGraphNode_t insertEventAfterNode(cudaGraphNode_t original_node1, cudaEvent_t event)
+    {
+        cudaGraphNode_t node;
+        checkCudaErrors(cudaGraphAddEventRecordNode(&node, sg_, &original_node1, 1, event));
+        auto children = cudaGraphNodeGetDependentNodes(original_node1);
+        for (auto& child : children)
+        {
+            if (child == node) continue;
+            MUSTARD_cudaGraphAddDependencies(sg_, &node, &child, 1);
+            MUSTARD_cudaGraphRemoveDependencies(sg_, &original_node1, &child, 1);
+        }
+        return node;
+    }
+
+    // Before:  original_node1 -> original_node3 -> ...
+    //          original_node2 ->
+    //
+    // After:   original_node1 -> new_node -> original_node3 -> ...
+    //          original_node2 ->
+    cudaGraphNode_t insertEventBeforeNode(cudaGraphNode_t original_node3, cudaEvent_t event)
+    {
+        auto            parents = cudaGraphNodeGetDependencies(original_node3);
+        cudaGraphNode_t node;
+        checkCudaErrors(
+            cudaGraphAddEventRecordNode(&node, sg_, parents.data(), parents.size(), event));
+        for (auto& parent : parents)
+            MUSTARD_cudaGraphRemoveDependencies(sg_, &parent, &original_node3, 1);
+        MUSTARD_cudaGraphAddDependencies(sg_, &node, &original_node3, 1);
+        return node;
+    }
+
+   private:
+    cudaGraph_t sg_;
+};
 
 struct InjectionContext
 {
@@ -135,41 +242,27 @@ class SubgraphInjector : public IInjector
 
     void appendSignalNode(int task, cudaGraph_t sg, int n_notify)
     {
-        int* d_notify_pes = scheduler_.getDeviceNotifyPEs(task);
-
-        cudaGraphNode_t tail = getSubgraphTail(sg);
-        cudaGraphNode_t signalNode;
-        int             task_id_val = task;
-        void* signalArgs[5]         = {&task_id_val, &d_completion_flags_, &d_notify_pes, &n_notify,
-                                       &debug_};
-        auto  signalParams          = makeKernelParams((void*)kernel_signal_static, signalArgs);
-        checkCudaErrors(cudaGraphAddKernelNode(&signalNode, sg, &tail, 1, &signalParams));
+        int*  d_notify_pes  = scheduler_.getDeviceNotifyPEs(task);
+        int   task_id_val   = task;
+        void* signalArgs[5] = {&task_id_val, &d_completion_flags_, &d_notify_pes, &n_notify,
+                               &debug_};
+        auto  signalParams  = makeKernelParams((void*)kernel_signal_static, signalArgs);
+        GraphInjector(sg).appendNode(signalParams);
     }
 
-    void prependWaitNode(cudaGraph_t& sg, int*& d_deps, int& n_deps, mustard::InjectionContext& ctx,
+    void prependWaitNode(cudaGraph_t sg, int* d_deps, int n_deps, mustard::InjectionContext& ctx,
                          int task)
     {
-        // obtain root node(s)
-        auto roots = getRootNodes(sg);
-
-        // construct wait node
-        cudaGraphNode_t waitNode;
-        void*           waitArgs[4] = {&d_deps, &n_deps, &d_completion_flags_, &debug_};
-        auto            waitParams  = makeKernelParams((void*)kernel_wait_static, waitArgs);
-
-        // replace position of original root nodes with wait-node
-        checkCudaErrors(cudaGraphAddKernelNode(&waitNode, sg, nullptr, 0, &waitParams));
-        ctx.task_wait_node[task] = waitNode;
-
-        // add old root(s) back into the DAG after wait-node
-        for (auto& root : roots) MUSTARD_cudaGraphAddDependencies(sg, &waitNode, &root, 1);
+        void* waitArgs[4]        = {&d_deps, &n_deps, &d_completion_flags_, &debug_};
+        auto  waitParams         = makeKernelParams((void*)kernel_wait_static, waitArgs);
+        ctx.task_wait_node[task] = GraphInjector(sg).prependNode(waitParams);
     }
 
    private:
-    cudaGraph_t*                     subgraphs_;
+    cudaGraph_t*           subgraphs_;
     const StaticScheduler& scheduler_;
-    int*                             d_completion_flags_;
-    int                              debug_;
+    int*                   d_completion_flags_;
+    int                    debug_;
 };
 
 // Injects a compute-start event after the wait kernel (or before the first compute node if no
@@ -188,34 +281,12 @@ class WaitTimeDecorator : public IInjector
 
         for (int task : tasks)
         {
-            cudaGraph_t     sg = subgraphs_[task];
-            cudaGraphNode_t computeStartNode;
             checkCudaErrors(cudaEventCreate(&ctx.compute_start[task]));
-
+            GraphInjector gi(subgraphs_[task]);
             if (ctx.task_wait_node[task] != nullptr)
-            {
-                cudaGraphNode_t waitNode = ctx.task_wait_node[task];
-                checkCudaErrors(cudaGraphAddEventRecordNode(&computeStartNode, sg, &waitNode, 1,
-                                                            ctx.compute_start[task]));
-                size_t numChildren;
-                MUSTARD_cudaGraphNodeGetDependentNodes(waitNode, nullptr, &numChildren);
-                std::vector<cudaGraphNode_t> children(numChildren);
-                MUSTARD_cudaGraphNodeGetDependentNodes(waitNode, children.data(), &numChildren);
-                for (auto& child : children)
-                {
-                    if (child == computeStartNode) continue;
-                    MUSTARD_cudaGraphAddDependencies(sg, &computeStartNode, &child, 1);
-                    MUSTARD_cudaGraphRemoveDependencies(sg, &waitNode, &child, 1);
-                }
-            }
+                gi.insertEventAfterNode(ctx.task_wait_node[task], ctx.compute_start[task]);
             else
-            {
-                auto roots = getRootNodes(sg);
-                checkCudaErrors(cudaGraphAddEventRecordNode(&computeStartNode, sg, nullptr, 0,
-                                                            ctx.compute_start[task]));
-                for (auto& root : roots)
-                    MUSTARD_cudaGraphAddDependencies(sg, &computeStartNode, &root, 1);
-            }
+                gi.prependEventNode(ctx.compute_start[task]);
         }
     }
 
@@ -240,22 +311,9 @@ class ComputeTimeDecorator : public IInjector
 
         for (int task : tasks)
         {
-            cudaGraph_t sg = subgraphs_[task];
             checkCudaErrors(cudaEventCreate(&ctx.compute_end[task]));
-
-            // Signal kernel is the current tail; insert compute-end before it
-            cudaGraphNode_t signalNode = getSubgraphTail(sg);
-            size_t          numParents;
-            MUSTARD_cudaGraphNodeGetDependencies(signalNode, nullptr, &numParents);
-            std::vector<cudaGraphNode_t> parents(numParents);
-            MUSTARD_cudaGraphNodeGetDependencies(signalNode, parents.data(), &numParents);
-
-            cudaGraphNode_t computeEndNode;
-            checkCudaErrors(cudaGraphAddEventRecordNode(&computeEndNode, sg, parents.data(),
-                                                        numParents, ctx.compute_end[task]));
-            for (auto& parent : parents)
-                MUSTARD_cudaGraphRemoveDependencies(sg, &parent, &signalNode, 1);
-            MUSTARD_cudaGraphAddDependencies(sg, &computeEndNode, &signalNode, 1);
+            GraphInjector gi(subgraphs_[task]);
+            gi.insertEventBeforeNode(gi.tailNode(), ctx.compute_end[task]);
         }
     }
 
@@ -294,39 +352,19 @@ class WaitTimestampDecorator : public IInjector
         {
             if (ctx.task_wait_node[task] == nullptr) continue;  // no cross-GPU dep, skip
 
-            cudaGraph_t     sg       = subgraphs_[task];
+            GraphInjector   gi(subgraphs_[task]);
             cudaGraphNode_t waitNode = ctx.task_wait_node[task];
 
-            // --- Wait-start timestamp (before spin-wait kernel) ---
-            cudaGraphNode_t     tsWaitStartNode;
             unsigned long long* wait_start_ptr   = ctx.d_wait_timestamps + task * 2 + 0;
             void*               waitStartArgs[1] = {&wait_start_ptr};
             auto                tsWaitStartParams =
                 makeKernelParams((void*)kernel_record_timestamp, waitStartArgs);
-            // Insert as a new root (no deps), then make waitNode depend on it
-            checkCudaErrors(
-                cudaGraphAddKernelNode(&tsWaitStartNode, sg, nullptr, 0, &tsWaitStartParams));
-            MUSTARD_cudaGraphAddDependencies(sg, &tsWaitStartNode, &waitNode, 1);
+            gi.prependNode(tsWaitStartParams);
 
-            // --- Wait-end timestamp (after spin-wait kernel, before compute) ---
-            cudaGraphNode_t     tsWaitEndNode;
             unsigned long long* wait_end_ptr   = ctx.d_wait_timestamps + task * 2 + 1;
             void*               waitEndArgs[1] = {&wait_end_ptr};
             auto tsWaitEndParams = makeKernelParams((void*)kernel_record_timestamp, waitEndArgs);
-            // Insert after waitNode, then rewire waitNode's existing children through tsWaitEndNode
-            checkCudaErrors(
-                cudaGraphAddKernelNode(&tsWaitEndNode, sg, &waitNode, 1, &tsWaitEndParams));
-
-            size_t numChildren;
-            MUSTARD_cudaGraphNodeGetDependentNodes(waitNode, nullptr, &numChildren);
-            std::vector<cudaGraphNode_t> children(numChildren);
-            MUSTARD_cudaGraphNodeGetDependentNodes(waitNode, children.data(), &numChildren);
-            for (auto& child : children)
-            {
-                if (child == tsWaitEndNode) continue;
-                MUSTARD_cudaGraphAddDependencies(sg, &tsWaitEndNode, &child, 1);
-                MUSTARD_cudaGraphRemoveDependencies(sg, &waitNode, &child, 1);
-            }
+            gi.insertAfterNode(waitNode, tsWaitEndParams);
         }
     }
 
@@ -369,59 +407,21 @@ class TimestampDecorator : public IInjector
 
         for (int task : tasks)
         {
-            cudaGraph_t sg = subgraphs_[task];
+            GraphInjector gi(subgraphs_[task]);
 
-            // --- Compute-start timestamp (after wait, before compute) ---
-            cudaGraphNode_t     tsStartNode;
             unsigned long long* start_ptr    = ctx.d_timestamps + task * 2 + 0;
             void*               startArgs[1] = {&start_ptr};
             auto tsStartParams = makeKernelParams((void*)kernel_record_timestamp, startArgs);
 
             if (ctx.task_wait_node[task] != nullptr)
-            {
-                cudaGraphNode_t waitNode = ctx.task_wait_node[task];
-                checkCudaErrors(
-                    cudaGraphAddKernelNode(&tsStartNode, sg, &waitNode, 1, &tsStartParams));
-
-                // Rewire waitNode's other dependents to go through tsStartNode instead
-                size_t numChildren;
-                MUSTARD_cudaGraphNodeGetDependentNodes(waitNode, nullptr, &numChildren);
-                std::vector<cudaGraphNode_t> children(numChildren);
-                MUSTARD_cudaGraphNodeGetDependentNodes(waitNode, children.data(), &numChildren);
-                for (auto& child : children)
-                {
-                    if (child == tsStartNode) continue;
-                    MUSTARD_cudaGraphAddDependencies(sg, &tsStartNode, &child, 1);
-                    MUSTARD_cudaGraphRemoveDependencies(sg, &waitNode, &child, 1);
-                }
-            }
+                gi.insertAfterNode(ctx.task_wait_node[task], tsStartParams);
             else
-            {
-                // No wait node: insert before all current roots
-                auto roots = getRootNodes(sg);
-                checkCudaErrors(
-                    cudaGraphAddKernelNode(&tsStartNode, sg, nullptr, 0, &tsStartParams));
-                for (auto& root : roots)
-                    MUSTARD_cudaGraphAddDependencies(sg, &tsStartNode, &root, 1);
-            }
+                gi.prependNode(tsStartParams);
 
-            // --- Compute-end timestamp (after compute, before signal) ---
-            cudaGraphNode_t signalNode = getSubgraphTail(sg);
-            size_t          numParents;
-            MUSTARD_cudaGraphNodeGetDependencies(signalNode, nullptr, &numParents);
-            std::vector<cudaGraphNode_t> parents(numParents);
-            MUSTARD_cudaGraphNodeGetDependencies(signalNode, parents.data(), &numParents);
-
-            cudaGraphNode_t     tsEndNode;
             unsigned long long* end_ptr    = ctx.d_timestamps + task * 2 + 1;
             void*               endArgs[1] = {&end_ptr};
             auto tsEndParams = makeKernelParams((void*)kernel_record_timestamp, endArgs);
-
-            checkCudaErrors(
-                cudaGraphAddKernelNode(&tsEndNode, sg, parents.data(), numParents, &tsEndParams));
-            for (auto& parent : parents)
-                MUSTARD_cudaGraphRemoveDependencies(sg, &parent, &signalNode, 1);
-            MUSTARD_cudaGraphAddDependencies(sg, &tsEndNode, &signalNode, 1);
+            gi.insertBeforeNode(gi.tailNode(), tsEndParams);
         }
     }
 

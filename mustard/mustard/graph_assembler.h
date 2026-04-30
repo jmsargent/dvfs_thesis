@@ -12,39 +12,17 @@
 #include "mustard.h"
 #include "utils.h"
 
-struct TiledCholeskyBuildContext
-{
-    cudaStream_t       s;
-    cusolverDnHandle_t cusolverHandle;
-    cublasHandle_t     cublasHandle;
-    double*            d_workspace_cusolver;
-    void**             d_workspace_cublas;
-    int*               d_info;
-    volatile int*      d_flags;
-    int                workspaceInBytesOnDevice;
-    int                cublasWorkspaceSize;
-    size_t             N;
-    size_t             B;
-    size_t             T;
-    int                smLimit;
-    int                myPE;
-    int                totalNodes;
-    int                nPEs = 0;
-};
-
-class PanelingGraphAssembler
+class PanelGraph
 {
    public:
     std::unique_ptr<mustard::TiledGraphCreator> creator;
 
-    PanelingGraphAssembler(const TiledCholeskyBuildContext& ctx, cudaGraph_t graph,
-                           StridedPanels& panels)
-        : ctx(ctx), one(1.0), minusOne(-1.0), panels_(panels)
+    PanelGraph(cudaStream_t s, cudaGraph_t graph, int totalNodes) : s_(s)
     {
-        creator = std::make_unique<mustard::TiledGraphCreator>(ctx.s, graph, true, ctx.totalNodes);
+        creator = std::make_unique<mustard::TiledGraphCreator>(s, graph, true, totalNodes);
     }
 
-    virtual ~PanelingGraphAssembler() = default;
+    virtual ~PanelGraph() = default;
 
     virtual void assemble() = 0;
 
@@ -104,16 +82,7 @@ class PanelingGraphAssembler
     }
 
    protected:
-    TiledCholeskyBuildContext ctx;
-    double                    one;
-    double                    minusOne;
-    StridedPanels&            panels_;
-
-    void setWorkspace(int idx) const
-    {
-        checkCudaErrors(cublasSetWorkspace(ctx.cublasHandle, ctx.d_workspace_cublas[idx],
-                                           ctx.cublasWorkspaceSize));
-    }
+    cudaStream_t s_;
 };
 
 /*
@@ -147,120 +116,171 @@ class PanelingGraphAssembler
     Each PE owns scratchpad
 */
 
-class PanelGraphAssembler : public PanelingGraphAssembler
+// owns panels, cublas/cusolver handles, and all workspace memory
+class CholeskyCudaOperations
 {
    public:
-    PanelGraphAssembler(const TiledCholeskyBuildContext& ctx, cudaGraph_t graph,
-                        StridedPanels& panels, const std::vector<int>& taskToPanel)
-        : PanelingGraphAssembler(ctx, graph, panels), taskToPanel_(taskToPanel)
+    CholeskyCudaOperations(cublasHandle_t cublasHandle, cusolverDnHandle_t cusolverHandle,
+                           double* d_workspace_cusolver, int workspaceInBytesOnDevice,
+                           void** d_workspace_cublas, int cublasWorkspaceSize, int numWorkspaces,
+                           int* d_info, StridedDevicePanels panels, int B, int N, int nPEs)
+        : cublasHandle_(cublasHandle),
+          cusolverHandle_(cusolverHandle),
+          d_workspace_cusolver_(d_workspace_cusolver),
+          workspaceInBytesOnDevice_(workspaceInBytesOnDevice),
+          d_workspace_cublas_(d_workspace_cublas),
+          cublasWorkspaceSize_(cublasWorkspaceSize),
+          numWorkspaces_(numWorkspaces),
+          d_info_(d_info),
+          panels_(std::move(panels)),
+          B_(B),
+          N_(N),
+          nPEs_(nPEs),
+          one_(1.0),
+          minusOne_(-1.0)
+    {
+    }
+
+    ~CholeskyCudaOperations()
+    {
+        cublasDestroy(cublasHandle_);
+        cusolverDnDestroy(cusolverHandle_);
+        cudaFree(d_workspace_cusolver_);
+        for (int i = 0; i < numWorkspaces_; i++) cudaFree(d_workspace_cublas_[i]);
+        free(d_workspace_cublas_);
+        cudaFree(d_info_);
+    }
+
+    CholeskyCudaOperations(const CholeskyCudaOperations&)            = delete;
+    CholeskyCudaOperations& operator=(const CholeskyCudaOperations&) = delete;
+
+    StridedDevicePanel& myPanel() { return panels_.myPanel(); }
+
+    void setWorkspace()
+    {
+        checkCudaErrors(
+            cublasSetWorkspace(cublasHandle_, d_workspace_cublas_[++wsIdx_], cublasWorkspaceSize_));
+    }
+
+    void doSYRK(int i, int k)
+    {
+        checkCudaErrors(cublasDsyrk(cublasHandle_, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, B_, B_,
+                                    &minusOne_, panels_.otherPanel(k % nPEs_).tile(i, k), N_, &one_,
+                                    panels_.myPanel().tile(i, i), N_));
+    }
+
+    void doGEMM(int j, int i, int k)
+    {
+        checkCudaErrors(cublasGemmEx(cublasHandle_, CUBLAS_OP_N, CUBLAS_OP_T, B_, B_, B_,
+                                     &minusOne_, panels_.otherPanel(k % nPEs_).tile(j, k),
+                                     CUDA_R_64F, N_, panels_.otherPanel(k % nPEs_).tile(i, k),
+                                     CUDA_R_64F, N_, &one_, panels_.myPanel().tile(j, i),
+                                     CUDA_R_64F, N_, CUBLAS_COMPUTE_64F, CUBLAS_GEMM_DEFAULT));
+    }
+
+    void doPOTRF(int k)
+    {
+        checkCudaErrors(cusolverDnDpotrf(cusolverHandle_, CUBLAS_FILL_MODE_LOWER, B_,
+                                         panels_.myPanel().tile(k, k), N_, d_workspace_cusolver_,
+                                         workspaceInBytesOnDevice_, d_info_));
+    }
+
+    void doTRSM(int i, int k)
+    {
+        checkCudaErrors(cublasDtrsm(cublasHandle_, CUBLAS_SIDE_RIGHT, CUBLAS_FILL_MODE_LOWER,
+                                    CUBLAS_OP_T, CUBLAS_DIAG_NON_UNIT, B_, B_, &one_,
+                                    panels_.myPanel().tile(k, k), N_, panels_.myPanel().tile(i, k),
+                                    N_));
+    }
+
+   private:
+    cublasHandle_t      cublasHandle_;
+    cusolverDnHandle_t  cusolverHandle_;
+    double*             d_workspace_cusolver_;
+    int                 workspaceInBytesOnDevice_;
+    void**              d_workspace_cublas_;
+    int                 cublasWorkspaceSize_;
+    int                 numWorkspaces_;
+    int*                d_info_;
+    StridedDevicePanels panels_;
+    int                 B_, N_, nPEs_;
+    int                 wsIdx_ = -1;
+    double              one_, minusOne_;
+};
+
+class CholeskyPanelGraph : public PanelGraph
+{
+   public:
+    CholeskyPanelGraph(cudaStream_t s, cudaGraph_t graph, int totalNodes, size_t T, int myPE,
+                       int nPEs, CholeskyCudaOperations& ops, mustard::OccupancyTracker& occupancy)
+        : PanelGraph(s, graph, totalNodes), T_(T), myPE_(myPE), nPEs_(nPEs), ops_(ops),
+          occupancy_(occupancy)
     {
     }
 
     void assemble() override
     {
-        for (int k = 0; k < (int)ctx.T; k++)
+        for (int k = 0; k < (int)T_; k++)
         {
-            if (k % ctx.nPEs == ctx.myPE)
+            if (k % nPEs_ == myPE_)
             {
                 assemblePOTRFNode(k);
-                for (int i = k + 1; i < (int)ctx.T; i++) assembleTRSMNode(i, k);
+                for (int i = k + 1; i < (int)T_; i++) assembleTRSMNode(i, k);
             }
             else
-                creator->skip(ctx.T - k);  // 1 POTRF + (T-k-1) TRSMs
+                creator->skip(T_ - k);  // 1 POTRF + (T-k-1) TRSMs
 
-            for (int i = k + 1; i < (int)ctx.T; i++)
+            for (int i = k + 1; i < (int)T_; i++)
             {
-                if (i % ctx.nPEs == ctx.myPE)
+                if (i % nPEs_ == myPE_)
                 {
                     assembleSYRKNode(i, k);
-                    for (int j = i + 1; j < (int)ctx.T; j++) assembleGEMMNode(j, i, k);
+                    for (int j = i + 1; j < (int)T_; j++) assembleGEMMNode(j, i, k);
                 }
                 else
-                    creator->skip(ctx.T - i);  // 1 SYRK + (T-i-1) GEMMs
+                    creator->skip(T_ - i);  // 1 SYRK + (T-i-1) GEMMs
             }
         }
     }
 
    private:
-    std::vector<int> taskToPanel_;
-    int              wsIdx = -1;
+    size_t                     T_;
+    int                        myPE_, nPEs_;
+    CholeskyCudaOperations&    ops_;
+    mustard::OccupancyTracker& occupancy_;
 
-    void doSYRK(int i, int k)
+    template <typename F>
+    void captureNode(std::pair<int, int> write, std::vector<std::pair<int, int>> reads,
+                     const std::string& name, bool occupancy, F&& work)
     {
-        checkCudaErrors(cublasDsyrk(ctx.cublasHandle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, ctx.B,
-                                    ctx.B, &minusOne, panels_.otherPanel(k % ctx.nPEs).tile(i, k),
-                                    ctx.N, &one, panels_.myPanel().tile(i, i), ctx.N));
-    }
-
-    void doGEMM(int j, int i, int k)
-    {
-        checkCudaErrors(cublasGemmEx(
-            ctx.cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, ctx.B, ctx.B, ctx.B, &minusOne,
-            panels_.otherPanel(k % ctx.nPEs).tile(j, k), CUDA_R_64F, ctx.N,
-            panels_.otherPanel(k % ctx.nPEs).tile(i, k), CUDA_R_64F, ctx.N,
-            &one, panels_.myPanel().tile(j, i), CUDA_R_64F, ctx.N,
-            CUBLAS_COMPUTE_64F, CUBLAS_GEMM_DEFAULT));
-    }
-
-    void doPOTRF(int k)
-    {
-        checkCudaErrors(cusolverDnDpotrf(ctx.cusolverHandle, CUBLAS_FILL_MODE_LOWER, ctx.B,
-                                         panels_.myPanel().tile(k, k), ctx.N,
-                                         ctx.d_workspace_cusolver, ctx.workspaceInBytesOnDevice,
-                                         ctx.d_info));
-    }
-
-    void doTRSM(int i, int k)
-    {
-        checkCudaErrors(cublasDtrsm(ctx.cublasHandle, CUBLAS_SIDE_RIGHT, CUBLAS_FILL_MODE_LOWER,
-                                    CUBLAS_OP_T, CUBLAS_DIAG_NON_UNIT, ctx.B, ctx.B, &one,
-                                    panels_.myPanel().tile(k, k), ctx.N,
-                                    panels_.myPanel().tile(i, k), ctx.N));
+        creator->beginCaptureOperation(write, reads, name);
+        ops_.setWorkspace();
+        if (occupancy) occupancy_.incrementOccupancy(s_);
+        work();
+        if (occupancy) occupancy_.decrementOccupancy(s_);
+        creator->endCaptureOperation();
     }
 
     void assemblePOTRFNode(int k)
     {
-        creator->beginCaptureOperation(std::make_pair(k, k), {std::make_pair(k, k)},
-                                       opName("POTRF", k, k));
-        setWorkspace(++wsIdx);
-        doPOTRF(k);
-        creator->endCaptureOperation();
+        captureNode({k, k}, {{k, k}}, opName("POTRF", k, k), false, [&] { ops_.doPOTRF(k); });
     }
 
     void assembleTRSMNode(int i, int k)
     {
-        creator->beginCaptureOperation(std::make_pair(i, k),
-                                       {std::make_pair(k, k), std::make_pair(i, k)},
-                                       opName("TRSM", i, k));
-        setWorkspace(++wsIdx);
-        mustard::kernel_occupancy_update<<<1, 1, 0, ctx.s>>>(ctx.smLimit, ctx.d_flags);
-        doTRSM(i, k);
-        mustard::kernel_occupancy_update<<<1, 1, 0, ctx.s>>>(-ctx.smLimit, ctx.d_flags);
-        creator->endCaptureOperation();
+        captureNode({i, k}, {{k, k}, {i, k}}, opName("TRSM", i, k), true,
+                    [&] { ops_.doTRSM(i, k); });
     }
 
     void assembleSYRKNode(int i, int k)
     {
-        creator->beginCaptureOperation(std::make_pair(i, i),
-                                       {std::make_pair(i, i), std::make_pair(i, k)},
-                                       opName("SYRK", i, i, k));
-        setWorkspace(++wsIdx);
-        mustard::kernel_occupancy_update<<<1, 1, 0, ctx.s>>>(ctx.smLimit, ctx.d_flags);
-        doSYRK(i, k);
-        mustard::kernel_occupancy_update<<<1, 1, 0, ctx.s>>>(-ctx.smLimit, ctx.d_flags);
-        creator->endCaptureOperation();
+        captureNode({i, i}, {{i, i}, {i, k}}, opName("SYRK", i, i, k), true,
+                    [&] { ops_.doSYRK(i, k); });
     }
 
     void assembleGEMMNode(int j, int i, int k)
     {
-        creator->beginCaptureOperation(
-            std::make_pair(j, i),
-            {std::make_pair(j, i), std::make_pair(j, k), std::make_pair(i, k)},
-            opName("GEMM", j, i, k));
-        setWorkspace(++wsIdx);
-        mustard::kernel_occupancy_update<<<1, 1, 0, ctx.s>>>(ctx.smLimit, ctx.d_flags);
-        doGEMM(j, i, k);
-        mustard::kernel_occupancy_update<<<1, 1, 0, ctx.s>>>(-ctx.smLimit, ctx.d_flags);
-        creator->endCaptureOperation();
+        captureNode({j, i}, {{j, i}, {j, k}, {i, k}}, opName("GEMM", j, i, k), true,
+                    [&] { ops_.doGEMM(j, i, k); });
     }
 };

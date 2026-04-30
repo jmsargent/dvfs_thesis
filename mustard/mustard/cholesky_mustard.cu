@@ -20,6 +20,7 @@
 #include "gen.h"
 #include "graph_assembler.h"
 #include "injectors.h"
+#include "task_timing.h"
 #include "mustard.h"
 #include "pe_writer.h"
 #include "time_utils.cuh"
@@ -38,7 +39,7 @@ static int&          runs      = cfg.runs;
 static int&          repeat    = cfg.repeat;
 // When --output is set, all diagnostic output goes here instead of stdout so
 // it cannot interleave with the CSV written by PEWriter.
-static FILE*         g_log     = stdout;
+static FILE* g_log = stdout;
 
 void trivialCholesky(bool verify)
 {
@@ -522,46 +523,18 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
     }
 }
 
-
 void tiledCholeskyPanel(bool verify, bool dot)
 {
     auto setup_start = std::chrono::high_resolution_clock::now();
 
     int nPEs = nvshmem_n_pes();
 
-    // Each PE owns block-columns k where k % nPEs == myPE.
-    int myNumCols = 0;
+    StridedHostPanel hostPanel(myPE, nPEs, N, B, T);
+    hostPanel.fill();
 
-    for (int k = myPE; k < (int)T; k += nPEs) myNumCols++;
-    // NVSHMEM symmetric heap requires identical sizes on all PEs — use the ceiling.
-    int    maxNumCols       = ((int)T + nPEs - 1) / nPEs;
-    size_t myMatrixSize     = (size_t)myNumCols * B * N;
-    size_t symmetricMatSize = (size_t)maxNumCols * B * N;
-
-    // Generate owned block-columns on the host using a deterministic per-index formula
-    // that produces a diagonally dominant (hence SPD) matrix without global rand() state.
-    auto originalMatrix = std::make_unique<double[]>(myMatrixSize);
-    for (int blockCol = myPE; blockCol < (int)T; blockCol += nPEs)
-    {
-        int localIdx = blockCol / nPEs;
-        for (int bc = 0; bc < (int)B; bc++)
-        {
-            int globalCol = blockCol * B + bc;
-            for (int row = 0; row < (int)N; row++)
-            {
-                int    d   = abs(row - globalCol);
-                double val = (d == 0) ? (double)N + 1.0 : 1.0 / (double)(d + 1);
-                originalMatrix[(size_t)localIdx * B * N + bc * N + row] = val;
-            }
-        }
-    }
-
-    volatile int* d_flags = (volatile int*)nvshmem_malloc(sizeof(int) * 32);
-    StridedPanels panels(myPE, nPEs, N, B, T);
-
-    checkCudaErrors(
-        cudaMemcpy(panels.myPanel().tile(0, 0), originalMatrix.get(), myMatrixSize * sizeof(double),
-                   cudaMemcpyHostToDevice));
+    mustard::OccupancyTracker occupancyTracker(smLimit);
+    StridedDevicePanels       panels(myPE, nPEs, N, B, T);
+    hostPanel.copyToDevicePanel(panels.myPanel());
 
     cusolverDnHandle_t cusolverDnHandle;
     cusolverDnParams_t cusolverDnParams;
@@ -572,7 +545,8 @@ void tiledCholeskyPanel(bool verify, bool dot)
 
     int workspaceInBytesOnDevice;
     checkCudaErrors(cusolverDnDpotrf_bufferSize(cusolverDnHandle, CUBLAS_FILL_MODE_LOWER, B,
-                                                panels.myPanel().tile(0, 0), N, &workspaceInBytesOnDevice));
+                                                panels.myPanel().tile(0, 0), N,
+                                                &workspaceInBytesOnDevice));
     workspaceInBytesOnDevice *= 8;
 
     double* d_workspace_cusolver;
@@ -586,7 +560,7 @@ void tiledCholeskyPanel(bool verify, bool dot)
 
     // Compute panel assignment and count how many tasks this PE owns so we
     // know how many cuBLAS workspaces to allocate.
-    auto taskToPanel = PanelingGraphAssembler::buildTaskToPanel(T);
+    auto taskToPanel = PanelGraph::buildTaskToPanel(T);
     int  numMyTasks  = 0;
     for (int i = 0; i < totalNodes; i++)
         if (taskToPanel[i] % nPEs == myPE) numMyTasks++;
@@ -603,38 +577,23 @@ void tiledCholeskyPanel(bool verify, bool dot)
         std::cout << "bufferSize=" << workspaceInBytesOnDevice << std::endl;
         std::cout << "tileSize=" << cublasWorkspaceSize << std::endl;
     }
-    printf("device %d | tiledCholeskyPanel: building %d/%d graphs\n", myPE, numMyTasks,
-           totalNodes);
+    printf("device %d | tiledCholeskyPanel: building %d/%d graphs\n", myPE, numMyTasks, totalNodes);
     fflush(stdout);
 
     cudaStream_t s;
     checkCudaErrors(cudaStreamCreate(&s));
     checkCudaErrors(cusolverDnSetStream(cusolverDnHandle, s));
     checkCudaErrors(cublasSetStream(cublasHandle, s));
-    checkCudaErrors(cublasSetWorkspace(cublasHandle, d_workspace_cublas[0], cublasWorkspaceSize));
-
     cudaGraph_t graph;
     checkCudaErrors(cudaGraphCreate(&graph, 0));
 
-    TiledCholeskyBuildContext buildCtx{s,
-                                       cusolverDnHandle,
-                                       cublasHandle,
-                                       d_workspace_cusolver,
-                                       d_workspace_cublas,
-                                       d_info,
-                                       d_flags,
-                                       workspaceInBytesOnDevice,
-                                       cublasWorkspaceSize,
-                                       N,
-                                       B,
-                                       T,
-                                       smLimit,
-                                       myPE,
-                                       totalNodes,
-                                       nPEs,
-                                       };
+    CholeskyCudaOperations ops(cublasHandle, cusolverDnHandle, d_workspace_cusolver,
+                               workspaceInBytesOnDevice, d_workspace_cublas, cublasWorkspaceSize,
+                               numMyTasks, d_info, std::move(panels), B, N, nPEs);
 
-    auto assembler = std::make_unique<PanelGraphAssembler>(buildCtx, graph, panels, taskToPanel);
+    auto assembler =
+        std::make_unique<CholeskyPanelGraph>(s, graph, totalNodes, T, myPE, nPEs, ops,
+                                             occupancyTracker);
     assembler->assemble();
     auto& tiledCholeskyGraphCreator = assembler->creator;
 
@@ -642,6 +601,7 @@ void tiledCholeskyPanel(bool verify, bool dot)
     printf("device %d | tiledCholeskyPanel: graph construction done\n", myPE);
     fflush(stdout);
 
+    // INJECTOR - This should 
     auto has_flag    = [&](const char* f) { return cfg.measureFlags.find(f) != std::string::npos; };
     bool col_wait_ms = has_flag("wait_ms");
     bool col_compute_ms    = has_flag("compute_ms");
@@ -654,7 +614,7 @@ void tiledCholeskyPanel(bool verify, bool dot)
     checkCudaErrors(cudaMemset(d_completion_flags, 0, sizeof(int) * totalNodes));
 
     auto scheduler = std::make_unique<mustard::StaticPanelScheduler>(
-        nPEs, myPE, totalNodes, PanelingGraphAssembler::buildDependencies(T), taskToPanel);
+        nPEs, myPE, totalNodes, PanelGraph::buildDependencies(T), taskToPanel);
 
     mustard::TaskAllocator alloc;
     for (int task : scheduler->getMyTasksOrdered())
@@ -667,6 +627,7 @@ void tiledCholeskyPanel(bool verify, bool dot)
 
     const std::vector<int>& my_tasks_sorted = scheduler->getMyTasksOrdered();
 
+    // INJECTOR - This should be moved to a builder pattern or a factory
     mustard::InjectionContext ctx(totalNodes);
     {
         auto injector = std::unique_ptr<mustard::IInjector>(
@@ -714,30 +675,22 @@ void tiledCholeskyPanel(bool verify, bool dot)
     printf("device %d | Setup time (s): %4.4f\n", myPE, setup_time);
     fflush(stdout);
 
-    struct TaskTiming
-    {
-        float              wait_ms       = 0.0f;
-        float              compute_ms    = 0.0f;
-        unsigned long long start_ns      = 0;
-        unsigned long long end_ns        = 0;
-        unsigned long long wait_start_ns = 0;
-        unsigned long long wait_end_ns   = 0;
-    };
-    int                                  numTasksSorted = (int)my_tasks_sorted.size();
-    std::vector<std::vector<TaskTiming>> all_timings(runs, std::vector<TaskTiming>(numTasksSorted));
-    std::vector<unsigned long long>      h_timestamps(totalNodes * 2);
-    std::vector<unsigned long long>      h_wait_timestamps(totalNodes * 2);
+    int                 numTasksSorted = (int)my_tasks_sorted.size();
+    TaskTimingCollector collector(ctx, my_tasks_sorted, totalNodes, runs, col_wait_ms,
+                                  col_compute_ms, col_start_ts, col_end_ts, col_wait_start_ts,
+                                  col_wait_end_ts);
 
     double totalTime = 0.0;
 
     for (int i = 0; i < runs; i++)
     {
-        checkCudaErrors(cudaMemcpy(panels.myPanel().tile(0, 0), originalMatrix.get(), myMatrixSize * sizeof(double),
-                                   cudaMemcpyHostToDevice));
+        // This makes me think Panels should not be owned by anything else
+        hostPanel.copyToDevicePanel(ops.myPanel());  // panels owned by ops
 
         nvshmem_barrier_all();
         if (myPE == 0)
         {
+            // flags should probably be a class
             std::vector<int> zeros(totalNodes, 0);
             for (int pe = 0; pe < nPEs; pe++)
                 nvshmem_int_put(d_completion_flags, zeros.data(), totalNodes, pe);
@@ -773,60 +726,7 @@ void tiledCholeskyPanel(bool verify, bool dot)
         auto t_end = std::chrono::high_resolution_clock::now();
         if (myPE == 0) print_timestamp("cholesky tiledPanel end_time", 7);
 
-        if (col_wait_ms || col_compute_ms)
-        {
-            for (int idx = 0; idx < numTasksSorted; idx++)
-            {
-                int         task = my_tasks_sorted[idx];
-                TaskTiming& tt   = all_timings[i][idx];
-                if (col_wait_ms)
-                    tt.wait_ms = (ctx.task_wait_node[task] != nullptr)
-                                     ? [&] {
-                                           float t;
-                                           checkCudaErrors(cudaEventElapsedTime(
-                                               &t, ev_ref, ctx.compute_start[task]));
-                                           return t;
-                                       }()
-                                     : 0.0f;
-                if (col_compute_ms)
-                    checkCudaErrors(cudaEventElapsedTime(&tt.compute_ms, ctx.compute_start[task],
-                                                         ctx.compute_end[task]));
-            }
-        }
-        if (col_start_ts || col_end_ts)
-        {
-            checkCudaErrors(cudaMemcpy(h_timestamps.data(), ctx.d_timestamps,
-                                       sizeof(unsigned long long) * totalNodes * 2,
-                                       cudaMemcpyDeviceToHost));
-            for (int idx = 0; idx < numTasksSorted; idx++)
-            {
-                int         task = my_tasks_sorted[idx];
-                TaskTiming& tt   = all_timings[i][idx];
-                if (col_start_ts)
-                    tt.start_ns =
-                        gpu_clock::globaltimer_to_unix_ns(h_timestamps[task * 2 + 0], ts_ref);
-                if (col_end_ts)
-                    tt.end_ns =
-                        gpu_clock::globaltimer_to_unix_ns(h_timestamps[task * 2 + 1], ts_ref);
-            }
-        }
-        if ((col_wait_start_ts || col_wait_end_ts) && ctx.d_wait_timestamps)
-        {
-            checkCudaErrors(cudaMemcpy(h_wait_timestamps.data(), ctx.d_wait_timestamps,
-                                       sizeof(unsigned long long) * totalNodes * 2,
-                                       cudaMemcpyDeviceToHost));
-            for (int idx = 0; idx < numTasksSorted; idx++)
-            {
-                int         task = my_tasks_sorted[idx];
-                TaskTiming& tt   = all_timings[i][idx];
-                if (col_wait_start_ts && h_wait_timestamps[task * 2 + 0] != 0)
-                    tt.wait_start_ns =
-                        gpu_clock::globaltimer_to_unix_ns(h_wait_timestamps[task * 2 + 0], ts_ref);
-                if (col_wait_end_ts && h_wait_timestamps[task * 2 + 1] != 0)
-                    tt.wait_end_ns =
-                        gpu_clock::globaltimer_to_unix_ns(h_wait_timestamps[task * 2 + 1], ts_ref);
-            }
-        }
+        collector.collect(i, ev_ref, ts_ref);
 
         if (ev_ref) checkCudaErrors(cudaEventDestroy(ev_ref));
         for (int si = 0; si < numStreams; si++) checkCudaErrors(cudaStreamDestroy(taskStreams[si]));
@@ -838,77 +738,17 @@ void tiledCholeskyPanel(bool verify, bool dot)
     }
     printf("Total time used (s): %4.4f\n", totalTime);
 
-    if (col_wait_ms || col_compute_ms || col_start_ts || col_end_ts || col_wait_start_ts ||
-        col_wait_end_ts)
-    {
-        PEWriter out(cfg.outputPrefix, myPE);
-        out.print("pe,run,task_id,op_name");
-        if (col_wait_ms) out.print(",wait_ms");
-        if (col_compute_ms) out.print(",compute_ms");
-        if (col_start_ts) out.print(",start_ts");
-        if (col_end_ts) out.print(",end_ts");
-        if (col_wait_start_ts) out.print(",wait_start_ts");
-        if (col_wait_end_ts) out.print(",wait_end_ts");
-        out.print("\n");
-        for (int i = 0; i < runs; i++)
-        {
-            for (int idx = 0; idx < numTasksSorted; idx++)
-            {
-                int task = my_tasks_sorted[idx];
-                out.print("%d,%d,%d,%s", myPE, i, task,
-                          tiledCholeskyGraphCreator->subgraphOpNames[task].c_str());
-                if (col_wait_ms) out.print(",%.4f", all_timings[i][idx].wait_ms);
-                if (col_compute_ms) out.print(",%.4f", all_timings[i][idx].compute_ms);
-                if (col_start_ts) out.print(",%lld", (long long)all_timings[i][idx].start_ns);
-                if (col_end_ts) out.print(",%lld", (long long)all_timings[i][idx].end_ns);
-                if (col_wait_start_ts)
-                    out.print(",%lld", (long long)all_timings[i][idx].wait_start_ns);
-                if (col_wait_end_ts) out.print(",%lld", (long long)all_timings[i][idx].wait_end_ns);
-                out.print("\n");
-            }
-        }
-        out.flush();
-    }
+    collector.write(cfg.outputPrefix, myPE, tiledCholeskyGraphCreator->subgraphOpNames);
 
     if (verify)
     {
-        // Per-PE verification: download owned L block-columns and check that
-        // every diagonal tile L_{jj} (POTRF result) has all-positive diagonal elements.
-        auto   h_L_owned = std::make_unique<double[]>(myMatrixSize);
-        checkCudaErrors(
-            cudaMemcpy(h_L_owned.get(), panels.myPanel().tile(0, 0), myMatrixSize * sizeof(double),
-                       cudaMemcpyDeviceToHost));
-
-        bool   pass       = true;
-        double minDiagVal = std::numeric_limits<double>::max();
-        for (int j = myPE; j < (int)T; j += nPEs)
-        {
-            int localJ = j / nPEs;
-            for (int c = 0; c < (int)B; c++)
-            {
-                // compact col-major: h_L_owned[localJ*B*N + j*B + c*N + c] = L[j*B+c][j*B+c]
-                double diag = h_L_owned[(size_t)localJ * B * N + j * B + c * N + c];
-                minDiagVal  = std::min(minDiagVal, diag);
-                if (diag <= 0.0)
-                {
-                    printf("device %d | VERIFY FAIL: L[%d][%d] = %.6g (non-positive diagonal)\n",
-                           myPE, j * B + c, j * B + c, diag);
-                    pass = false;
-                }
-            }
-        }
-        printf("device %d | diagonal verification: %s (min diag = %.6g)\n", myPE,
-               pass ? "PASS" : "FAIL", minDiagVal);
+        bool pass = hostPanel.verify(ops.myPanel());  // panels owned by ops
+        printf("device %d | diagonal verification: %s\n", myPE, pass ? "PASS" : "FAIL");
     }
 
     delete[] h_subgraphsExec;
     nvshmem_free(d_completion_flags);
-    nvshmem_free((void*)d_flags);
-    checkCudaErrors(cudaFree(d_info));
-    checkCudaErrors(cudaFree(d_workspace_cusolver));
-    for (int i = 0; i < numMyTasks; i++) checkCudaErrors(cudaFree(d_workspace_cublas[i]));
-    free(d_workspace_cublas);
-}
+}  // ops destructor frees handles, workspaces, panels, and d_info; occupancyTracker frees d_flags
 
 void Cholesky(bool tiled, bool verify, bool subgraph, bool staticMultiGPU, bool oneGraphPerPE,
               bool panel, bool dot)
@@ -953,8 +793,8 @@ int main(int argc, char** argv)
     fprintf(g_log, "device %d | NVSHMEM init time (s): %4.4f\n", myPE, init_time);
     fflush(g_log);
 
-    if (!(cmdl["tiled"] || cmdl["subgraph"] || cmdl["static-multigpu"] || cmdl["one-graph-per-pe"] ||
-          cmdl["panel"]))
+    if (!(cmdl["tiled"] || cmdl["subgraph"] || cmdl["static-multigpu"] ||
+          cmdl["one-graph-per-pe"] || cmdl["panel"]))
         T = 1;
     B = N / T;
 

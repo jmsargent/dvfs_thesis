@@ -49,6 +49,48 @@
     cudaGraphRemoveDependencies((g), (from), (to), (cnt))
 #endif
 
+inline std::vector<cudaGraphNode_t> cudaGraphGetNodes(cudaGraph_t g)
+{
+    size_t n;
+    cudaGraphGetNodes(g, nullptr, &n);
+    std::vector<cudaGraphNode_t> v(n);
+    cudaGraphGetNodes(g, v.data(), &n);
+    return v;
+}
+inline std::vector<cudaGraphNode_t> cudaGraphGetRootNodes(cudaGraph_t g)
+{
+    size_t n;
+    cudaGraphGetRootNodes(g, nullptr, &n);
+    std::vector<cudaGraphNode_t> v(n);
+    cudaGraphGetRootNodes(g, v.data(), &n);
+    return v;
+}
+inline std::pair<std::vector<cudaGraphNode_t>, std::vector<cudaGraphNode_t>> cudaGraphGetEdges(
+    cudaGraph_t g)
+{
+    size_t n;
+    MUSTARD_cudaGraphGetEdges(g, nullptr, nullptr, &n);
+    std::vector<cudaGraphNode_t> from(n), to(n);
+    MUSTARD_cudaGraphGetEdges(g, from.data(), to.data(), &n);
+    return {from, to};
+}
+inline std::vector<cudaGraphNode_t> cudaGraphNodeGetDependentNodes(cudaGraphNode_t node)
+{
+    size_t n;
+    MUSTARD_cudaGraphNodeGetDependentNodes(node, nullptr, &n);
+    std::vector<cudaGraphNode_t> v(n);
+    MUSTARD_cudaGraphNodeGetDependentNodes(node, v.data(), &n);
+    return v;
+}
+inline std::vector<cudaGraphNode_t> cudaGraphNodeGetDependencies(cudaGraphNode_t node)
+{
+    size_t n;
+    MUSTARD_cudaGraphNodeGetDependencies(node, nullptr, &n);
+    std::vector<cudaGraphNode_t> v(n);
+    MUSTARD_cudaGraphNodeGetDependencies(node, v.data(), &n);
+    return v;
+}
+
 extern int myPE;
 
 typedef std::pair<int, int> MatrixTile;
@@ -477,6 +519,33 @@ class TiledGraphCreator
             return u;
         }
     }
+};
+
+class OccupancyTracker
+{
+   public:
+    OccupancyTracker(int smLimit) : smLimit_(smLimit)
+    {
+        d_flags_ = (volatile int*)nvshmem_malloc(sizeof(int) * 32);
+    }
+    ~OccupancyTracker() { nvshmem_free((void*)d_flags_); }
+    OccupancyTracker(const OccupancyTracker&)            = delete;
+    OccupancyTracker& operator=(const OccupancyTracker&) = delete;
+
+    void incrementOccupancy(cudaStream_t s)
+    {
+        kernel_occupancy_update<<<1, 1, 0, s>>>(smLimit_, d_flags_);
+    }
+    void decrementOccupancy(cudaStream_t s)
+    {
+        kernel_occupancy_update<<<1, 1, 0, s>>>(-smLimit_, d_flags_);
+    }
+    volatile int* flags() const { return d_flags_; }
+    void          reset() { cudaMemset((void*)d_flags_, 0, sizeof(int) * 32); }
+
+   private:
+    int           smLimit_;
+    volatile int* d_flags_;
 };
 
 }  // namespace mustard
