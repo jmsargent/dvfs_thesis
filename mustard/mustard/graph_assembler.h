@@ -16,7 +16,6 @@
 #include "mustard.h"
 #include "utils.h"
 
-
 struct TileAccess
 {
     std::string             name;
@@ -25,124 +24,236 @@ struct TileAccess
     std::function<void()>   work;
 };
 
+struct Node
+{
+    int                     index = -1;
+    int                     partition = -1;
+    std::string             name;
+    MatrixTile              write;
+    std::vector<MatrixTile> reads;
+    std::function<void()>   work;
+};
+
+struct Edge
+{
+    int from;
+    int to;
+};
+
+class PartitionedDag
+{
+   public:
+    void addNode(Node n)
+    {
+        n.index = (int)nodes_.size();
+        nodes_.push_back(std::move(n));
+    }
+    void addEdge(Edge e) { edges_.push_back(e); }
+
+    std::vector<Node>&       nodes()       { return nodes_; }
+    const std::vector<Node>& nodes() const { return nodes_; }
+
+    std::vector<int> nodes(int partition) const
+    {
+        std::vector<int> result;
+        for (auto& n : nodes_)
+            if (n.partition == partition) result.push_back(n.index);
+        return result;
+    }
+
+    std::vector<int> crossIncomingNodeIndices(const Node& n) const
+    {
+        std::vector<int> result;
+        for (auto& e : edges_)
+            if (e.to == n.index && nodes_[e.from].partition != n.partition)
+                result.push_back(e.from);
+        return result;
+    }
+
+    std::vector<int> crossOutgoingPartitions(const Node& n) const
+    {
+        std::set<int> result;
+        for (auto& e : edges_)
+            if (e.from == n.index && nodes_[e.to].partition != n.partition)
+                result.insert(nodes_[e.to].partition);
+        return {result.begin(), result.end()};
+    }
+
+   private:
+    std::vector<Node> nodes_;
+    std::vector<Edge> edges_;
+};
+
+struct MeasureFlags
+{
+    bool measureKernelWait   = false;
+    bool measureKernelLaunch = false;
+};
+
+struct TimestampBuffers
+{
+    unsigned long long* d_waitTs = nullptr;
+    unsigned long long* d_compTs = nullptr;
+};
+
+class OperationCapturer
+{
+   public:
+    OperationCapturer(mustard::TiledGraphCreator& creator, int* completionFlags, cudaStream_t stream)
+        : creator_(creator), completionFlags_(completionFlags), stream_(stream)
+    {}
+
+    static int* upload(const std::vector<int>& v)
+    {
+        if (v.empty()) return nullptr;
+        int* d;
+        cudaMalloc(&d, v.size() * sizeof(int));
+        cudaMemcpy(d, v.data(), v.size() * sizeof(int), cudaMemcpyHostToDevice);
+        return d;
+    }
+
+    void beginCapture(MatrixTile write, const std::vector<MatrixTile>& reads,
+                      const std::string& name)
+    {
+        creator_.beginCaptureOperation(write, reads, name);
+    }
+
+    void launchWait(int* d_wait, int n)
+    {
+        mustard::kernel_wait_static<<<1, 1, 0, stream_>>>(d_wait, n, completionFlags_, 0);
+    }
+
+    void launchSignal(int nodeIndex, int* d_signal, int n)
+    {
+        mustard::kernel_signal_static<<<1, 1, 0, stream_>>>(nodeIndex, completionFlags_, d_signal,
+                                                            n, 0);
+    }
+
+    void launchTimestamp(unsigned long long* ptr)
+    {
+        mustard::kernel_record_timestamp<<<1, 1, 0, stream_>>>(ptr);
+    }
+
+    void endCapture() { creator_.endCaptureOperation(); }
+
+    void phantom(MatrixTile write, const std::vector<MatrixTile>& reads, const std::string& name)
+    {
+        creator_.phantomOperation(write, reads, name);
+    }
+
+   private:
+    mustard::TiledGraphCreator& creator_;
+    int*                        completionFlags_;
+    cudaStream_t                stream_;
+};
+
+class KernelStopWatch
+{
+   public:
+    KernelStopWatch(MeasureFlags flags, OperationCapturer& capturer)
+        : flags_(flags), capturer_(capturer)
+    {}
+
+    void allocateTimers(int nrNodes)
+    {
+        if (flags_.measureKernelWait)
+        {
+            cudaMalloc(&d_waitTs_, 2 * nrNodes * sizeof(unsigned long long));
+            cudaMemset(d_waitTs_, 0, 2 * nrNodes * sizeof(unsigned long long));
+        }
+        if (flags_.measureKernelLaunch)
+        {
+            cudaMalloc(&d_compTs_, 2 * nrNodes * sizeof(unsigned long long));
+            cudaMemset(d_compTs_, 0, 2 * nrNodes * sizeof(unsigned long long));
+        }
+    }
+
+    void waitStart(int idx) { if (d_waitTs_) capturer_.launchTimestamp(d_waitTs_ + idx * 2 + 0); }
+    void waitEnd(int idx)   { if (d_waitTs_) capturer_.launchTimestamp(d_waitTs_ + idx * 2 + 1); }
+    void compStart(int idx) { if (d_compTs_) capturer_.launchTimestamp(d_compTs_ + idx * 2 + 0); }
+    void compEnd(int idx)   { if (d_compTs_) capturer_.launchTimestamp(d_compTs_ + idx * 2 + 1); }
+
+    TimestampBuffers buffers() const { return {d_waitTs_, d_compTs_}; }
+
+   private:
+    MeasureFlags        flags_;
+    OperationCapturer&  capturer_;
+    unsigned long long* d_waitTs_ = nullptr;
+    unsigned long long* d_compTs_ = nullptr;
+};
+
 template <typename Ops>
 class DAGBuilder
 {
-    struct Node
-    {
-        int              owner;
-        TileAccess       tiles;
-        std::vector<int> dependsOn;
-
-        Node(int o, TileAccess t, std::vector<int> d)
-            : owner(o), tiles(std::move(t)), dependsOn(std::move(d))
-        {
-        }
-
-        void findRAWDependencies(const std::map<MatrixTile, int>& tileToLastWriter)
-        {
-            for (const auto& readTile : tiles.reads)
-            {
-                auto it = tileToLastWriter.find(readTile);
-                if (it != tileToLastWriter.end()) dependsOn.push_back(it->second);
-            }
-        }
-    };
-
-    std::vector<Node>           nodes_;
-    std::map<MatrixTile, int>   lastWriterByTile_;
-    int                         myPE_;
-    mustard::TiledGraphCreator& creator_;
-    Ops&                        ops_;
-    int*                        completionFlags_;
-    cudaStream_t                stream_;
+    PartitionedDag            dag_;
+    std::map<MatrixTile, int> lastWriterByTile_;
+    int                       myPE_;
+    Ops&                      ops_;
+    OperationCapturer&        capturer_;
+    KernelStopWatch&          sw_;
 
    public:
-    DAGBuilder(int myPE, mustard::TiledGraphCreator& creator, Ops& ops, int* completionFlags,
-               cudaStream_t stream)
-        : myPE_(myPE), creator_(creator), ops_(ops), completionFlags_(completionFlags),
-          stream_(stream)
+    DAGBuilder(int myPE, Ops& ops, OperationCapturer& capturer, KernelStopWatch& sw)
+        : myPE_(myPE), ops_(ops), capturer_(capturer), sw_(sw)
     {
     }
 
     template <typename F>
     void add(int owner, F&& f)
     {
-        TileAccess       access    = f(ops_);
-        int              nodeIndex = (int)nodes_.size();
-        std::vector<int> dependencies;
+        TileAccess access      = f(ops_);
+        int        futureIndex = (int)dag_.nodes().size();
 
-        Node node(owner, std::move(access), std::move(dependencies));
-        node.findRAWDependencies(lastWriterByTile_);
+        for (const auto& readTile : access.reads)
+        {
+            auto it = lastWriterByTile_.find(readTile);
+            if (it != lastWriterByTile_.end())
+                dag_.addEdge({it->second, futureIndex});
+        }
 
-        lastWriterByTile_[node.tiles.write] = nodeIndex;
-        nodes_.push_back(node);
+        lastWriterByTile_[access.write] = futureIndex;
+        dag_.addNode({-1, owner, std::move(access.name), std::move(access.write),
+                      std::move(access.reads), std::move(access.work)});
     }
 
-    void build()
+    PartitionedDag build()
     {
-        int nNodes = (int)nodes_.size();
+        int localNodes = 0;
+        for (auto& n : dag_.nodes())
+            if (n.partition == myPE_) localNodes++;
+        sw_.allocateTimers(localNodes);
 
-        // For each node: which PEs need to be notified when it completes
-        std::vector<std::vector<int>> notifyPEs(nNodes);
-        for (int i = 0; i < nNodes; i++)
-            for (int dep : nodes_[i].dependsOn)
-                if (nodes_[i].owner != nodes_[dep].owner)
-                    notifyPEs[dep].push_back(nodes_[i].owner);
-        for (auto& v : notifyPEs)
+        int localIdx = 0;
+        for (auto& n : dag_.nodes())
         {
-            std::sort(v.begin(), v.end());
-            v.erase(std::unique(v.begin(), v.end()), v.end());
-        }
-
-        // For each node: which task indices (on other PEs) does it need to wait for
-        std::vector<std::vector<int>> crossPEDeps(nNodes);
-        for (int i = 0; i < nNodes; i++)
-            for (int dep : nodes_[i].dependsOn)
-                if (nodes_[dep].owner != nodes_[i].owner)
-                    crossPEDeps[i].push_back(dep);
-
-        // Upload to device before any graph capture begins
-        std::vector<int*> d_crossPEDeps(nNodes, nullptr);
-        std::vector<int*> d_notifyPEs(nNodes, nullptr);
-        for (int i = 0; i < nNodes; i++)
-        {
-            if (!crossPEDeps[i].empty())
+            if (n.partition == myPE_)
             {
-                cudaMalloc(&d_crossPEDeps[i], crossPEDeps[i].size() * sizeof(int));
-                cudaMemcpy(d_crossPEDeps[i], crossPEDeps[i].data(),
-                           crossPEDeps[i].size() * sizeof(int), cudaMemcpyHostToDevice);
-            }
-            if (!notifyPEs[i].empty())
-            {
-                cudaMalloc(&d_notifyPEs[i], notifyPEs[i].size() * sizeof(int));
-                cudaMemcpy(d_notifyPEs[i], notifyPEs[i].data(),
-                           notifyPEs[i].size() * sizeof(int), cudaMemcpyHostToDevice);
-            }
-        }
+                auto waitNodes   = dag_.crossIncomingNodeIndices(n);
+                auto signalParts = dag_.crossOutgoingPartitions(n);
+                int* d_wait      = OperationCapturer::upload(waitNodes);
+                int* d_signal    = OperationCapturer::upload(signalParts);
 
-        for (int i = 0; i < nNodes; i++)
-        {
-            auto& n = nodes_[i];
-            if (n.owner == myPE_)
-            {
-                creator_.beginCaptureOperation(n.tiles.write, n.tiles.reads, n.tiles.name);
-                if (d_crossPEDeps[i])
-                    mustard::kernel_wait_static<<<1, 1, 0, stream_>>>(d_crossPEDeps[i],
-                                                                    (int)crossPEDeps[i].size(),
-                                                                    completionFlags_, 0);
-                n.tiles.work();
-                if (d_notifyPEs[i])
-                    mustard::kernel_signal_static<<<1, 1, 0, stream_>>>(i, completionFlags_,
-                                                                       d_notifyPEs[i],
-                                                                       (int)notifyPEs[i].size(), 0);
-                creator_.endCaptureOperation();
+                capturer_.beginCapture(n.write, n.reads, n.name);
+                if (d_wait)
+                {
+                    sw_.waitStart(localIdx);
+                    capturer_.launchWait(d_wait, (int)waitNodes.size());
+                    sw_.waitEnd(localIdx);
+                }
+                sw_.compStart(localIdx);
+                n.work();
+                sw_.compEnd(localIdx);
+                if (d_signal)
+                    capturer_.launchSignal(n.index, d_signal, (int)signalParts.size());
+                capturer_.endCapture();
+                localIdx++;
             }
             else
             {
-                creator_.phantomOperation(n.tiles.write, n.tiles.reads, n.tiles.name);
+                capturer_.phantom(n.write, n.reads, n.name);
             }
         }
+        return std::move(dag_);
     }
 };
 

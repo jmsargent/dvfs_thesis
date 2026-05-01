@@ -596,7 +596,21 @@ void tiledCholeskyPanel(bool verify, bool dot)
 
     auto creator = std::make_unique<mustard::TiledGraphCreator>(s, graph, true, totalNodes);
 
-    DAGBuilder<CholeskyCudaOperations> dag(myPE, *creator, ops, d_completion_flags, s);
+    auto has_flag = [&](const char* f) { return cfg.measureFlags.find(f) != std::string::npos; };
+    bool col_wait_ms       = has_flag("wait_ms");
+    bool col_compute_ms    = has_flag("compute_ms");
+    bool col_start_ts      = has_flag("start_ts");
+    bool col_end_ts        = has_flag("end_ts");
+    bool col_wait_start_ts = has_flag("wait_start_ts");
+    bool col_wait_end_ts   = has_flag("wait_end_ts");
+    MeasureFlags flags{
+        col_wait_ms || col_wait_start_ts || col_wait_end_ts,
+        col_compute_ms || col_start_ts || col_end_ts
+    };
+
+    OperationCapturer capturer(*creator, d_completion_flags, s);
+    KernelStopWatch sw(flags, capturer);
+    DAGBuilder<CholeskyCudaOperations> dag(myPE, ops, capturer, sw);
 
     for (int pivotColumn = 0; pivotColumn < (int)T; pivotColumn++)
     {
@@ -613,56 +627,14 @@ void tiledCholeskyPanel(bool verify, bool dot)
                 dag.add(column % nPEs, [=](auto& o) { return o.gemm(row, column, pivotColumn); });
         }
     }
-    dag.build();
+    
+    auto partdag         = dag.build();
+    auto ts              = sw.buffers();
+    auto my_tasks_sorted = partdag.nodes(myPE);
 
     checkCudaErrors(cudaDeviceSynchronize());
     printf("device %d | tiledCholeskyPanel: graph construction done\n", myPE);
     fflush(stdout);
-
-    // INJECTOR - This should
-    auto has_flag    = [&](const char* f) { return cfg.measureFlags.find(f) != std::string::npos; };
-    bool col_wait_ms = has_flag("wait_ms");
-    bool col_compute_ms    = has_flag("compute_ms");
-    bool col_start_ts      = has_flag("start_ts");
-    bool col_end_ts        = has_flag("end_ts");
-    bool col_wait_start_ts = has_flag("wait_start_ts");
-    bool col_wait_end_ts   = has_flag("wait_end_ts");
-
-
-    auto scheduler = std::make_unique<mustard::StaticPanelScheduler>(
-        nPEs, myPE, totalNodes, PanelGraph::buildDependencies(T), taskToPanel);
-
-    mustard::TaskAllocator alloc;
-    for (int task : scheduler->getMyTasksOrdered())
-    {
-        const auto& d = scheduler->getDeps(task);
-        scheduler->setTaskDeps(task, alloc.allocate(d), (int)d.size());
-        const auto& n = scheduler->getNotifyPEs(task);
-        scheduler->setTaskNotifyPEs(task, alloc.allocate(n), (int)n.size());
-    }
-
-    const std::vector<int>& my_tasks_sorted = scheduler->getMyTasksOrdered();
-
-    // INJECTOR - This should be moved to a builder pattern or a factory
-    mustard::InjectionContext ctx(totalNodes);
-    {
-        auto injector = std::unique_ptr<mustard::IInjector>(
-            new mustard::SubgraphInjector(creator->subgraphs, *scheduler,
-                                          d_completion_flags, cfg.debugKernels));
-        if (col_wait_start_ts || col_wait_end_ts)
-            injector = std::make_unique<mustard::WaitTimestampDecorator>(
-                std::move(injector), creator->subgraphs);
-        if (col_wait_ms || col_compute_ms)
-            injector = std::make_unique<mustard::WaitTimeDecorator>(
-                std::move(injector), creator->subgraphs);
-        if (col_compute_ms)
-            injector = std::make_unique<mustard::ComputeTimeDecorator>(
-                std::move(injector), creator->subgraphs);
-        if (col_start_ts || col_end_ts)
-            injector = std::make_unique<mustard::TimestampDecorator>(
-                std::move(injector), creator->subgraphs);
-        injector->inject(my_tasks_sorted, ctx);
-    }
 
     cudaGraphExec_t* h_subgraphsExec = new cudaGraphExec_t[totalNodes];
     for (int task : my_tasks_sorted)
@@ -692,10 +664,9 @@ void tiledCholeskyPanel(bool verify, bool dot)
     fflush(stdout);
 
     int                 numTasksSorted = (int)my_tasks_sorted.size();
-    TaskTimingCollector collector(ctx, my_tasks_sorted, totalNodes, runs, col_wait_ms,
+    TaskTimingCollector collector(ts, my_tasks_sorted, runs, col_wait_ms,
                                   col_compute_ms, col_start_ts, col_end_ts, col_wait_start_ts,
                                   col_wait_end_ts);
-
     double totalTime = 0.0;
 
     for (int i = 0; i < runs; i++)
@@ -718,15 +689,8 @@ void tiledCholeskyPanel(bool verify, bool dot)
         std::vector<cudaStream_t> taskStreams(numStreams);
         for (int si = 0; si < numStreams; si++) checkCudaErrors(cudaStreamCreate(&taskStreams[si]));
 
-        cudaEvent_t ev_ref = nullptr;
-        if (col_wait_ms)
-        {
-            checkCudaErrors(cudaEventCreate(&ev_ref));
-            checkCudaErrors(cudaEventRecord(ev_ref, taskStreams[0]));
-        }
-
         gpu_clock::CalibrationRef ts_ref;
-        if (col_start_ts || col_end_ts || col_wait_start_ts || col_wait_end_ts)
+        if (collector.active())
             ts_ref = gpu_clock::calibrate(taskStreams[0]);
 
         if (myPE == 0) print_timestamp("cholesky tiledPanel start_time", 7);
@@ -742,9 +706,7 @@ void tiledCholeskyPanel(bool verify, bool dot)
         auto t_end = std::chrono::high_resolution_clock::now();
         if (myPE == 0) print_timestamp("cholesky tiledPanel end_time", 7);
 
-        collector.collect(i, ev_ref, ts_ref);
-
-        if (ev_ref) checkCudaErrors(cudaEventDestroy(ev_ref));
+        collector.collect(i, ts_ref);
         for (int si = 0; si < numStreams; si++) checkCudaErrors(cudaStreamDestroy(taskStreams[si]));
         nvshmem_barrier_all();
 
