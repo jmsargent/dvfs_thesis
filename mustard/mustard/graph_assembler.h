@@ -16,11 +16,13 @@
 #include "mustard.h"
 #include "utils.h"
 
-class HasLocation
+
+struct TileAccess
 {
-   public:
-    virtual void setCoordinate(std::vector<int> coords) = 0;
-    virtual ~HasLocation()                              = default;
+    std::string             name;
+    MatrixTile              write;
+    std::vector<MatrixTile> reads;
+    std::function<void()>   work;
 };
 
 template <typename Ops>
@@ -28,79 +30,128 @@ class DAGBuilder
 {
     struct Node
     {
-        int                   owner;
-        std::function<void()> op;
-        std::vector<int>      waitTaskIds;
-        std::vector<int>      signalPEs;
-    };
+        int              owner;
+        TileAccess       tiles;
+        std::vector<int> dependsOn;
 
-    std::vector<Node>           nodes_;
-    int                         myPE_;
-    mustard::TiledGraphCreator& creator_;
-    Ops&                        ops_;
-
-   public:
-    class NodeRef
-    {
-        Node& node_;
-
-       public:
-        NodeRef(Node& n) : node_(n) {}
-        NodeRef& waitsFor(std::vector<int> ids) { node_.waitTaskIds = std::move(ids); return *this; }
-        NodeRef& signals(std::vector<int> pes)  { node_.signalPEs   = std::move(pes);  return *this; }
-    };
-
-    class NodeBuilder
-    {
-        DAGBuilder&      dag_;
-        std::vector<int> coords_;
-
-       public:
-        NodeBuilder(DAGBuilder& dag, std::vector<int> coords)
-            : dag_(dag), coords_(std::move(coords)) {}
-
-        template <typename F>
-        NodeRef add(int owner, F&& f)
+        Node(int o, TileAccess t, std::vector<int> d)
+            : owner(o), tiles(std::move(t)), dependsOn(std::move(d))
         {
-            auto& ops = dag_.ops_;
-            auto  c   = coords_;
-            dag_.nodes_.push_back({owner, [&ops, c, f = std::forward<F>(f)]() mutable {
-                ops.setCoordinate(c);
-                f(ops);
-            }, {}, {}});
-            return NodeRef(dag_.nodes_.back());
+        }
+
+        void findRAWDependencies(const std::map<MatrixTile, int>& tileToLastWriter)
+        {
+            for (const auto& readTile : tiles.reads)
+            {
+                auto it = tileToLastWriter.find(readTile);
+                if (it != tileToLastWriter.end()) dependsOn.push_back(it->second);
+            }
         }
     };
 
-    DAGBuilder(int myPE, mustard::TiledGraphCreator& creator, Ops& ops)
-        : myPE_(myPE), creator_(creator), ops_(ops) {}
+    std::vector<Node>           nodes_;
+    std::map<MatrixTile, int>   lastWriterByTile_;
+    int                         myPE_;
+    mustard::TiledGraphCreator& creator_;
+    Ops&                        ops_;
+    int*                        completionFlags_;
+    cudaStream_t                stream_;
 
-    template <typename... Args>
-    NodeBuilder at(Args... args)
+   public:
+    DAGBuilder(int myPE, mustard::TiledGraphCreator& creator, Ops& ops, int* completionFlags,
+               cudaStream_t stream)
+        : myPE_(myPE), creator_(creator), ops_(ops), completionFlags_(completionFlags),
+          stream_(stream)
     {
-        return NodeBuilder(*this, {args...});
     }
 
-    void buildFor()
+    template <typename F>
+    void add(int owner, F&& f)
     {
-        // idk if want to change this to phantom operation , then we could somehow point to the creator whenever there is a dependency
-        for (auto& n : nodes_) n.owner == myPE_ ? n.op() : creator_.skip();
+        TileAccess       access    = f(ops_);
+        int              nodeIndex = (int)nodes_.size();
+        std::vector<int> dependencies;
+
+        Node node(owner, std::move(access), std::move(dependencies));
+        node.findRAWDependencies(lastWriterByTile_);
+
+        lastWriterByTile_[node.tiles.write] = nodeIndex;
+        nodes_.push_back(node);
+    }
+
+    void build()
+    {
+        int nNodes = (int)nodes_.size();
+
+        // For each node: which PEs need to be notified when it completes
+        std::vector<std::vector<int>> notifyPEs(nNodes);
+        for (int i = 0; i < nNodes; i++)
+            for (int dep : nodes_[i].dependsOn)
+                if (nodes_[i].owner != nodes_[dep].owner)
+                    notifyPEs[dep].push_back(nodes_[i].owner);
+        for (auto& v : notifyPEs)
+        {
+            std::sort(v.begin(), v.end());
+            v.erase(std::unique(v.begin(), v.end()), v.end());
+        }
+
+        // For each node: which task indices (on other PEs) does it need to wait for
+        std::vector<std::vector<int>> crossPEDeps(nNodes);
+        for (int i = 0; i < nNodes; i++)
+            for (int dep : nodes_[i].dependsOn)
+                if (nodes_[dep].owner != nodes_[i].owner)
+                    crossPEDeps[i].push_back(dep);
+
+        // Upload to device before any graph capture begins
+        std::vector<int*> d_crossPEDeps(nNodes, nullptr);
+        std::vector<int*> d_notifyPEs(nNodes, nullptr);
+        for (int i = 0; i < nNodes; i++)
+        {
+            if (!crossPEDeps[i].empty())
+            {
+                cudaMalloc(&d_crossPEDeps[i], crossPEDeps[i].size() * sizeof(int));
+                cudaMemcpy(d_crossPEDeps[i], crossPEDeps[i].data(),
+                           crossPEDeps[i].size() * sizeof(int), cudaMemcpyHostToDevice);
+            }
+            if (!notifyPEs[i].empty())
+            {
+                cudaMalloc(&d_notifyPEs[i], notifyPEs[i].size() * sizeof(int));
+                cudaMemcpy(d_notifyPEs[i], notifyPEs[i].data(),
+                           notifyPEs[i].size() * sizeof(int), cudaMemcpyHostToDevice);
+            }
+        }
+
+        for (int i = 0; i < nNodes; i++)
+        {
+            auto& n = nodes_[i];
+            if (n.owner == myPE_)
+            {
+                creator_.beginCaptureOperation(n.tiles.write, n.tiles.reads, n.tiles.name);
+                if (d_crossPEDeps[i])
+                    mustard::kernel_wait_static<<<1, 1, 0, stream_>>>(d_crossPEDeps[i],
+                                                                    (int)crossPEDeps[i].size(),
+                                                                    completionFlags_, 0);
+                n.tiles.work();
+                if (d_notifyPEs[i])
+                    mustard::kernel_signal_static<<<1, 1, 0, stream_>>>(i, completionFlags_,
+                                                                       d_notifyPEs[i],
+                                                                       (int)notifyPEs[i].size(), 0);
+                creator_.endCaptureOperation();
+            }
+            else
+            {
+                creator_.phantomOperation(n.tiles.write, n.tiles.reads, n.tiles.name);
+            }
+        }
     }
 };
 
 class PanelGraph
 {
    public:
-    std::unique_ptr<mustard::TiledGraphCreator> creator;
-
-    PanelGraph(cudaStream_t s, cudaGraph_t graph, int totalNodes) : s_(s)
-    {
-        creator = std::make_unique<mustard::TiledGraphCreator>(s, graph, true, totalNodes);
-    }
+    PanelGraph(cudaGraph_t graph, int totalNodes) {}
 
     virtual ~PanelGraph() = default;
-
-    virtual void assemble() = 0;
 
     static std::vector<std::vector<int>> buildDependencies(int T)
     {
@@ -145,18 +196,6 @@ class PanelGraph
         }
         return v;
     }
-
-    template <typename... Args>
-    static std::string opName(const std::string& name, Args... args)
-    {
-        std::string s     = name + "(";
-        bool        first = true;
-        ((s += (first ? "" : ",") + std::to_string(args), first = false), ...);
-        return s + ")";
-    }
-
-   protected:
-    cudaStream_t s_;
 };
 
 // owns panels, cublas/cusolver handles, and all workspace memory
@@ -166,7 +205,8 @@ class CholeskyCudaOperations
     CholeskyCudaOperations(cublasHandle_t cublasHandle, cusolverDnHandle_t cusolverHandle,
                            double* d_workspace_cusolver, int workspaceInBytesOnDevice,
                            void** d_workspace_cublas, int cublasWorkspaceSize, int numWorkspaces,
-                           int* d_info, StridedDevicePanels panels, int B, int N, int nPEs)
+                           int* d_info, StridedDevicePanels panels, int B, int N, int nPEs,
+                           mustard::OccupancyTracker& occupancy)
         : cublasHandle_(cublasHandle),
           cusolverHandle_(cusolverHandle),
           d_workspace_cusolver_(d_workspace_cusolver),
@@ -180,7 +220,8 @@ class CholeskyCudaOperations
           N_(N),
           nPEs_(nPEs),
           one_(1.0),
-          minusOne_(-1.0)
+          minusOne_(-1.0),
+          occupancy_(occupancy)
     {
     }
 
@@ -205,169 +246,78 @@ class CholeskyCudaOperations
             cublasSetWorkspace(cublasHandle_, d_workspace_cublas_[++wsIdx_], cublasWorkspaceSize_));
     }
 
-    void doSYRK(int i, int k)
+    TileAccess potrf(int k)
     {
-        checkCudaErrors(cublasDsyrk(cublasHandle_, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, B_, B_,
-                                    &minusOne_, panels_.otherPanel(k % nPEs_).tile(i, k), N_, &one_,
-                                    panels_.myPanel().tile(i, i), N_));
+        return {mustard::opName("POTRF", k),
+                {k, k},
+                {{k, k}},
+                [this, k]()
+                {
+                    checkCudaErrors(cusolverDnDpotrf(
+                        cusolverHandle_, CUBLAS_FILL_MODE_LOWER, B_, panels_.myPanel().tile(k, k),
+                        N_, d_workspace_cusolver_, workspaceInBytesOnDevice_, d_info_));
+                }};
     }
 
-    void doGEMM(int j, int i, int k)
+    TileAccess trsm(int i, int k)
     {
-        checkCudaErrors(cublasGemmEx(cublasHandle_, CUBLAS_OP_N, CUBLAS_OP_T, B_, B_, B_,
+        return {mustard::opName("TRSM", i, k),
+                {i, k},
+                {{k, k}, {i, k}},
+                [this, i, k]()
+                {
+                    setWorkspace();
+                    checkCudaErrors(cublasDtrsm(
+                        cublasHandle_, CUBLAS_SIDE_RIGHT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_T,
+                        CUBLAS_DIAG_NON_UNIT, B_, B_, &one_, panels_.myPanel().tile(k, k), N_,
+                        panels_.myPanel().tile(i, k), N_));
+                }};
+    }
+
+    TileAccess syrk(int i, int k)
+    {
+        return {mustard::opName("SYRK", i, i, k),
+                {i, i},
+                {{i, i}, {i, k}},
+                [this, i, k]()
+                {
+                    setWorkspace();
+                    checkCudaErrors(cublasDsyrk(cublasHandle_, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N,
+                                                B_, B_, &minusOne_,
+                                                panels_.otherPanel(k % nPEs_).tile(i, k), N_, &one_,
+                                                panels_.myPanel().tile(i, i), N_));
+                }};
+    }
+
+    TileAccess gemm(int j, int i, int k)
+    {
+        return {mustard::opName("GEMM", j, i, k),
+                {j, i},
+                {{j, i}, {j, k}, {i, k}},
+                [this, j, i, k]()
+                {
+                    setWorkspace();
+                    checkCudaErrors(
+                        cublasGemmEx(cublasHandle_, CUBLAS_OP_N, CUBLAS_OP_T, B_, B_, B_,
                                      &minusOne_, panels_.otherPanel(k % nPEs_).tile(j, k),
                                      CUDA_R_64F, N_, panels_.otherPanel(k % nPEs_).tile(i, k),
                                      CUDA_R_64F, N_, &one_, panels_.myPanel().tile(j, i),
                                      CUDA_R_64F, N_, CUBLAS_COMPUTE_64F, CUBLAS_GEMM_DEFAULT));
-    }
-
-    void doPOTRF(int k)
-    {
-        checkCudaErrors(cusolverDnDpotrf(cusolverHandle_, CUBLAS_FILL_MODE_LOWER, B_,
-                                         panels_.myPanel().tile(k, k), N_, d_workspace_cusolver_,
-                                         workspaceInBytesOnDevice_, d_info_));
-    }
-
-    void doTRSM(int i, int k)
-    {
-        checkCudaErrors(cublasDtrsm(cublasHandle_, CUBLAS_SIDE_RIGHT, CUBLAS_FILL_MODE_LOWER,
-                                    CUBLAS_OP_T, CUBLAS_DIAG_NON_UNIT, B_, B_, &one_,
-                                    panels_.myPanel().tile(k, k), N_, panels_.myPanel().tile(i, k),
-                                    N_));
+                }};
     }
 
    private:
-    cublasHandle_t      cublasHandle_;
-    cusolverDnHandle_t  cusolverHandle_;
-    double*             d_workspace_cusolver_;
-    int                 workspaceInBytesOnDevice_;
-    void**              d_workspace_cublas_;
-    int                 cublasWorkspaceSize_;
-    int                 numWorkspaces_;
-    int*                d_info_;
-    StridedDevicePanels panels_;
-    int                 B_, N_, nPEs_;
-    int                 wsIdx_ = -1;
-    double              one_, minusOne_;
-};
-
-class CholeskyPanelGraph : public PanelGraph, public HasLocation
-{
-   public:
-    CholeskyPanelGraph(cudaStream_t s, cudaGraph_t graph, int totalNodes, size_t T, int myPE,
-                       int nPEs, CholeskyCudaOperations& ops, mustard::OccupancyTracker& occupancy)
-        : PanelGraph(s, graph, totalNodes),
-          T_(T),
-          myPE_(myPE),
-          nPEs_(nPEs),
-          ops_(ops),
-          occupancy_(occupancy)
-    {
-    }
-
-    void setCoordinate(std::vector<int> c) override { coords_ = std::move(c); }
-
-    void assemble() override
-    {
-        // These dependencies are wierd, lol
-        DAGBuilder<CholeskyPanelGraph> dag(myPE_, *creator, *this);
-        
-        for (int pivotColumn = 0; pivotColumn < (int)T_; pivotColumn++)
-        {
-            dag.at(pivotColumn).add(pivotColumn % nPEs_, [](auto& ops) { ops.potrf(); });
-
-            for (int column = pivotColumn + 1; column < (int)T_; column++)
-                dag.at(column, pivotColumn).add(pivotColumn % nPEs_, [](auto& ops) { ops.trsm(); })
-                   .signals(signalPEs(column, pivotColumn));
-
-            for (int column = pivotColumn + 1; column < (int)T_; column++)
-            {
-                dag.at(column, pivotColumn)
-                   .add(column % nPEs_, [](auto& ops) { ops.syrk(); })
-                   .waitsFor(writeAt(column, pivotColumn));
-
-                for (int row = column + 1; row < (int)T_; row++)
-                    dag.at(row, column, pivotColumn)
-                       .add(column % nPEs_, [](auto& ops) { ops.gemm(); })
-                       .waitsFor(writeAt(row, column, pivotColumn));
-            }
-        }
-        dag.buildFor();
-    }
-
-   private:
-    size_t                     T_;
-    int                        myPE_, nPEs_;
-    CholeskyCudaOperations&    ops_;
+    cublasHandle_t             cublasHandle_;
+    cusolverDnHandle_t         cusolverHandle_;
+    double*                    d_workspace_cusolver_;
+    int                        workspaceInBytesOnDevice_;
+    void**                     d_workspace_cublas_;
+    int                        cublasWorkspaceSize_;
+    int                        numWorkspaces_;
+    int*                       d_info_;
+    StridedDevicePanels        panels_;
+    int                        B_, N_, nPEs_;
+    int                        wsIdx_ = -1;
+    double                     one_, minusOne_;
     mustard::OccupancyTracker& occupancy_;
-    std::vector<int>           coords_;
-
-    void potrf()
-    {
-        assert(coords_.size() == 1 && "potrf: expected 1 coordinate from at()");
-        int k = coords_[0];
-        captureNode({k, k}, {{k, k}}, opName("POTRF", k), false, [&] { ops_.doPOTRF(k); });
-    }
-
-    void trsm()
-    {
-        assert(coords_.size() == 2 && "trsm: expected 2 coordinates from at()");
-        int i = coords_[0], k = coords_[1];
-        captureNode({i, k}, {{k, k}, {i, k}}, opName("TRSM", i, k), true, [&] { ops_.doTRSM(i, k); });
-    }
-
-    void syrk()
-    {
-        assert(coords_.size() == 2 && "syrk: expected 2 coordinates from at()");
-        int i = coords_[0], k = coords_[1];
-        captureNode({i, i}, {{i, i}, {i, k}}, opName("SYRK", i, i, k), true, [&] { ops_.doSYRK(i, k); });
-    }
-
-    void gemm()
-    {
-        assert(coords_.size() == 3 && "gemm: expected 3 coordinates from at()");
-        int j = coords_[0], i = coords_[1], k = coords_[2];
-        captureNode({j, i}, {{j, i}, {j, k}, {i, k}}, opName("GEMM", j, i, k), true,
-                    [&] { ops_.doGEMM(j, i, k); });
-    }
-
-    template <typename F>
-    void captureNode(std::pair<int, int> write, std::vector<std::pair<int, int>> reads,
-                     const std::string& name, bool occupancy, F&& work)
-    {
-        creator->beginCaptureOperation(write, reads, name);
-        ops_.setWorkspace();
-        if (occupancy) occupancy_.incrementOccupancy(s_);
-        work();
-        if (occupancy) occupancy_.decrementOccupancy(s_);
-        creator->endCaptureOperation();
-    }
-
-    int trsmFlagIdx(int column, int pivotColumn)
-    {
-        return pivotColumn * (2 * (int)T_ - pivotColumn - 1) / 2 + (column - pivotColumn - 1);
-    }
-
-    std::vector<int> signalPEs(int column, int pivotColumn)
-    {
-        std::set<int> pes;
-        if (column % nPEs_ != pivotColumn % nPEs_)
-            pes.insert(column % nPEs_);
-        for (int p = pivotColumn + 1; p < column; p++)
-            if (p % nPEs_ != pivotColumn % nPEs_)
-                pes.insert(p % nPEs_);
-        return {pes.begin(), pes.end()};
-    }
-
-    std::vector<int> writeAt(int column, int pivotColumn)
-    {
-        if (pivotColumn % nPEs_ == column % nPEs_) return {};
-        return {trsmFlagIdx(column, pivotColumn)};
-    }
-
-    std::vector<int> writeAt(int row, int column, int pivotColumn)
-    {
-        if (pivotColumn % nPEs_ == column % nPEs_) return {};
-        return {trsmFlagIdx(column, pivotColumn), trsmFlagIdx(row, pivotColumn)};
-    }
 };

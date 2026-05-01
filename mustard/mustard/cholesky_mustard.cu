@@ -20,9 +20,9 @@
 #include "gen.h"
 #include "graph_assembler.h"
 #include "injectors.h"
-#include "task_timing.h"
 #include "mustard.h"
 #include "pe_writer.h"
+#include "task_timing.h"
 #include "time_utils.cuh"
 #include "verify.h"
 
@@ -210,7 +210,7 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
     checkCudaErrors(cublasSetStream(cublasHandle, s));
     checkCudaErrors(cublasSetWorkspace(cublasHandle, d_workspace_cublas[0], cublasWorkspaceSize));
 
-    auto tiledCholeskyGraphCreator =
+    auto creator =
         std::make_unique<mustard::TiledGraphCreator>(s, graph, subgraph, totalNodes);
 
     for (int k = 0; k < T; k++)
@@ -219,7 +219,7 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
         // L[k][k]*U[k][k] = A[k][k]
         checkCudaErrors(
             cublasSetWorkspace(cublasHandle, d_workspace_cublas[0], cublasWorkspaceSize));
-        tiledCholeskyGraphCreator->beginCaptureOperation(
+        creator->beginCaptureOperation(
             std::make_pair(k, k), {std::make_pair(k, k)},
             "POTRF(" + std::to_string(k) + "," + std::to_string(k) + ")");
         if (subgraph)
@@ -241,7 +241,7 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
                                   sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
             mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(-smLimit, d_flags);
         }
-        tiledCholeskyGraphCreator->endCaptureOperation();
+        creator->endCaptureOperation();
 
         for (int i = k + 1; i < T; i++)
         {
@@ -249,7 +249,7 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
             // seems like only these need a separate workspace
             checkCudaErrors(
                 cublasSetWorkspace(cublasHandle, d_workspace_cublas[i], cublasWorkspaceSize));
-            tiledCholeskyGraphCreator->beginCaptureOperation(
+            creator->beginCaptureOperation(
                 std::make_pair(i, k), {std::make_pair(k, k), std::make_pair(i, k)},
                 "TRSM(" + std::to_string(i) + "," + std::to_string(k) + ")");
             if (subgraph)
@@ -276,7 +276,7 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
                                       sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
                 mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(-smLimit, d_flags);
             }
-            tiledCholeskyGraphCreator->endCaptureOperation();
+            creator->endCaptureOperation();
         }
 
         for (int i = k + 1; i < T; i++)
@@ -284,7 +284,7 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
             // U[k][i] = TRSM(A[k][k], A[k][i]) // the L part of A[k][k]
             checkCudaErrors(
                 cublasSetWorkspace(cublasHandle, d_workspace_cublas[i + T], cublasWorkspaceSize));
-            tiledCholeskyGraphCreator->beginCaptureOperation(
+            creator->beginCaptureOperation(
                 std::make_pair(i, i), {std::make_pair(i, i), std::make_pair(i, k)},
                 "SYRK(" + std::to_string(i) + "," + std::to_string(i) + "," + std::to_string(k) +
                     ")");
@@ -312,7 +312,7 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
                                       sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
                 mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(-smLimit, d_flags);
             }
-            tiledCholeskyGraphCreator->endCaptureOperation();
+            creator->endCaptureOperation();
 
             for (int j = i + 1; j < T; j++)
             {
@@ -321,7 +321,7 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
                 checkCudaErrors(cublasSetWorkspace(
                     cublasHandle, d_workspace_cublas[2 * T + (i - 1) * T + (j - 1)],
                     cublasWorkspaceSize));
-                tiledCholeskyGraphCreator->beginCaptureOperation(
+                creator->beginCaptureOperation(
                     std::make_pair(j, i),
                     {std::make_pair(j, i), std::make_pair(j, k), std::make_pair(i, k)},
                     "GEMM(" + std::to_string(j) + "," + std::to_string(i) + "," +
@@ -355,7 +355,7 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
                                           sizeof(double) * B, B, cudaMemcpyDeviceToDevice, s);
                     mustard::kernel_occupancy_update<<<1, 1, 0, s>>>(-smLimit, d_flags);
                 }
-                tiledCholeskyGraphCreator->endCaptureOperation();
+                creator->endCaptureOperation();
             }
         }
     }
@@ -368,7 +368,7 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
 
     if (subgraph)
     {
-        if (verbose) tiledCholeskyGraphCreator->printDeps();
+        if (verbose) creator->printDeps();
 
         // volatile int *d_flags;
         int*      h_dependencies;  //, *d_dependencies;
@@ -383,7 +383,7 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
 
         for (int i = 0; i < totalNodes; i++)
         {
-            h_dependencies[i] = tiledCholeskyGraphCreator->subgraphDependencies[i].size();
+            h_dependencies[i] = creator->subgraphDependencies[i].size();
         }
         if (verbose) std::cout << "Populating the queue..." << std::endl;
 
@@ -396,15 +396,15 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
 
         for (int dst = 0; dst < totalNodes; dst++)
             for (int src_ind = 0; src_ind < h_dependencies[dst]; src_ind++)
-                tiledCholeskyGraphCreator->insertDependencyKernel(
-                    tiledCholeskyGraphCreator->subgraphDependencies[dst][src_ind], dst, queue,
+                creator->insertDependencyKernel(
+                    creator->subgraphDependencies[dst][src_ind], dst, queue,
                     d_dependencies);
         if (verbose) showMemUsage();
         if (verbose) std::cout << "Uploading graphs..." << std::endl;
 
         if (!cfg.invocationPath.empty())
         {
-            tiledCholeskyGraphCreator->printInvocations(cfg.invocationPath, myPE);
+            creator->printInvocations(cfg.invocationPath, myPE);
         }
 
         cudaGraphExec_t* h_subgraphsExec = new cudaGraphExec_t[totalNodes];
@@ -415,9 +415,9 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
             sprintf(filename, "./graph_%d.dot", i);
             if (dot)
                 checkCudaErrors(
-                    cudaGraphDebugDotPrint(tiledCholeskyGraphCreator->subgraphs[i], filename, 0));
+                    cudaGraphDebugDotPrint(creator->subgraphs[i], filename, 0));
             checkCudaErrors(cudaGraphInstantiate(&h_subgraphsExec[i],
-                                                 tiledCholeskyGraphCreator->subgraphs[i],
+                                                 creator->subgraphs[i],
                                                  cudaGraphInstantiateFlagDeviceLaunch));
             cudaGraphUpload(h_subgraphsExec[i], s);
         }
@@ -589,19 +589,37 @@ void tiledCholeskyPanel(bool verify, bool dot)
 
     CholeskyCudaOperations ops(cublasHandle, cusolverDnHandle, d_workspace_cusolver,
                                workspaceInBytesOnDevice, d_workspace_cublas, cublasWorkspaceSize,
-                               numMyTasks, d_info, std::move(panels), B, N, nPEs);
+                               numMyTasks, d_info, std::move(panels), B, N, nPEs, occupancyTracker);
 
-    auto assembler =
-        std::make_unique<CholeskyPanelGraph>(s, graph, totalNodes, T, myPE, nPEs, ops,
-                                             occupancyTracker);
-    assembler->assemble();
-    auto& tiledCholeskyGraphCreator = assembler->creator;
+    int* d_completion_flags = (int*)nvshmem_malloc(sizeof(int) * totalNodes);
+    checkCudaErrors(cudaMemset(d_completion_flags, 0, sizeof(int) * totalNodes));
+
+    auto creator = std::make_unique<mustard::TiledGraphCreator>(s, graph, true, totalNodes);
+
+    DAGBuilder<CholeskyCudaOperations> dag(myPE, *creator, ops, d_completion_flags, s);
+
+    for (int pivotColumn = 0; pivotColumn < (int)T; pivotColumn++)
+    {
+        dag.add(pivotColumn % nPEs, [=](auto& o) { return o.potrf(pivotColumn); });
+
+        for (int column = pivotColumn + 1; column < (int)T; column++)
+            dag.add(pivotColumn % nPEs, [=](auto& o) { return o.trsm(column, pivotColumn); });
+
+        for (int column = pivotColumn + 1; column < (int)T; column++)
+        {
+            dag.add(column % nPEs, [=](auto& o) { return o.syrk(column, pivotColumn); });
+
+            for (int row = column + 1; row < (int)T; row++)
+                dag.add(column % nPEs, [=](auto& o) { return o.gemm(row, column, pivotColumn); });
+        }
+    }
+    dag.build();
 
     checkCudaErrors(cudaDeviceSynchronize());
     printf("device %d | tiledCholeskyPanel: graph construction done\n", myPE);
     fflush(stdout);
 
-    // INJECTOR - This should 
+    // INJECTOR - This should
     auto has_flag    = [&](const char* f) { return cfg.measureFlags.find(f) != std::string::npos; };
     bool col_wait_ms = has_flag("wait_ms");
     bool col_compute_ms    = has_flag("compute_ms");
@@ -610,8 +628,6 @@ void tiledCholeskyPanel(bool verify, bool dot)
     bool col_wait_start_ts = has_flag("wait_start_ts");
     bool col_wait_end_ts   = has_flag("wait_end_ts");
 
-    int* d_completion_flags = (int*)nvshmem_malloc(sizeof(int) * totalNodes);
-    checkCudaErrors(cudaMemset(d_completion_flags, 0, sizeof(int) * totalNodes));
 
     auto scheduler = std::make_unique<mustard::StaticPanelScheduler>(
         nPEs, myPE, totalNodes, PanelGraph::buildDependencies(T), taskToPanel);
@@ -631,20 +647,20 @@ void tiledCholeskyPanel(bool verify, bool dot)
     mustard::InjectionContext ctx(totalNodes);
     {
         auto injector = std::unique_ptr<mustard::IInjector>(
-            new mustard::SubgraphInjector(tiledCholeskyGraphCreator->subgraphs, *scheduler,
+            new mustard::SubgraphInjector(creator->subgraphs, *scheduler,
                                           d_completion_flags, cfg.debugKernels));
         if (col_wait_start_ts || col_wait_end_ts)
             injector = std::make_unique<mustard::WaitTimestampDecorator>(
-                std::move(injector), tiledCholeskyGraphCreator->subgraphs);
+                std::move(injector), creator->subgraphs);
         if (col_wait_ms || col_compute_ms)
             injector = std::make_unique<mustard::WaitTimeDecorator>(
-                std::move(injector), tiledCholeskyGraphCreator->subgraphs);
+                std::move(injector), creator->subgraphs);
         if (col_compute_ms)
             injector = std::make_unique<mustard::ComputeTimeDecorator>(
-                std::move(injector), tiledCholeskyGraphCreator->subgraphs);
+                std::move(injector), creator->subgraphs);
         if (col_start_ts || col_end_ts)
             injector = std::make_unique<mustard::TimestampDecorator>(
-                std::move(injector), tiledCholeskyGraphCreator->subgraphs);
+                std::move(injector), creator->subgraphs);
         injector->inject(my_tasks_sorted, ctx);
     }
 
@@ -656,10 +672,10 @@ void tiledCholeskyPanel(bool verify, bool dot)
             char filename[32];
             sprintf(filename, "./graph_%d_%d.dot", task, myPE);
             checkCudaErrors(
-                cudaGraphDebugDotPrint(tiledCholeskyGraphCreator->subgraphs[task], filename, 0));
+                cudaGraphDebugDotPrint(creator->subgraphs[task], filename, 0));
         }
         checkCudaErrors(cudaGraphInstantiate(&h_subgraphsExec[task],
-                                             tiledCholeskyGraphCreator->subgraphs[task], nullptr,
+                                             creator->subgraphs[task], nullptr,
                                              nullptr, 0));
         cudaGraphUpload(h_subgraphsExec[task], s);
     }
@@ -668,7 +684,7 @@ void tiledCholeskyPanel(bool verify, bool dot)
     fflush(stdout);
 
     if (!cfg.invocationPath.empty())
-        tiledCholeskyGraphCreator->printInvocations(cfg.invocationPath, myPE);
+        creator->printInvocations(cfg.invocationPath, myPE);
 
     auto   setup_end  = std::chrono::high_resolution_clock::now();
     double setup_time = std::chrono::duration<double>(setup_end - setup_start).count();
@@ -738,7 +754,7 @@ void tiledCholeskyPanel(bool verify, bool dot)
     }
     printf("Total time used (s): %4.4f\n", totalTime);
 
-    collector.write(cfg.outputPrefix, myPE, tiledCholeskyGraphCreator->subgraphOpNames);
+    collector.write(cfg.outputPrefix, myPE, creator->subgraphOpNames);
 
     if (verify)
     {

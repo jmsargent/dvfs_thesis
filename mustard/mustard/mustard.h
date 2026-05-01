@@ -98,6 +98,15 @@ typedef std::pair<int, int> MatrixTile;
 namespace mustard
 {
 
+template <typename... Args>
+static std::string opName(const std::string& name, Args... args)
+{
+    std::string s     = name + "(";
+    bool        first = true;
+    ((s += (first ? "" : ",") + std::to_string(args), first = false), ...);
+    return s + ")";
+}
+
 __global__ void kernel_dep_wait(int* dependencies, int nodeIndex, int myPE)
 {
     while (nvshmem_int_atomic_fetch(dependencies + nodeIndex, myPE) > 0)
@@ -168,34 +177,9 @@ __global__ void kernel_scheduler(BrokerWorkDistributor queue, volatile int* flag
 }
 
 __global__ void kernel_signal_static(int task_id, int* d_completion_flags, int* d_notify_pes,
-                                     int n_notify_pes, int debug)
-{
-    int one = 1;
-    if (debug) printf("[signal] task %d: signaling %d PEs\n", task_id, n_notify_pes);
-    nvshmem_quiet();
-    for (int i = 0; i < n_notify_pes; i++)
-    {
-        if (debug)
-            printf("[signal] task %d -> PE %d flag[%d]\n", task_id, d_notify_pes[i], task_id);
+                                     int n_notify_pes, int debug);
 
-        nvshmem_int_put(&d_completion_flags[task_id], &one, 1, d_notify_pes[i]);
-    }
-    if (debug) printf("[signal] task %d: done\n", task_id);
-}
-
-__global__ void kernel_wait_static(int* d_deps, int n_deps, int* d_completion_flags, int debug)
-{
-    if (debug) printf("[wait] waiting on %d deps\n", n_deps);
-    for (int i = 0; i < n_deps; i++)
-    {
-        if (debug)
-            printf("[wait] polling flag[%d] (currently %d)\n", d_deps[i],
-                   d_completion_flags[d_deps[i]]);
-        nvshmem_int_wait_until(&d_completion_flags[d_deps[i]], NVSHMEM_CMP_EQ, 1);
-        if (debug) printf("[wait] flag[%d] set\n", d_deps[i]);
-    }
-    if (debug) printf("[wait] all deps satisfied\n");
-}
+__global__ void kernel_wait_static(int* d_deps, int n_deps, int* d_completion_flags, int debug);
 
 // Records the current GPU nanosecond wall-clock timestamp (__globaltimer) to *out.
 // Inject as a graph node immediately after the wait kernel and before the signal kernel
@@ -227,11 +211,11 @@ class TiledGraphCreator
         this->index_counter = 0;
     }
 
-    void beginCaptureOperation(MatrixTile                        tileToWrite,
-                               std::initializer_list<MatrixTile> tilesToRead,
-                               const std::string&                opName = "")
+    void beginCaptureOperation(MatrixTile              tileToWrite,
+                               std::vector<MatrixTile> tilesToRead,
+                               const std::string&      opName = "")
     {
-        auto tiles = std::vector<MatrixTile>(tilesToRead);
+        auto tiles = std::move(tilesToRead);
         tiles.push_back(tileToWrite);
 
         this->lastModifiedTile = tileToWrite;
@@ -309,11 +293,11 @@ class TiledGraphCreator
 
     // Register a task that lives on another PE: track tile→index mapping and
     // compute dependencies without allocating a cudaGraph_t.
-    void phantomOperation(MatrixTile                        tileToWrite,
-                          std::initializer_list<MatrixTile> tilesToRead,
-                          const std::string&                opName = "")
+    void phantomOperation(MatrixTile              tileToWrite,
+                          std::vector<MatrixTile> tilesToRead,
+                          const std::string&      opName = "")
     {
-        auto tiles = std::vector<MatrixTile>(tilesToRead);
+        auto tiles = std::move(tilesToRead);
         tiles.push_back(tileToWrite);
         subgraphDependencies[index_counter] = getSubgraphDependencies(tiles);
         subgraphOpNames[index_counter]      = opName;

@@ -44,20 +44,7 @@ public:
 
     void copyToDevicePanel(StridedDevicePanel& panel);
 
-    bool verify(StridedDevicePanel& panel)
-    {
-        auto tmp = std::make_unique<double[]>(myMatrixSize_);
-        cudaMemcpy(tmp.get(), panel.device_matrix, myMatrixSize_ * sizeof(double), cudaMemcpyDeviceToHost);
-
-        for (int j = myPE_; j < T_; j += nPEs_)
-        {
-            int localJ = j / nPEs_;
-            for (int c = 0; c < B_; c++)
-                if (tmp[(size_t)localJ * B_ * N_ + j * B_ + c * N_ + c] <= 0.0)
-                    return false;
-        }
-        return true;
-    }
+    bool verify(StridedDevicePanel& panel);
 
 private:
     int     myPE_ = 0, nPEs_, N_, B_, T_;
@@ -100,6 +87,21 @@ inline void StridedHostPanel::copyToDevicePanel(StridedDevicePanel& panel)
     cudaMemcpy(panel.device_matrix, matrix_, myMatrixSize_ * sizeof(double), cudaMemcpyHostToDevice);
 }
 
+inline bool StridedHostPanel::verify(StridedDevicePanel& panel)
+{
+    auto tmp = std::make_unique<double[]>(myMatrixSize_);
+    cudaMemcpy(tmp.get(), panel.device_matrix, myMatrixSize_ * sizeof(double), cudaMemcpyDeviceToHost);
+
+    for (int j = myPE_; j < T_; j += nPEs_)
+    {
+        int localJ = j / nPEs_;
+        for (int c = 0; c < B_; c++)
+            if (tmp[(size_t)localJ * B_ * N_ + j * B_ + c * N_ + c] <= 0.0)
+                return false;
+    }
+    return true;
+}
+
 
 class StridedDevicePanels
 {
@@ -118,6 +120,10 @@ public:
         for (int pe = 0; pe < (int)panels_.size(); pe++)
             if (pe != myPE_) panels_[pe].release();
     }
+
+    StridedDevicePanels(StridedDevicePanels&&)                 = default;
+    StridedDevicePanels(const StridedDevicePanels&)            = delete;
+    StridedDevicePanels& operator=(const StridedDevicePanels&) = delete;
 
     StridedDevicePanel& myPanel()          { return panels_[myPE_]; }
     StridedDevicePanel& otherPanel(int pe) { return panels_[pe]; }
