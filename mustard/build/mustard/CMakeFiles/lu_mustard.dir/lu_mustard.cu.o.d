@@ -755,6 +755,8 @@ mustard/CMakeFiles/lu_mustard.dir/lu_mustard.cu.o : /data/users/sargent/dvfs_the
     /usr/include/c++/11/bits/quoted_string.h \
     /data/users/sargent/dvfs_thesis/mustard/include/gen.h \
     /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/math_libs/include/curand.h \
+    /data/users/sargent/dvfs_thesis/mustard/mustard/graph_assembler.h \
+    /data/users/sargent/dvfs_thesis/mustard/mustard/StridedPanel.h \
     /data/users/sargent/dvfs_thesis/mustard/mustard/mustard.h \
     /usr/include/c++/11/fstream \
     /usr/include/x86_64-linux-gnu/c++/11/bits/basic_file.h \
@@ -771,6 +773,7 @@ mustard/CMakeFiles/lu_mustard.dir/lu_mustard.cu.o : /data/users/sargent/dvfs_the
     /data/users/sargent/dvfs_thesis/mustard/mustard/allocator.h \
     /data/users/sargent/dvfs_thesis/mustard/mustard/pe_writer.h \
     /usr/include/c++/11/cstdarg \
+    /data/users/sargent/dvfs_thesis/mustard/mustard/task_timing.h \
+    /data/users/sargent/dvfs_thesis/mustard/mustard/time_utils.cuh \
     /data/users/sargent/dvfs_thesis/mustard/include/verify.h \
-    /usr/include/c++/11/cstring \
-    /data/users/sargent/dvfs_thesis/mustard/mustard/time_utils.cuh
+    /usr/include/c++/11/cstring
