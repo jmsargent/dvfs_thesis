@@ -19,20 +19,20 @@ class TaskTimingCollector
     using TaskTiming = std::array<double, NUM_COLS>;
 
     TaskTimingCollector(TimestampBuffers ts, const std::vector<int>& tasks, int runs,
-                        bool col_wait_ms, bool col_compute_ms, bool col_start_ts, bool col_end_ts,
-                        bool col_wait_start_ts, bool col_wait_end_ts)
+                        const std::string& measureFlags)
         : ts_(ts),
           tasks_(tasks),
           all_timings_(runs, std::vector<TaskTiming>(tasks.size())),
           h_compTs_(tasks.size() * 2),
           h_waitTs_(tasks.size() * 2)
     {
-        if (col_wait_ms) active_cols_.push_back(WAIT_MS);
-        if (col_compute_ms) active_cols_.push_back(COMPUTE_MS);
-        if (col_start_ts) active_cols_.push_back(START_TS);
-        if (col_end_ts) active_cols_.push_back(END_TS);
-        if (col_wait_start_ts) active_cols_.push_back(WAIT_START_TS);
-        if (col_wait_end_ts) active_cols_.push_back(WAIT_END_TS);
+        auto has = [&](const char* f) { return measureFlags.find(f) != std::string::npos; };
+        if (has("wait_ms"))       active_cols_.push_back(WAIT_MS);
+        if (has("compute_ms"))    active_cols_.push_back(COMPUTE_MS);
+        if (has("start_ts"))      active_cols_.push_back(START_TS);
+        if (has("end_ts"))        active_cols_.push_back(END_TS);
+        if (has("wait_start_ts")) active_cols_.push_back(WAIT_START_TS);
+        if (has("wait_end_ts"))   active_cols_.push_back(WAIT_END_TS);
     }
 
     bool active() const { return !active_cols_.empty(); }

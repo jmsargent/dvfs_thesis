@@ -22,6 +22,8 @@ struct MustardConfig
     int         debugKernels   = 0;
     std::string invocationPath = "";
     std::string measureFlags   = "";  // e.g. "task_wait_time,task_compute_time"
+    bool        measureWait    = false;
+    bool        measureCompute = false;
     std::string outputPrefix   = "";  // base path for per-PE output files
 };
 
@@ -148,6 +150,11 @@ inline bool parseCommonArgs(argh::parser& cmdl, MustardConfig& cfg)
     cfg.staticMultiGPU = cmdl["static-multigpu"];
 
     cmdl("measure", "") >> cfg.measureFlags;
+    {
+        auto has = [&](const char* f) { return cfg.measureFlags.find(f) != std::string::npos; };
+        cfg.measureWait    = has("wait_ms") || has("wait_start_ts") || has("wait_end_ts");
+        cfg.measureCompute = has("compute_ms") || has("start_ts") || has("end_ts");
+    }
     cmdl("output", "") >> cfg.outputPrefix;
 
     return true;

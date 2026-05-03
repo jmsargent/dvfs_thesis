@@ -210,8 +210,7 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
     checkCudaErrors(cublasSetStream(cublasHandle, s));
     checkCudaErrors(cublasSetWorkspace(cublasHandle, d_workspace_cublas[0], cublasWorkspaceSize));
 
-    auto creator =
-        std::make_unique<mustard::TiledGraphCreator>(s, graph, subgraph, totalNodes);
+    auto creator = std::make_unique<mustard::TiledGraphCreator>(s, graph, subgraph, totalNodes);
 
     for (int k = 0; k < T; k++)
     {
@@ -284,10 +283,10 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
             // U[k][i] = TRSM(A[k][k], A[k][i]) // the L part of A[k][k]
             checkCudaErrors(
                 cublasSetWorkspace(cublasHandle, d_workspace_cublas[i + T], cublasWorkspaceSize));
-            creator->beginCaptureOperation(
-                std::make_pair(i, i), {std::make_pair(i, i), std::make_pair(i, k)},
-                "SYRK(" + std::to_string(i) + "," + std::to_string(i) + "," + std::to_string(k) +
-                    ")");
+            creator->beginCaptureOperation(std::make_pair(i, i),
+                                           {std::make_pair(i, i), std::make_pair(i, k)},
+                                           "SYRK(" + std::to_string(i) + "," + std::to_string(i) +
+                                               "," + std::to_string(k) + ")");
 
             if (subgraph)
             {
@@ -396,9 +395,8 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
 
         for (int dst = 0; dst < totalNodes; dst++)
             for (int src_ind = 0; src_ind < h_dependencies[dst]; src_ind++)
-                creator->insertDependencyKernel(
-                    creator->subgraphDependencies[dst][src_ind], dst, queue,
-                    d_dependencies);
+                creator->insertDependencyKernel(creator->subgraphDependencies[dst][src_ind], dst,
+                                                queue, d_dependencies);
         if (verbose) showMemUsage();
         if (verbose) std::cout << "Uploading graphs..." << std::endl;
 
@@ -413,11 +411,8 @@ void tiledCholesky(bool verify, bool subgraph, bool dot)
         {
             char filename[20];
             sprintf(filename, "./graph_%d.dot", i);
-            if (dot)
-                checkCudaErrors(
-                    cudaGraphDebugDotPrint(creator->subgraphs[i], filename, 0));
-            checkCudaErrors(cudaGraphInstantiate(&h_subgraphsExec[i],
-                                                 creator->subgraphs[i],
+            if (dot) checkCudaErrors(cudaGraphDebugDotPrint(creator->subgraphs[i], filename, 0));
+            checkCudaErrors(cudaGraphInstantiate(&h_subgraphsExec[i], creator->subgraphs[i],
                                                  cudaGraphInstantiateFlagDeviceLaunch));
             cudaGraphUpload(h_subgraphsExec[i], s);
         }
@@ -536,138 +531,75 @@ void tiledCholeskyPanel(bool verify, bool dot)
     StridedDevicePanels       panels(myPE, nPEs, N, B, T);
     hostPanel.copyToDevicePanel(panels.myPanel());
 
-    cusolverDnHandle_t cusolverDnHandle;
-    cusolverDnParams_t cusolverDnParams;
-    cublasHandle_t     cublasHandle;
-    checkCudaErrors(cusolverDnCreate(&cusolverDnHandle));
-    checkCudaErrors(cusolverDnCreateParams(&cusolverDnParams));
-    checkCudaErrors(cublasCreate(&cublasHandle));
-
-    int workspaceInBytesOnDevice;
-    checkCudaErrors(cusolverDnDpotrf_bufferSize(cusolverDnHandle, CUBLAS_FILL_MODE_LOWER, B,
-                                                panels.myPanel().tile(0, 0), N,
-                                                &workspaceInBytesOnDevice));
-    workspaceInBytesOnDevice *= 8;
-
-    double* d_workspace_cusolver;
-    checkCudaErrors(cudaMalloc(&d_workspace_cusolver, workspaceInBytesOnDevice));
-    int* d_info;
-    checkCudaErrors(cudaMalloc(&d_info, sizeof(int)));
-
     int totalNodes = T;
     for (int k = 0; k < (int)T; k++)
         for (int i = k + 1; i < (int)T; i++) totalNodes += 2 + (T - (i + 1));
 
-    // Compute panel assignment and count how many tasks this PE owns so we
-    // know how many cuBLAS workspaces to allocate.
-    auto taskToPanel = PanelGraph::buildTaskToPanel(T);
-    int  numMyTasks  = 0;
-    for (int i = 0; i < totalNodes; i++)
-        if (taskToPanel[i] % nPEs == myPE) numMyTasks++;
+    int numMyTasks = 0;
+    for (int p = myPE; p < T; p += nPEs) numMyTasks += (T - p) * (p + 1);
 
-    int    cublasWorkspaceSize = 1024 * workspace;
-    void** d_workspace_cublas  = (void**)malloc(sizeof(void*) * numMyTasks);
-    for (int i = 0; i < numMyTasks; i++)
-        checkCudaErrors(cudaMalloc(&d_workspace_cublas[i], cublasWorkspaceSize));
+    cudaStream_t s;
+    checkCudaErrors(cudaStreamCreate(&s));
+    cudaGraph_t graph;
+    checkCudaErrors(cudaGraphCreate(&graph, 0));
 
     if (verbose)
     {
         std::cout << "totalNodes=" << totalNodes << std::endl;
         std::cout << "numMyTasks=" << numMyTasks << std::endl;
-        std::cout << "bufferSize=" << workspaceInBytesOnDevice << std::endl;
-        std::cout << "tileSize=" << cublasWorkspaceSize << std::endl;
+        std::cout << "tileSize=" << 1024 * workspace << std::endl;
     }
     printf("device %d | tiledCholeskyPanel: building %d/%d graphs\n", myPE, numMyTasks, totalNodes);
     fflush(stdout);
 
-    cudaStream_t s;
-    checkCudaErrors(cudaStreamCreate(&s));
-    checkCudaErrors(cusolverDnSetStream(cusolverDnHandle, s));
-    checkCudaErrors(cublasSetStream(cublasHandle, s));
-    cudaGraph_t graph;
-    checkCudaErrors(cudaGraphCreate(&graph, 0));
+    CholeskyCudaOperations ops = CholeskyCudaOperations::build(
+        s, std::move(panels), B, N, nPEs, numMyTasks, workspace, occupancyTracker);
 
-    CholeskyCudaOperations ops(cublasHandle, cusolverDnHandle, d_workspace_cusolver,
-                               workspaceInBytesOnDevice, d_workspace_cublas, cublasWorkspaceSize,
-                               numMyTasks, d_info, std::move(panels), B, N, nPEs, occupancyTracker);
-
-    int* d_completion_flags = (int*)nvshmem_malloc(sizeof(int) * totalNodes);
-    checkCudaErrors(cudaMemset(d_completion_flags, 0, sizeof(int) * totalNodes));
+    CompletionFlags d_completion_flags(totalNodes);
 
     auto creator = std::make_unique<mustard::TiledGraphCreator>(s, graph, true, totalNodes);
 
-    auto has_flag = [&](const char* f) { return cfg.measureFlags.find(f) != std::string::npos; };
-    bool col_wait_ms       = has_flag("wait_ms");
-    bool col_compute_ms    = has_flag("compute_ms");
-    bool col_start_ts      = has_flag("start_ts");
-    bool col_end_ts        = has_flag("end_ts");
-    bool col_wait_start_ts = has_flag("wait_start_ts");
-    bool col_wait_end_ts   = has_flag("wait_end_ts");
-    MeasureFlags flags{
-        col_wait_ms || col_wait_start_ts || col_wait_end_ts,
-        col_compute_ms || col_start_ts || col_end_ts
-    };
-
-    OperationCapturer capturer(*creator, d_completion_flags, s);
-    KernelStopWatch sw(flags, capturer);
-    DAGBuilder<CholeskyCudaOperations> dag(myPE, ops, capturer, sw);
+    MeasureFlags      flags{cfg.measureWait, cfg.measureCompute};
+    OperationCapturer capturer(*creator, d_completion_flags.data(), s);
+    KernelStopWatch   sw(flags, capturer);
+    PartitionedCudaGraphBuilder<CholeskyCudaOperations> graphBuilder(myPE, ops, capturer, sw);
 
     for (int pivotColumn = 0; pivotColumn < (int)T; pivotColumn++)
     {
-        dag.add(pivotColumn % nPEs, [=](auto& o) { return o.potrf(pivotColumn); });
+        graphBuilder.add(pivotColumn % nPEs, [=](auto& o) { return o.potrf(pivotColumn); });
 
         for (int column = pivotColumn + 1; column < (int)T; column++)
-            dag.add(pivotColumn % nPEs, [=](auto& o) { return o.trsm(column, pivotColumn); });
+            graphBuilder.add(pivotColumn % nPEs,
+                             [=](auto& o) { return o.trsm(column, pivotColumn); });
 
         for (int column = pivotColumn + 1; column < (int)T; column++)
         {
-            dag.add(column % nPEs, [=](auto& o) { return o.syrk(column, pivotColumn); });
+            graphBuilder.add(column % nPEs, [=](auto& o) { return o.syrk(column, pivotColumn); });
 
             for (int row = column + 1; row < (int)T; row++)
-                dag.add(column % nPEs, [=](auto& o) { return o.gemm(row, column, pivotColumn); });
+                graphBuilder.add(column % nPEs,
+                                 [=](auto& o) { return o.gemm(row, column, pivotColumn); });
         }
     }
-    
-    auto partdag         = dag.build();
-    auto ts              = sw.buffers();
-    auto my_tasks_sorted = partdag.nodes(myPE);
 
-    checkCudaErrors(cudaDeviceSynchronize());
-    printf("device %d | tiledCholeskyPanel: graph construction done\n", myPE);
-    fflush(stdout);
+    auto executableGraphs = graphBuilder.build(*creator, s, dot);
+    auto partitionedDag   = graphBuilder.getPartitionedGraph();
+    auto ts               = sw.buffers();
+    auto my_tasks_sorted  = partitionedDag.nodes(myPE);
+    auto numTasksSorted   = (int)my_tasks_sorted.size();
 
-    cudaGraphExec_t* h_subgraphsExec = new cudaGraphExec_t[totalNodes];
-    for (int task : my_tasks_sorted)
-    {
-        if (dot)
-        {
-            char filename[32];
-            sprintf(filename, "./graph_%d_%d.dot", task, myPE);
-            checkCudaErrors(
-                cudaGraphDebugDotPrint(creator->subgraphs[task], filename, 0));
-        }
-        checkCudaErrors(cudaGraphInstantiate(&h_subgraphsExec[task],
-                                             creator->subgraphs[task], nullptr,
-                                             nullptr, 0));
-        cudaGraphUpload(h_subgraphsExec[task], s);
-    }
-    checkCudaErrors(cudaDeviceSynchronize());
     printf("device %d | tiledCholeskyPanel: graphs instantiated, entering timing loop\n", myPE);
     fflush(stdout);
 
-    if (!cfg.invocationPath.empty())
-        creator->printInvocations(cfg.invocationPath, myPE);
+    if (!cfg.invocationPath.empty()) creator->printInvocations(cfg.invocationPath, myPE);
 
     auto   setup_end  = std::chrono::high_resolution_clock::now();
     double setup_time = std::chrono::duration<double>(setup_end - setup_start).count();
     printf("device %d | Setup time (s): %4.4f\n", myPE, setup_time);
     fflush(stdout);
 
-    int                 numTasksSorted = (int)my_tasks_sorted.size();
-    TaskTimingCollector collector(ts, my_tasks_sorted, runs, col_wait_ms,
-                                  col_compute_ms, col_start_ts, col_end_ts, col_wait_start_ts,
-                                  col_wait_end_ts);
-    double totalTime = 0.0;
+    TaskTimingCollector collector(ts, my_tasks_sorted, runs, cfg.measureFlags);
+    double              totalTime = 0.0;
 
     for (int i = 0; i < runs; i++)
     {
@@ -675,14 +607,7 @@ void tiledCholeskyPanel(bool verify, bool dot)
         hostPanel.copyToDevicePanel(ops.myPanel());  // panels owned by ops
 
         nvshmem_barrier_all();
-        if (myPE == 0)
-        {
-            // flags should probably be a class
-            std::vector<int> zeros(totalNodes, 0);
-            for (int pe = 0; pe < nPEs; pe++)
-                nvshmem_int_put(d_completion_flags, zeros.data(), totalNodes, pe);
-            nvshmem_quiet();
-        }
+        if (myPE == 0) d_completion_flags.resetAll(nPEs);
         nvshmem_barrier_all();
 
         int                       numStreams = std::min(numTasksSorted, 32);
@@ -690,20 +615,20 @@ void tiledCholeskyPanel(bool verify, bool dot)
         for (int si = 0; si < numStreams; si++) checkCudaErrors(cudaStreamCreate(&taskStreams[si]));
 
         gpu_clock::CalibrationRef ts_ref;
-        if (collector.active())
-            ts_ref = gpu_clock::calibrate(taskStreams[0]);
 
         if (myPE == 0) print_timestamp("cholesky tiledPanel start_time", 7);
+
         auto t_start = std::chrono::high_resolution_clock::now();
+        if (collector.active()) ts_ref = gpu_clock::calibrate(taskStreams[0]);
         for (int idx = 0; idx < numTasksSorted; idx++)
-        {
-            int task = my_tasks_sorted[idx];
-            checkCudaErrors(cudaGraphLaunch(h_subgraphsExec[task], taskStreams[idx % numStreams]));
-        }
+            checkCudaErrors(cudaGraphLaunch(executableGraphs[idx], taskStreams[idx % numStreams]));
+
         for (int si = 0; si < numStreams; si++)
             checkCudaErrors(cudaStreamSynchronize(taskStreams[si]));
+
         checkCudaErrors(cudaDeviceSynchronize());
         auto t_end = std::chrono::high_resolution_clock::now();
+
         if (myPE == 0) print_timestamp("cholesky tiledPanel end_time", 7);
 
         collector.collect(i, ts_ref);
@@ -724,8 +649,6 @@ void tiledCholeskyPanel(bool verify, bool dot)
         printf("device %d | diagonal verification: %s\n", myPE, pass ? "PASS" : "FAIL");
     }
 
-    delete[] h_subgraphsExec;
-    nvshmem_free(d_completion_flags);
 }  // ops destructor frees handles, workspaces, panels, and d_info; occupancyTracker frees d_flags
 
 void Cholesky(bool tiled, bool verify, bool subgraph, bool staticMultiGPU, bool oneGraphPerPE,

@@ -16,10 +16,12 @@
 #include "argh.h"
 #include "cli.h"
 #include "gen.h"
+#include "graph_assembler.h"
 #include "mustard.h"
 #include "injectors.h"
 #include "allocator.h"
 #include "pe_writer.h"
+#include "task_timing.h"
 #include "verify.h"
 #include "time_utils.cuh"
 
@@ -1094,9 +1096,144 @@ void tiledLUStatic(bool verify, bool dot)
     free(d_workspace_cublas);
 }
 
-void LU(bool tiled, bool verify, bool subgraph, bool staticMultiGPU, bool dot)
+void tiledLUPanel(bool verify, bool dot)
 {
-    if (staticMultiGPU)
+    auto setup_start = std::chrono::high_resolution_clock::now();
+
+    int nPEs = nvshmem_n_pes();
+
+    StridedHostPanel hostPanel(myPE, nPEs, N, B, T);
+    hostPanel.fill();
+
+    mustard::OccupancyTracker occupancyTracker(smLimit);
+    StridedDevicePanels       panels(myPE, nPEs, N, B, T);
+    hostPanel.copyToDevicePanel(panels.myPanel());
+
+    int totalNodes = T;
+    for (int k = 0; k < (int)T; k++)
+        for (int i = k + 1; i < (int)T; i++) totalNodes += 2 + ((int)T - (k + 1));
+
+    // Count cuBLAS ops owned by this PE (trsm_r → k%nPEs, trsm_l → i%nPEs, gemm → j%nPEs)
+    int numMyTasks = 0;
+    for (int k = 0; k < (int)T; k++)
+        for (int i = k + 1; i < (int)T; i++)
+        {
+            if (k % nPEs == myPE) numMyTasks++;
+            if (i % nPEs == myPE) numMyTasks++;
+            for (int j = k + 1; j < (int)T; j++)
+                if (j % nPEs == myPE) numMyTasks++;
+        }
+
+    cudaStream_t s;
+    checkCudaErrors(cudaStreamCreate(&s));
+    cudaGraph_t graph;
+    checkCudaErrors(cudaGraphCreate(&graph, 0));
+
+    if (verbose)
+    {
+        std::cout << "totalNodes=" << totalNodes << std::endl;
+        std::cout << "numMyTasks=" << numMyTasks << std::endl;
+        std::cout << "tileSize=" << 1024 * workspace << std::endl;
+    }
+    printf("device %d | tiledLUPanel: building %d/%d graphs\n", myPE, numMyTasks, totalNodes);
+    fflush(stdout);
+
+    LUCudaOperations ops =
+        LUCudaOperations::build(s, std::move(panels), B, N, nPEs, numMyTasks, workspace,
+                                occupancyTracker);
+
+    CompletionFlags d_completion_flags(totalNodes);
+
+    auto creator = std::make_unique<mustard::TiledGraphCreator>(s, graph, true, totalNodes);
+
+    MeasureFlags flags{cfg.measureWait, cfg.measureCompute};
+
+    OperationCapturer                             capturer(*creator, d_completion_flags.data(), s);
+    KernelStopWatch                               sw(flags, capturer);
+    PartitionedCudaGraphBuilder<LUCudaOperations> graphBuilder(myPE, ops, capturer, sw);
+
+    for (int k = 0; k < (int)T; k++)
+    {
+        graphBuilder.add(k % nPEs, [=](auto& o) { return o.getrf(k); });
+        for (int i = k + 1; i < (int)T; i++)
+        {
+            graphBuilder.add(k % nPEs, [=](auto& o) { return o.trsm_r(i, k); });
+            graphBuilder.add(i % nPEs, [=](auto& o) { return o.trsm_l(k, i); });
+        }
+        for (int i = k + 1; i < (int)T; i++)
+            for (int j = k + 1; j < (int)T; j++)
+                graphBuilder.add(j % nPEs, [=](auto& o) { return o.gemm(i, j, k); });
+    }
+
+    auto executableGraphs = graphBuilder.build(*creator, s, dot);
+    auto partitionedDag   = graphBuilder.getPartitionedGraph();
+    auto ts               = sw.buffers();
+    auto my_tasks_sorted  = partitionedDag.nodes(myPE);
+    auto numTasksSorted   = (int)my_tasks_sorted.size();
+
+    printf("device %d | tiledLUPanel: graphs instantiated, entering timing loop\n", myPE);
+    fflush(stdout);
+
+    if (!cfg.invocationPath.empty()) creator->printInvocations(cfg.invocationPath, myPE);
+
+    auto   setup_end  = std::chrono::high_resolution_clock::now();
+    double setup_time = std::chrono::duration<double>(setup_end - setup_start).count();
+    printf("device %d | Setup time (s): %4.4f\n", myPE, setup_time);
+    fflush(stdout);
+
+    TaskTimingCollector collector(ts, my_tasks_sorted, runs, cfg.measureFlags);
+    double              totalTime = 0.0;
+
+    for (int i = 0; i < runs; i++)
+    {
+        hostPanel.copyToDevicePanel(ops.myPanel());
+
+        nvshmem_barrier_all();
+        if (myPE == 0) d_completion_flags.resetAll(nPEs);
+        nvshmem_barrier_all();
+
+        int                       numStreams = std::min(numTasksSorted, 32);
+        std::vector<cudaStream_t> taskStreams(numStreams);
+        for (int si = 0; si < numStreams; si++) checkCudaErrors(cudaStreamCreate(&taskStreams[si]));
+
+        gpu_clock::CalibrationRef ts_ref;
+
+        if (myPE == 0) print_timestamp("lu tiledPanel start_time", 7);
+
+        auto t_start = std::chrono::high_resolution_clock::now();
+        if (collector.active()) ts_ref = gpu_clock::calibrate(taskStreams[0]);
+        for (int idx = 0; idx < numTasksSorted; idx++)
+            checkCudaErrors(cudaGraphLaunch(executableGraphs[idx], taskStreams[idx % numStreams]));
+
+        for (int si = 0; si < numStreams; si++)
+            checkCudaErrors(cudaStreamSynchronize(taskStreams[si]));
+        checkCudaErrors(cudaDeviceSynchronize());
+        auto t_end = std::chrono::high_resolution_clock::now();
+
+        if (myPE == 0) print_timestamp("lu tiledPanel end_time", 7);
+
+        collector.collect(i, ts_ref);
+        for (int si = 0; si < numStreams; si++) checkCudaErrors(cudaStreamDestroy(taskStreams[si]));
+        nvshmem_barrier_all();
+
+        double time = std::chrono::duration<double>(t_end - t_start).count();
+        printf("device %d | %d run | time (s): %4.4f\n", myPE, i, time);
+        totalTime += time;
+    }
+    printf("Total time used (s): %4.4f\n", totalTime);
+
+    collector.write(cfg.outputPrefix, myPE, creator->subgraphOpNames);
+
+    if (verify)
+        printf("device %d | tiledLUPanel: verification not yet implemented for panel layout\n",
+               myPE);
+}
+
+void LU(bool tiled, bool verify, bool subgraph, bool staticMultiGPU, bool panel, bool dot)
+{
+    if (panel)
+        tiledLUPanel(verify, dot);
+    else if (staticMultiGPU)
         tiledLUStatic(verify, dot);
     else if (tiled && myPE == 0)
         tiledLU(verify, subgraph, dot);
@@ -1150,7 +1287,7 @@ int main(int argc, char **argv)
         }
     }
 
-    LU(cmdl["tiled"], cmdl["verify"] && myPE == 0, cmdl["subgraph"], cmdl["static-multigpu"],
+    LU(cmdl["tiled"], cmdl["verify"], cmdl["subgraph"], cmdl["static-multigpu"], cmdl["panel"],
        cmdl["dot"]);
 
     nvshmem_finalize();
