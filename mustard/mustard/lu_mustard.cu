@@ -1264,7 +1264,7 @@ int main(int argc, char **argv)
     double init_time = std::chrono::duration<double>(init_end - init_start).count();
     printf("device %d | NVSHMEM init time (s): %4.4f\n", myPE, init_time);
 
-    if (!(cmdl["tiled"] || cmdl["subgraph"] || cmdl["static-multigpu"])) T = 1;
+    if (!(cmdl["tiled"] || cmdl["subgraph"] || cmdl["static-multigpu"] || cmdl["panel"])) T = 1;
     B = N / T;
 
     if (myPE == 0)
