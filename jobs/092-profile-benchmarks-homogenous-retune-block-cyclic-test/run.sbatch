@@ -4,7 +4,7 @@
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=1
 #SBATCH --gres=gpu:L4:2
-#SBATCH --nodelist=europa
+#SBATCH --nodelist=europa,ganymede,io
 #SBATCH --partition=long
 
 source "/data/users/sargent/dvfs_thesis/benchscripts/library.sh"
