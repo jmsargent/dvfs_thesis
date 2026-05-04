@@ -14,6 +14,7 @@
 
 #include "StridedPanel.h"
 #include "mustard.h"
+#include "partitioned_dag.h"
 #include "utils.h"
 
 struct TileAccess
@@ -22,66 +23,6 @@ struct TileAccess
     MatrixTile              write;
     std::vector<MatrixTile> reads;
     std::function<void()>   work;
-};
-
-struct Node
-{
-    int                     index     = -1;
-    int                     partition = -1;
-    std::string             name;
-    MatrixTile              write;
-    std::vector<MatrixTile> reads;
-    std::function<void()>   work;
-};
-
-struct Edge
-{
-    int from;
-    int to;
-};
-
-class PartitionedDag
-{
-   public:
-    void addNode(Node n)
-    {
-        n.index = (int)nodes_.size();
-        nodes_.push_back(std::move(n));
-    }
-    void addEdge(Edge e) { edges_.push_back(e); }
-
-    std::vector<Node>&       nodes() { return nodes_; }
-    const std::vector<Node>& nodes() const { return nodes_; }
-
-    std::vector<int> nodes(int partition) const
-    {
-        std::vector<int> result;
-        for (auto& n : nodes_)
-            if (n.partition == partition) result.push_back(n.index);
-        return result;
-    }
-
-    std::vector<int> crossIncomingNodeIndices(const Node& n) const
-    {
-        std::vector<int> result;
-        for (auto& e : edges_)
-            if (e.to == n.index && nodes_[e.from].partition != n.partition)
-                result.push_back(e.from);
-        return result;
-    }
-
-    std::vector<int> crossOutgoingPartitions(const Node& n) const
-    {
-        std::set<int> result;
-        for (auto& e : edges_)
-            if (e.from == n.index && nodes_[e.to].partition != n.partition)
-                result.insert(nodes_[e.to].partition);
-        return {result.begin(), result.end()};
-    }
-
-   private:
-    std::vector<Node> nodes_;
-    std::vector<Edge> edges_;
 };
 
 struct MeasureFlags
@@ -224,7 +165,7 @@ class KernelStopWatch
 template <typename Ops>
 class PartitionedCudaGraphBuilder
 {
-    PartitionedDag            dag_;
+    PartitionedDag<TileAccess> dag_;
     std::map<MatrixTile, int> lastWriterByTile_;
     int                       myPE_;
     Ops&                      ops_;
@@ -251,8 +192,7 @@ class PartitionedCudaGraphBuilder
         }
 
         lastWriterByTile_[access.write] = futureIndex;
-        dag_.addNode({-1, owner, std::move(access.name), std::move(access.write),
-                      std::move(access.reads), std::move(access.work)});
+        dag_.addNode({-1, owner, std::move(access)});
     }
 
     std::vector<cudaGraphExec_t> build(mustard::TiledGraphCreator& creator, cudaStream_t stream,
@@ -273,7 +213,7 @@ class PartitionedCudaGraphBuilder
                 int* d_wait      = OperationCapturer::upload(waitNodes);
                 int* d_signal    = OperationCapturer::upload(signalParts);
 
-                capturer_.beginCapture(n.write, n.reads, n.name);
+                capturer_.beginCapture(n.content.write, n.content.reads, n.content.name);
                 if (d_wait)
                 {
                     sw_.waitStart(localIdx);
@@ -281,7 +221,7 @@ class PartitionedCudaGraphBuilder
                     sw_.waitEnd(localIdx);
                 }
                 sw_.compStart(localIdx);
-                n.work();
+                n.content.work();
                 sw_.compEnd(localIdx);
                 if (d_signal) capturer_.launchSignal(n.index, d_signal, (int)signalParts.size());
                 capturer_.endCapture();
@@ -289,7 +229,7 @@ class PartitionedCudaGraphBuilder
             }
             else
             {
-                capturer_.phantom(n.write, n.reads, n.name);
+                capturer_.phantom(n.content.write, n.content.reads, n.content.name);
             }
         }
 
@@ -315,7 +255,7 @@ class PartitionedCudaGraphBuilder
         return execs;
     }
 
-    PartitionedDag getPartitionedGraph(){
+    PartitionedDag<TileAccess> getPartitionedGraph(){
         return std::move(dag_);
     }
 };

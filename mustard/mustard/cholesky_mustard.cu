@@ -610,7 +610,7 @@ void tiledCholeskyPanel(bool verify, bool dot)
         if (myPE == 0) d_completion_flags.resetAll(nPEs);
         nvshmem_barrier_all();
 
-        int                       numStreams = std::min(numTasksSorted, 32);
+        int                       numStreams = std::min(numTasksSorted, cfg.numStreams);
         std::vector<cudaStream_t> taskStreams(numStreams);
         for (int si = 0; si < numStreams; si++) checkCudaErrors(cudaStreamCreate(&taskStreams[si]));
 

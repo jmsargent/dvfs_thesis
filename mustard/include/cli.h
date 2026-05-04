@@ -19,6 +19,7 @@ struct MustardConfig
     int         runs           = 1;
     int         repeat         = 1;
     bool        staticMultiGPU = false;
+    int         numStreams      = 32;
     int         debugKernels   = 0;
     std::string invocationPath = "";
     std::string measureFlags   = "";  // e.g. "task_wait_time,task_compute_time"
@@ -36,6 +37,8 @@ inline void printCommonUsage()
               << "    --sm, --smLimit=<int> SM limit per kernel (1-108)             [default: 20]\n"
               << "    --ws, --workspace=<int> cuBLAS workspace in kB (1-1048576)   [default: 256]\n"
               << "    -r, --runs=<int>     Number of timing runs                    [default: 1]\n"
+              << "    --streams=<int>      Max CUDA streams for concurrent launch    [default: 32]\n"
+              << "                         Use --streams=1 for fully sequential execution\n"
               << "    --repeat=<int>       Repeat each compute kernel N times (no   [default: 1]\n"
               << "                         save/restore — result is incorrect)\n"
               << "    -v, --verbose        Enable verbose output\n"
@@ -148,6 +151,7 @@ inline bool parseCommonArgs(argh::parser& cmdl, MustardConfig& cfg)
 
     cmdl("invocations", "") >> cfg.invocationPath;
     cfg.staticMultiGPU = cmdl["static-multigpu"];
+    cmdl("streams", cfg.numStreams) >> cfg.numStreams;
 
     cmdl("measure", "") >> cfg.measureFlags;
     {
