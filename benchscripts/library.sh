@@ -65,7 +65,14 @@ stop_monitors() {
     local pid
     for pid in "$@"; do
         kill "$pid" 2>/dev/null
-        (sleep 0.5 && kill -9 "$pid" 2>/dev/null) &
+    done
+    for pid in "$@"; do
+        while kill -0 "$pid" 2>/dev/null; do
+            sleep 0.1
+        done
+    done
+    for pid in "$@"; do
+        kill -9 "$pid" 2>/dev/null
     done
 }
 
