@@ -4,7 +4,7 @@
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=1
 #SBATCH --gres=gpu:L4:2
-#SBATCH --nodelist=europa
+#SBATCH --nodelist=europa,ganymede
 #SBATCH --partition=long
 
 source "/data/users/sargent/dvfs_thesis/benchscripts/library.sh"
@@ -14,7 +14,7 @@ EXPERIMENT_ID="$SLURM_JOB_NAME"
 
 # Define Parameter Spaces
 BENCHMARKS=("lu" "cholesky")
-FREQS=(2040) #1815 1665 1515 1365 1215 1065 915 795 690 540 390 315 240)
+FREQS=(2040 1815 1665 1515 1365 1215 1065 915 795 690 540 390 315 240)
 TILE_SIZES=(16)
 N_SIZE=20000
 RUNS=2
