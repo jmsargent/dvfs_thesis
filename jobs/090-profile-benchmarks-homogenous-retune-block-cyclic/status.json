@@ -1,0 +1,13 @@
+{
+  "git_sha": "71cb23c5c966e3e9e6b11254852034083a6317ac",
+  "id": "090-profile-benchmarks-homogenous-retune-block-cyclic",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/090-profile-benchmarks-homogenous-retune-block-cyclic",
+  "last_update_at": "2026-05-04T13:27:17+02:00",
+  "log_err": "/data/users/chjing/dvfs_thesis/jobs/090-profile-benchmarks-homogenous-retune-block-cyclic/slurm-185637.err",
+  "log_out": "/data/users/chjing/dvfs_thesis/jobs/090-profile-benchmarks-homogenous-retune-block-cyclic/slurm-185637.out",
+  "queued_at": "2026-05-04T13:27:11+02:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/090-profile-benchmarks-homogenous-retune-block-cyclic/run.sbatch",
+  "slurm_job_id": 185637,
+  "state": "SUBMITTED",
+  "submitted_at": "2026-05-04T13:27:13+02:00"
+}
