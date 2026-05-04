@@ -55,7 +55,7 @@ start_monitors() {
         python3 "$PROFILER_PATH" --monitor \
             --gpu-id "$gpu" \
             --interval 0.01 \
-            --output "${csv_base}_${i}.csv" &
+            --output "${csv_base}_${i}.csv" >/dev/null 2>/dev/null &
         echo $!
         (( i++ ))
     done
