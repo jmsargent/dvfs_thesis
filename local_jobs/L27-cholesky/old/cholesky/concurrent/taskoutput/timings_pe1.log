@@ -1,0 +1,6 @@
+device 1 | NVSHMEM init time (s): 2.4274
+device 1 | 0 run | time (s): 115.5460
+device 1 | 1 run | time (s): 115.6492
+device 1 | 2 run | time (s): 115.6428
+device 1 | 3 run | time (s): 115.4872
+device 1 | 4 run | time (s): 115.3884

@@ -1,0 +1,7 @@
+Program start timestamp: 1777921896.4077550
+device 0 | NVSHMEM init time (s): 2.4274
+device 0 | 0 run | time (s): 112.2227
+device 0 | 1 run | time (s): 112.3256
+device 0 | 2 run | time (s): 112.3226
+device 0 | 3 run | time (s): 112.1680
+device 0 | 4 run | time (s): 112.0681

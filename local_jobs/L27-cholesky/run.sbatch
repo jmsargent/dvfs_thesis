@@ -13,8 +13,8 @@ source "$VENV_PATH/bin/activate"
 
 CLEAN_GPUS=$(select_gpus 2)
 
-N_SIZE=40000
-TILE=16
+N_SIZE=24000
+TILE=64
 RUNS=5
 STREAMS=(1 32)
 
