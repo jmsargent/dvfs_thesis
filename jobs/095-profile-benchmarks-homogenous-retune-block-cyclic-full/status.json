@@ -1,0 +1,9 @@
+{
+  "git_sha": "f3389afa70f8051d5d33b0bd4e633f118e845c8f",
+  "id": "095-profile-benchmarks-homogenous-retune-block-cyclic-full",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/095-profile-benchmarks-homogenous-retune-block-cyclic-full",
+  "last_update_at": "2026-05-05T18:34:49+02:00",
+  "queued_at": "2026-05-05T18:34:49+02:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/095-profile-benchmarks-homogenous-retune-block-cyclic-full/run.sbatch",
+  "state": "QUEUED"
+}
