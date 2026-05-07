@@ -16,3 +16,4 @@ local_jobs/**/nvshmem_debug
 slurm-*.err
 slurm-*.out
 database
+homogenous-retune-best-parameters
