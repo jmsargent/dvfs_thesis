@@ -15,20 +15,20 @@
 #include "StridedPanel.h"
 #include "mustard.h"
 #include "partitioned_dag.h"
+#include "tile_operation.h"
 #include "utils.h"
 
 struct TileAccess
 {
-    std::string             name;
-    MatrixTile              write;
-    std::vector<MatrixTile> reads;
-    std::function<void()>   work;
+    TileOperation          op;
+    std::function<void()>  work;
 };
 
 struct MeasureFlags
 {
     bool measureKernelWait   = false;
     bool measureKernelLaunch = false;
+    bool notifyWaitReached   = false;
 };
 
 struct TimestampBuffers
@@ -49,8 +49,7 @@ class CompletionFlags
     void resetAll(int nPEs)
     {
         std::vector<int> zeros(n_, 0);
-        for (int pe = 0; pe < nPEs; pe++)
-            nvshmem_int_put(ptr_, zeros.data(), n_, pe);
+        for (int pe = 0; pe < nPEs; pe++) nvshmem_int_put(ptr_, zeros.data(), n_, pe);
         nvshmem_quiet();
     }
 
@@ -100,6 +99,8 @@ class OperationCapturer
     {
         mustard::kernel_record_timestamp<<<1, 1, 0, stream_>>>(ptr);
     }
+
+    void recordEvent(cudaEvent_t event) { cudaEventRecord(event, stream_); }
 
     void endCapture() { creator_.endCaptureOperation(); }
 
@@ -162,20 +163,48 @@ class KernelStopWatch
     unsigned long long* d_compTs_ = nullptr;
 };
 
+struct DVFSSignal
+{
+    cudaEvent_t   event;
+    TileOperation op;
+};
+
+class DVFSSignalBuilder
+{
+   public:
+    DVFSSignalBuilder(OperationCapturer& capturer) : capturer_(capturer) {}
+
+    void newSignal(const TileOperation& op)
+    {
+        cudaEvent_t ev;
+        cudaEventCreateWithFlags(&ev, cudaEventDisableTiming);
+        capturer_.recordEvent(ev);
+        signals_.push_back({ev, op});
+    }
+
+    const std::vector<DVFSSignal>& signals() const { return signals_; }
+
+   private:
+    OperationCapturer&      capturer_;
+    std::vector<DVFSSignal> signals_;
+};
+
 template <typename Ops>
 class PartitionedCudaGraphBuilder
 {
     PartitionedDag<TileAccess> dag_;
-    std::map<MatrixTile, int> lastWriterByTile_;
-    int                       myPE_;
-    Ops&                      ops_;
-    OperationCapturer&        capturer_;
-    KernelStopWatch&          sw_;
+    std::map<MatrixTile, int>  lastWriterByTile_;
+    int                        myPE_;
+    Ops&                       ops_;
+    OperationCapturer&         capturer_;
+    KernelStopWatch&           sw_;
+    DVFSSignalBuilder&         dvfsSignalBuilder_;
 
    public:
     PartitionedCudaGraphBuilder(int myPE, Ops& ops, OperationCapturer& capturer,
-                                KernelStopWatch& sw)
-        : myPE_(myPE), ops_(ops), capturer_(capturer), sw_(sw)
+                                KernelStopWatch& sw, DVFSSignalBuilder& dvfsSignalBuilder)
+        : myPE_(myPE), ops_(ops), capturer_(capturer), sw_(sw),
+          dvfsSignalBuilder_(dvfsSignalBuilder)
     {
     }
 
@@ -185,18 +214,18 @@ class PartitionedCudaGraphBuilder
         TileAccess access      = f(ops_);
         int        futureIndex = (int)dag_.nodes().size();
 
-        for (const auto& readTile : access.reads)
+        for (const auto& readTile : access.op.reads)
         {
             auto it = lastWriterByTile_.find(readTile);
             if (it != lastWriterByTile_.end()) dag_.addEdge({it->second, futureIndex});
         }
 
-        lastWriterByTile_[access.write] = futureIndex;
-        dag_.addNode({-1, owner, std::move(access)});
+        lastWriterByTile_[access.op.write] = futureIndex;
+        dag_.addNode({-1, owner, true, std::move(access)});
     }
 
     std::vector<cudaGraphExec_t> build(mustard::TiledGraphCreator& creator, cudaStream_t stream,
-                                        bool dot = false)
+                                       bool dot = false)
     {
         int localNodes = 0;
         for (auto& n : dag_.nodes())
@@ -208,16 +237,24 @@ class PartitionedCudaGraphBuilder
         {
             if (n.partition == myPE_)
             {
-                auto waitNodes   = dag_.crossIncomingNodeIndices(n);
-                auto signalParts = dag_.crossOutgoingPartitions(n);
-                int* d_wait      = OperationCapturer::upload(waitNodes);
+                auto waitNodes   = dag_.crossIncomingNodes(n);
+                auto signalNodes = dag_.crossOutgoingNodes(n);
+                std::vector<int> waitIndices;
+                for (auto& wn : waitNodes) waitIndices.push_back(wn.index);
+                std::set<int> signalPartSet;
+                for (auto& sn : signalNodes) signalPartSet.insert(sn.partition);
+                std::vector<int> signalParts(signalPartSet.begin(), signalPartSet.end());
+                int* d_wait      = OperationCapturer::upload(waitIndices);
                 int* d_signal    = OperationCapturer::upload(signalParts);
 
-                capturer_.beginCapture(n.content.write, n.content.reads, n.content.name);
+                capturer_.beginCapture(n.content.op.write, n.content.op.reads, n.content.op.name);
                 if (d_wait)
                 {
+                    dvfsSignalBuilder_.newSignal(n.content.op);
+
+
                     sw_.waitStart(localIdx);
-                    capturer_.launchWait(d_wait, (int)waitNodes.size());
+                    capturer_.launchWait(d_wait, (int)waitIndices.size());
                     sw_.waitEnd(localIdx);
                 }
                 sw_.compStart(localIdx);
@@ -229,25 +266,25 @@ class PartitionedCudaGraphBuilder
             }
             else
             {
-                capturer_.phantom(n.content.write, n.content.reads, n.content.name);
+                capturer_.phantom(n.content.op.write, n.content.op.reads, n.content.op.name);
             }
         }
 
         checkCudaErrors(cudaDeviceSynchronize());
 
-        auto myTasks = dag_.nodes(myPE_);
+        auto                         myTasks = dag_.nodes(myPE_);
         std::vector<cudaGraphExec_t> execs(myTasks.size());
         for (int idx = 0; idx < (int)myTasks.size(); idx++)
         {
-            int task = myTasks[idx];
+            int task = myTasks[idx].index;
             if (dot)
             {
                 char filename[32];
                 sprintf(filename, "./graph_%d_%d.dot", task, myPE_);
                 checkCudaErrors(cudaGraphDebugDotPrint(creator.subgraphs[task], filename, 0));
             }
-            checkCudaErrors(cudaGraphInstantiate(&execs[idx], creator.subgraphs[task],
-                                                 nullptr, nullptr, 0));
+            checkCudaErrors(
+                cudaGraphInstantiate(&execs[idx], creator.subgraphs[task], nullptr, nullptr, 0));
             cudaGraphUpload(execs[idx], stream);
         }
         checkCudaErrors(cudaDeviceSynchronize());
@@ -255,9 +292,8 @@ class PartitionedCudaGraphBuilder
         return execs;
     }
 
-    PartitionedDag<TileAccess> getPartitionedGraph(){
-        return std::move(dag_);
-    }
+
+    PartitionedDag<TileAccess> getPartitionedGraph() { return std::move(dag_); }
 };
 
 // owns panels, cublas/cusolver handles, and all workspace memory
@@ -353,9 +389,7 @@ class CholeskyCudaOperations
 
     TileAccess potrf(int k)
     {
-        return {mustard::opName("POTRF", k),
-                {k, k},
-                {{k, k}},
+        return {TileOperation::potrf(k),
                 [this, k]()
                 {
                     checkCudaErrors(cusolverDnDpotrf(
@@ -366,9 +400,7 @@ class CholeskyCudaOperations
 
     TileAccess trsm(int i, int k)
     {
-        return {mustard::opName("TRSM", i, k),
-                {i, k},
-                {{k, k}, {i, k}},
+        return {TileOperation::trsm(i, k),
                 [this, i, k]()
                 {
                     setWorkspace();
@@ -381,9 +413,7 @@ class CholeskyCudaOperations
 
     TileAccess syrk(int i, int k)
     {
-        return {mustard::opName("SYRK", i, i, k),
-                {i, i},
-                {{i, i}, {i, k}},
+        return {TileOperation::syrk(i, k),
                 [this, i, k]()
                 {
                     setWorkspace();
@@ -396,9 +426,7 @@ class CholeskyCudaOperations
 
     TileAccess gemm(int j, int i, int k)
     {
-        return {mustard::opName("GEMM", j, i, k),
-                {j, i},
-                {{j, i}, {j, k}, {i, k}},
+        return {TileOperation::cholGemm(j, i, k),
                 [this, j, i, k]()
                 {
                     setWorkspace();
@@ -478,9 +506,8 @@ class LUCudaOperations
         checkCudaErrors(cusolverDnSetStream(cusolverHandle, stream));
 
         int workspaceInBytesOnDevice;
-        checkCudaErrors(cusolverDnDgetrf_bufferSize(cusolverHandle, B, B,
-                                                    panels.myPanel().tile(0, 0), N,
-                                                    &workspaceInBytesOnDevice));
+        checkCudaErrors(cusolverDnDgetrf_bufferSize(
+            cusolverHandle, B, B, panels.myPanel().tile(0, 0), N, &workspaceInBytesOnDevice));
         workspaceInBytesOnDevice *= 8;
 
         double* d_workspace_cusolver;
@@ -494,10 +521,18 @@ class LUCudaOperations
         for (int i = 0; i < numMyTasks; i++)
             checkCudaErrors(cudaMalloc(&d_workspace_cublas[i], cublasWorkspaceSize));
 
-        return {cublasHandle,      cusolverHandle,         d_workspace_cusolver,
-                workspaceInBytesOnDevice, d_workspace_cublas, cublasWorkspaceSize,
-                numMyTasks,        d_info,                 std::move(panels),
-                B,                 N,                      nPEs,
+        return {cublasHandle,
+                cusolverHandle,
+                d_workspace_cusolver,
+                workspaceInBytesOnDevice,
+                d_workspace_cublas,
+                cublasWorkspaceSize,
+                numMyTasks,
+                d_info,
+                std::move(panels),
+                B,
+                N,
+                nPEs,
                 occupancy};
     }
 
@@ -512,9 +547,7 @@ class LUCudaOperations
     // Factor diagonal block: A[k][k] -> L[k][k], U[k][k]
     TileAccess getrf(int k)
     {
-        return {mustard::opName("GETRF", k),
-                {k, k},
-                {{k, k}},
+        return {TileOperation::getrf(k),
                 [this, k]()
                 {
                     checkCudaErrors(cusolverDnDgetrf(cusolverHandle_, B_, B_,
@@ -526,52 +559,44 @@ class LUCudaOperations
     // Solve L[k][k] * U[k][i] = A[k][i]  (update U row, assigned to PE i%nPEs)
     TileAccess trsm_l(int k, int i)
     {
-        return {mustard::opName("TRSM_L", k, i),
-                {k, i},
-                {{k, k}, {k, i}},
+        return {TileOperation::trsmL(k, i),
                 [this, k, i]()
                 {
                     setWorkspace();
-                    checkCudaErrors(cublasDtrsm(cublasHandle_, CUBLAS_SIDE_LEFT,
-                                                CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N,
-                                                CUBLAS_DIAG_UNIT, B_, B_, &one_,
-                                                panels_.otherPanel(k % nPEs_).tile(k, k), N_,
-                                                panels_.myPanel().tile(k, i), N_));
+                    checkCudaErrors(cublasDtrsm(
+                        cublasHandle_, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N,
+                        CUBLAS_DIAG_UNIT, B_, B_, &one_, panels_.otherPanel(k % nPEs_).tile(k, k),
+                        N_, panels_.myPanel().tile(k, i), N_));
                 }};
     }
 
     // Solve L[i][k] * U[k][k] = A[i][k]  (update L column, assigned to PE k%nPEs)
     TileAccess trsm_r(int i, int k)
     {
-        return {mustard::opName("TRSM_R", i, k),
-                {i, k},
-                {{k, k}, {i, k}},
+        return {TileOperation::trsmR(i, k),
                 [this, i, k]()
                 {
                     setWorkspace();
-                    checkCudaErrors(cublasDtrsm(cublasHandle_, CUBLAS_SIDE_RIGHT,
-                                                CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N,
-                                                CUBLAS_DIAG_NON_UNIT, B_, B_, &one_,
-                                                panels_.myPanel().tile(k, k), N_,
-                                                panels_.myPanel().tile(i, k), N_));
+                    checkCudaErrors(cublasDtrsm(
+                        cublasHandle_, CUBLAS_SIDE_RIGHT, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N,
+                        CUBLAS_DIAG_NON_UNIT, B_, B_, &one_, panels_.myPanel().tile(k, k), N_,
+                        panels_.myPanel().tile(i, k), N_));
                 }};
     }
 
     // A[i][j] -= L[i][k] * U[k][j]  (assigned to PE j%nPEs)
     TileAccess gemm(int i, int j, int k)
     {
-        return {mustard::opName("GEMM", i, j, k),
-                {i, j},
-                {{i, j}, {i, k}, {k, j}},
+        return {TileOperation::luGemm(i, j, k),
                 [this, i, j, k]()
                 {
                     setWorkspace();
-                    checkCudaErrors(cublasGemmEx(
-                        cublasHandle_, CUBLAS_OP_N, CUBLAS_OP_N, B_, B_, B_, &minusOne_,
-                        panels_.otherPanel(k % nPEs_).tile(i, k), CUDA_R_64F, N_,
-                        panels_.myPanel().tile(k, j), CUDA_R_64F, N_, &one_,
-                        panels_.myPanel().tile(i, j), CUDA_R_64F, N_, CUBLAS_COMPUTE_64F,
-                        CUBLAS_GEMM_DEFAULT));
+                    checkCudaErrors(
+                        cublasGemmEx(cublasHandle_, CUBLAS_OP_N, CUBLAS_OP_N, B_, B_, B_,
+                                     &minusOne_, panels_.otherPanel(k % nPEs_).tile(i, k),
+                                     CUDA_R_64F, N_, panels_.myPanel().tile(k, j), CUDA_R_64F, N_,
+                                     &one_, panels_.myPanel().tile(i, j), CUDA_R_64F, N_,
+                                     CUBLAS_COMPUTE_64F, CUBLAS_GEMM_DEFAULT));
                 }};
     }
 

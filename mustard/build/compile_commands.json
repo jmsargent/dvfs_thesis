@@ -7,6 +7,12 @@
   },
   {
     "directory": "/data/users/sargent/dvfs_thesis/mustard/build/mustard",
+    "command": "/usr/bin/g++  -isystem /data/users/sargent/dvfs_thesis/mustard/include -o CMakeFiles/test_spanned_dag.dir/test_spanned_dag.cpp.o -c /data/users/sargent/dvfs_thesis/mustard/mustard/test_spanned_dag.cpp",
+    "file": "/data/users/sargent/dvfs_thesis/mustard/mustard/test_spanned_dag.cpp",
+    "output": "mustard/CMakeFiles/test_spanned_dag.dir/test_spanned_dag.cpp.o"
+  },
+  {
+    "directory": "/data/users/sargent/dvfs_thesis/mustard/build/mustard",
     "command": "/usr/bin/g++ -isystem /data/users/sargent/dvfs_thesis/mustard/include -isystem \"/data/users/sargent/.local/include/cuda\" -isystem \"/data/users/sargent/.local/include/ompi\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi/opal/mca/hwloc/hwloc201/hwloc/include\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi/opal/mca/event/libevent2022/libevent\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi/opal/mca/event/libevent2022/libevent/include\" -I/data/users/sargent/.local/include/nvshmem -L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib -lnvshmem_host -lnvshmem_device -lcuda -D_FORCE_INLINES -DVERBOSE -Xcompiler -pthread -c /data/users/sargent/dvfs_thesis/mustard/mustard/cholesky_mustard.cu -o CMakeFiles/cholesky_mustard.dir/cholesky_mustard.cu.o",
     "file": "/data/users/sargent/dvfs_thesis/mustard/mustard/cholesky_mustard.cu",
     "output": "mustard/CMakeFiles/cholesky_mustard.dir/cholesky_mustard.cu.o"

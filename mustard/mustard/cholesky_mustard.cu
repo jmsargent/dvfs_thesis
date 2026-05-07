@@ -24,6 +24,7 @@
 #include "pe_writer.h"
 #include "task_timing.h"
 #include "time_utils.cuh"
+#include "tuner.h"
 #include "verify.h"
 
 // Global configuration (populated from CLI in main).
@@ -562,7 +563,9 @@ void tiledCholeskyPanel(bool verify, bool dot)
     MeasureFlags      flags{cfg.measureWait, cfg.measureCompute};
     OperationCapturer capturer(*creator, d_completion_flags.data(), s);
     KernelStopWatch   sw(flags, capturer);
-    PartitionedCudaGraphBuilder<CholeskyCudaOperations> graphBuilder(myPE, ops, capturer, sw);
+    DVFSSignalBuilder dvfsSignalBuilder(capturer);
+    PartitionedCudaGraphBuilder<CholeskyCudaOperations> graphBuilder(myPE, ops, capturer, sw,
+                                                                     dvfsSignalBuilder);
 
     for (int pivotColumn = 0; pivotColumn < (int)T; pivotColumn++)
     {
@@ -582,11 +585,15 @@ void tiledCholeskyPanel(bool verify, bool dot)
         }
     }
 
-    auto executableGraphs = graphBuilder.build(*creator, s, dot);
-    auto partitionedDag   = graphBuilder.getPartitionedGraph();
-    auto ts               = sw.buffers();
-    auto my_tasks_sorted  = partitionedDag.nodes(myPE);
-    auto numTasksSorted   = (int)my_tasks_sorted.size();
+    auto                  executableGraphs = graphBuilder.build(*creator, s, dot);
+    TaskProfileRepository repo(myPE, TaskProfileRepository::Algorithm::Cholesky);
+    if (!cfg.dbPath.empty()) repo.loadFromCSV(cfg.dbPath);
+
+    auto partitionedDag = graphBuilder.getPartitionedGraph();
+
+    auto ts              = sw.buffers();
+    auto my_tasks_sorted = partitionedDag.nodes(myPE);
+    auto numTasksSorted  = (int)my_tasks_sorted.size();
 
     printf("device %d | tiledCholeskyPanel: graphs instantiated, entering timing loop\n", myPE);
     fflush(stdout);
@@ -598,8 +605,13 @@ void tiledCholeskyPanel(bool verify, bool dot)
     printf("device %d | Setup time (s): %4.4f\n", myPE, setup_time);
     fflush(stdout);
 
-    TaskTimingCollector collector(ts, my_tasks_sorted, runs, cfg.measureFlags);
+    std::vector<int> task_indices;
+    for (auto& n : my_tasks_sorted) task_indices.push_back(n.index);
+    TaskTimingCollector collector(ts, task_indices, runs, cfg.measureFlags);
     double              totalTime = 0.0;
+
+    Tuner tuner(repo, dvfsSignalBuilder.signals(), partitionedDag, myPE);
+    tuner.plan();
 
     for (int i = 0; i < runs; i++)
     {
@@ -619,9 +631,12 @@ void tiledCholeskyPanel(bool verify, bool dot)
         if (myPE == 0) print_timestamp("cholesky tiledPanel start_time", 7);
 
         auto t_start = std::chrono::high_resolution_clock::now();
+        tuner.reset(taskStreams);
         if (collector.active()) ts_ref = gpu_clock::calibrate(taskStreams[0]);
         for (int idx = 0; idx < numTasksSorted; idx++)
             checkCudaErrors(cudaGraphLaunch(executableGraphs[idx], taskStreams[idx % numStreams]));
+
+        tuner.run();
 
         for (int si = 0; si < numStreams; si++)
             checkCudaErrors(cudaStreamSynchronize(taskStreams[si]));

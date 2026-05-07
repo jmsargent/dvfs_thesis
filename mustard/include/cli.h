@@ -26,6 +26,7 @@ struct MustardConfig
     bool        measureWait    = false;
     bool        measureCompute = false;
     std::string outputPrefix   = "";  // base path for per-PE output files
+    std::string dbPath         = "";  // path to task profile CSV for DVFS tuner
 };
 
 // Print common options shared by all executables.
@@ -160,6 +161,7 @@ inline bool parseCommonArgs(argh::parser& cmdl, MustardConfig& cfg)
         cfg.measureCompute = has("compute_ms") || has("start_ts") || has("end_ts");
     }
     cmdl("output", "") >> cfg.outputPrefix;
+    cmdl("db", "") >> cfg.dbPath;
 
     return true;
 }

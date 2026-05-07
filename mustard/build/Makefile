@@ -133,6 +133,19 @@ test_timer/fast:
 .PHONY : test_timer/fast
 
 #=============================================================================
+# Target rules for targets named test_spanned_dag
+
+# Build rule for target.
+test_spanned_dag: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_spanned_dag
+.PHONY : test_spanned_dag
+
+# fast build rule for target.
+test_spanned_dag/fast:
+	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_spanned_dag.dir/build.make mustard/CMakeFiles/test_spanned_dag.dir/build
+.PHONY : test_spanned_dag/fast
+
+#=============================================================================
 # Target rules for targets named cholesky_mustard
 
 # Build rule for target.
@@ -210,6 +223,7 @@ help:
 	@echo "... lu_mustard"
 	@echo "... p_lu_mustard"
 	@echo "... pingpong_mustard"
+	@echo "... test_spanned_dag"
 	@echo "... test_timer"
 .PHONY : help
 

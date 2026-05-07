@@ -134,6 +134,20 @@ test_timer/fast:
 .PHONY : test_timer/fast
 
 # Convenience name for target.
+mustard/CMakeFiles/test_spanned_dag.dir/rule:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mustard/CMakeFiles/test_spanned_dag.dir/rule
+.PHONY : mustard/CMakeFiles/test_spanned_dag.dir/rule
+
+# Convenience name for target.
+test_spanned_dag: mustard/CMakeFiles/test_spanned_dag.dir/rule
+.PHONY : test_spanned_dag
+
+# fast build rule for target.
+test_spanned_dag/fast:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_spanned_dag.dir/build.make mustard/CMakeFiles/test_spanned_dag.dir/build
+.PHONY : test_spanned_dag/fast
+
+# Convenience name for target.
 mustard/CMakeFiles/cholesky_mustard.dir/rule:
 	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mustard/CMakeFiles/cholesky_mustard.dir/rule
 .PHONY : mustard/CMakeFiles/cholesky_mustard.dir/rule
@@ -350,6 +364,30 @@ sync_kernels.cu.s:
 	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/lu_mustard.dir/build.make mustard/CMakeFiles/lu_mustard.dir/sync_kernels.cu.s
 .PHONY : sync_kernels.cu.s
 
+test_spanned_dag.o: test_spanned_dag.cpp.o
+.PHONY : test_spanned_dag.o
+
+# target to build an object file
+test_spanned_dag.cpp.o:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_spanned_dag.dir/build.make mustard/CMakeFiles/test_spanned_dag.dir/test_spanned_dag.cpp.o
+.PHONY : test_spanned_dag.cpp.o
+
+test_spanned_dag.i: test_spanned_dag.cpp.i
+.PHONY : test_spanned_dag.i
+
+# target to preprocess a source file
+test_spanned_dag.cpp.i:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_spanned_dag.dir/build.make mustard/CMakeFiles/test_spanned_dag.dir/test_spanned_dag.cpp.i
+.PHONY : test_spanned_dag.cpp.i
+
+test_spanned_dag.s: test_spanned_dag.cpp.s
+.PHONY : test_spanned_dag.s
+
+# target to generate assembly for a file
+test_spanned_dag.cpp.s:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_spanned_dag.dir/build.make mustard/CMakeFiles/test_spanned_dag.dir/test_spanned_dag.cpp.s
+.PHONY : test_spanned_dag.cpp.s
+
 test_timer.o: test_timer.cu.o
 .PHONY : test_timer.o
 
@@ -387,6 +425,7 @@ help:
 	@echo "... lu_mustard"
 	@echo "... p_lu_mustard"
 	@echo "... pingpong_mustard"
+	@echo "... test_spanned_dag"
 	@echo "... test_timer"
 	@echo "... cg_mustard.o"
 	@echo "... cg_mustard.i"
@@ -406,6 +445,9 @@ help:
 	@echo "... sync_kernels.o"
 	@echo "... sync_kernels.i"
 	@echo "... sync_kernels.s"
+	@echo "... test_spanned_dag.o"
+	@echo "... test_spanned_dag.i"
+	@echo "... test_spanned_dag.s"
 	@echo "... test_timer.o"
 	@echo "... test_timer.i"
 	@echo "... test_timer.s"

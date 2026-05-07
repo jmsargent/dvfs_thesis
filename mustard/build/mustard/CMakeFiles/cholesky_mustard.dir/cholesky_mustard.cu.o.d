@@ -765,6 +765,7 @@ mustard/CMakeFiles/cholesky_mustard.dir/cholesky_mustard.cu.o : /data/users/sarg
     /usr/include/c++/11/bits/fstream.tcc \
     /data/users/sargent/dvfs_thesis/mustard/mustard/broker_queue.h \
     /data/users/sargent/dvfs_thesis/mustard/mustard/partitioned_dag.h \
+    /data/users/sargent/dvfs_thesis/mustard/mustard/tile_operation.h \
     /data/users/sargent/dvfs_thesis/mustard/mustard/injectors.h \
     /data/users/sargent/dvfs_thesis/mustard/mustard/scheduler.h \
     /usr/include/c++/11/queue \
@@ -776,5 +777,9 @@ mustard/CMakeFiles/cholesky_mustard.dir/cholesky_mustard.cu.o : /data/users/sarg
     /usr/include/c++/11/cstdarg \
     /data/users/sargent/dvfs_thesis/mustard/mustard/task_timing.h \
     /data/users/sargent/dvfs_thesis/mustard/mustard/time_utils.cuh \
+    /data/users/sargent/dvfs_thesis/mustard/mustard/tuner.h \
+    /usr/include/c++/11/optional \
+    /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/12.6/targets/x86_64-linux/include/nvml.h \
+    /data/users/sargent/dvfs_thesis/mustard/mustard/task_profile_repository.h \
     /data/users/sargent/dvfs_thesis/mustard/include/verify.h \
     /usr/include/c++/11/cstring

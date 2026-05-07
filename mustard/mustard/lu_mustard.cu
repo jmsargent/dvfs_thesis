@@ -13,28 +13,29 @@
 #include <utility>
 #include <vector>
 
+#include "allocator.h"
 #include "argh.h"
 #include "cli.h"
 #include "gen.h"
 #include "graph_assembler.h"
-#include "mustard.h"
 #include "injectors.h"
-#include "allocator.h"
+#include "mustard.h"
 #include "pe_writer.h"
 #include "task_timing.h"
-#include "verify.h"
 #include "time_utils.cuh"
+#include "tuner.h"
+#include "verify.h"
 
 // Global configuration (populated from CLI in main).
 static MustardConfig cfg;
-static size_t       &N = cfg.N;
-static size_t       &B = cfg.B;
-static size_t       &T = cfg.T;
+static size_t&       N = cfg.N;
+static size_t&       B = cfg.B;
+static size_t&       T = cfg.T;
 int                  myPE;
-static int          &verbose   = cfg.verbose;
-static int          &workspace = cfg.workspace;
-static int          &smLimit   = cfg.smLimit;
-static int          &runs      = cfg.runs;
+static int&          verbose   = cfg.verbose;
+static int&          workspace = cfg.workspace;
+static int&          smLimit   = cfg.smLimit;
+static int&          runs      = cfg.runs;
 // mustard/lu_mustard.cu
 
 void trivialLU(bool verify)
@@ -47,10 +48,10 @@ void trivialLU(bool verify)
     checkCudaErrors(cusolverDnCreateParams(&cusolverDnParams));
 
     // Initialize data
-    double *h_A = (double *)malloc(N * N * sizeof(double));
+    double* h_A = (double*)malloc(N * N * sizeof(double));
     generateRandomSymmetricPositiveDefiniteMatrix(h_A, N);
 
-    double *d_A;
+    double* d_A;
     checkCudaErrors(cudaMalloc(&d_A, N * N * sizeof(double)));
     checkCudaErrors(cudaMemcpy(d_A, h_A, N * N * sizeof(double), cudaMemcpyHostToDevice));
 
@@ -60,12 +61,12 @@ void trivialLU(bool verify)
         cusolverDnHandle, cusolverDnParams, N, N, CUDA_R_64F, d_A, N, CUDA_R_64F,
         &workspaceInBytesOnDevice, &workspaceInBytesOnHost));
 
-    void *h_workspace = malloc(workspaceInBytesOnHost);
+    void* h_workspace = malloc(workspaceInBytesOnHost);
 
-    void *d_workspace;
+    void* d_workspace;
     checkCudaErrors(cudaMalloc(&d_workspace, workspaceInBytesOnDevice));
 
-    int *d_info;
+    int* d_info;
     checkCudaErrors(cudaMalloc(&d_info, sizeof(int)));
     CudaEventClock clock;
     double         totalTime = 0.0;
@@ -100,8 +101,8 @@ void trivialLU(bool verify)
     // Verify
     if (verify)
     {
-        double *h_L = (double *)malloc(N * N * sizeof(double));
-        double *h_U = (double *)malloc(N * N * sizeof(double));
+        double* h_L = (double*)malloc(N * N * sizeof(double));
+        double* h_U = (double*)malloc(N * N * sizeof(double));
         checkCudaErrors(cudaMemcpy(h_L, d_A, N * N * sizeof(double), cudaMemcpyDeviceToHost));
         cleanCusolverLUDecompositionResult(h_L, h_U, N);
         printf("Result passes verification: %d\n",
@@ -122,10 +123,10 @@ void trivialLU(bool verify)
     checkCudaErrors(cudaFree(d_info));
 }
 
-cudaGraph_t recordSubgraph(double *subMatrix, int subT, cudaStream_t s,
+cudaGraph_t recordSubgraph(double* subMatrix, int subT, cudaStream_t s,
                            cusolverDnHandle_t cusolverDnHandle, cublasHandle_t cublasHandle,
-                           double *d_workspace_cusolver, void **d_workspace_cublas,
-                           int cublasWorkspaceSize, int *d_info)
+                           double* d_workspace_cusolver, void** d_workspace_cublas,
+                           int cublasWorkspaceSize, int* d_info)
 {
     int    subN     = B;
     int    subB     = subN / subT;
@@ -141,7 +142,7 @@ cudaGraph_t recordSubgraph(double *subMatrix, int subT, cudaStream_t s,
         exit(0);
     }
 
-    auto getMatrixBlock = [&](double *matrix, int i, int j)
+    auto getMatrixBlock = [&](double* matrix, int i, int j)
     { return matrix + i * subB + j * subB * N; };
 
     int totalNodes = subT;
@@ -234,15 +235,15 @@ void tiledLU(bool verify, bool subgraph, bool dot)
     generateRandomSymmetricPositiveDefiniteMatrix(originalMatrix.get(), N);
 
     // Copy to device
-    double       *d_matrix;
-    double       *d_matrices;
-    double       *d_matrix_remote;
-    volatile int *d_flags;
+    double*       d_matrix;
+    double*       d_matrices;
+    double*       d_matrix_remote;
+    volatile int* d_flags;
     if (subgraph)
     {
-        d_flags    = (volatile int *)nvshmem_malloc(sizeof(int) * 32);
-        d_matrices = (double *)nvshmem_malloc(N * N * sizeof(double));
-        d_matrix   = (double *)nvshmem_ptr(d_matrices, myPE);
+        d_flags    = (volatile int*)nvshmem_malloc(sizeof(int) * 32);
+        d_matrices = (double*)nvshmem_malloc(N * N * sizeof(double));
+        d_matrix   = (double*)nvshmem_ptr(d_matrices, myPE);
     }
     else
     {
@@ -250,9 +251,9 @@ void tiledLU(bool verify, bool subgraph, bool dot)
     }
     checkCudaErrors(
         cudaMemcpy(d_matrix, originalMatrix.get(), N * N * sizeof(double), cudaMemcpyHostToDevice));
-    if (myPE != 0) d_matrix_remote = (double *)nvshmem_ptr(d_matrices, 0);
+    if (myPE != 0) d_matrix_remote = (double*)nvshmem_ptr(d_matrices, 0);
 
-    auto getMatrixBlock = [&](double *matrix, int i, int j) { return matrix + i * B + j * B * N; };
+    auto getMatrixBlock = [&](double* matrix, int i, int j) { return matrix + i * B + j * B * N; };
 
     // Initialize libraries
     cusolverDnHandle_t cusolverDnHandle;
@@ -272,10 +273,10 @@ void tiledLU(bool verify, bool subgraph, bool dot)
     checkCudaErrors(cusolverDnDgetrf_bufferSize(cusolverDnHandle, B, B, d_matrix, N,
                                                 &workspaceInBytesOnDevice));
 
-    double *d_workspace_cusolver;
+    double* d_workspace_cusolver;
     int     workspaces         = T * T;
-    void  **d_workspace_cublas = (void **)malloc(sizeof(void *) * workspaces);
-    int    *d_info;
+    void**  d_workspace_cublas = (void**)malloc(sizeof(void*) * workspaces);
+    int*    d_info;
     workspaceInBytesOnDevice *= 8;
     checkCudaErrors(cudaMalloc(&d_workspace_cusolver, workspaceInBytesOnDevice));
     int cublasWorkspaceSize = 1024 * workspace;
@@ -480,13 +481,13 @@ void tiledLU(bool verify, bool subgraph, bool dot)
     {
         if (verbose) tiledLUGraphCreator->printDeps();
 
-        int      *h_dependencies;
+        int*      h_dependencies;
         const int queue_size = totalNodes * 2;
         if (verbose) std::cout << "Creating queue..." << std::endl;
         BrokerWorkDistributor queue(queue_size);
         if (verbose) std::cout << "Allocating memory..." << std::endl;
 
-        int *d_dependencies = (int *)nvshmem_malloc(sizeof(int) * totalNodes);
+        int* d_dependencies = (int*)nvshmem_malloc(sizeof(int) * totalNodes);
         checkCudaErrors(cudaMallocHost(&h_dependencies, sizeof(int) * totalNodes));
         if (verbose) std::cout << "Setting dependencies..." << std::endl;
 
@@ -496,7 +497,7 @@ void tiledLU(bool verify, bool subgraph, bool dot)
         }
         if (verbose) std::cout << "Populating the queue..." << std::endl;
 
-        checkCudaErrors(cudaMemcpy((void *)d_dependencies, (void *)h_dependencies,
+        checkCudaErrors(cudaMemcpy((void*)d_dependencies, (void*)h_dependencies,
                                    sizeof(int) * totalNodes, cudaMemcpyHostToDevice));
         if (myPE == 0)
             mustard::kernel_populate_queue<<<108, 1024>>>(queue, d_dependencies, totalNodes);
@@ -516,8 +517,8 @@ void tiledLU(bool verify, bool subgraph, bool dot)
             tiledLUGraphCreator->printInvocations(cfg.invocationPath, myPE);
         }
 
-        cudaGraphExec_t *h_subgraphsExec = new cudaGraphExec_t[totalNodes];
-        cudaGraphExec_t *d_subgraphsExec;
+        cudaGraphExec_t* h_subgraphsExec = new cudaGraphExec_t[totalNodes];
+        cudaGraphExec_t* d_subgraphsExec;
         for (int i = 0; i < totalNodes; i++)
         {
             char filename[20];
@@ -531,7 +532,7 @@ void tiledLU(bool verify, bool subgraph, bool dot)
             cudaGraphUpload(h_subgraphsExec[i], s);
         }
         checkCudaErrors(cudaMalloc(&d_subgraphsExec, sizeof(cudaGraphExec_t) * totalNodes));
-        checkCudaErrors(cudaMemcpy((void *)d_subgraphsExec, (void *)h_subgraphsExec,
+        checkCudaErrors(cudaMemcpy((void*)d_subgraphsExec, (void*)h_subgraphsExec,
                                    sizeof(cudaGraphExec_t) * totalNodes, cudaMemcpyHostToDevice));
 
         if (verbose) std::cout << "Initializing scheduler..." << std::endl;
@@ -565,8 +566,8 @@ void tiledLU(bool verify, bool subgraph, bool dot)
             nvshmem_barrier_all();
             if (myPE == 0)
             {
-                checkCudaErrors(cudaMemset((void *)d_flags, 0, sizeof(int) * 32));
-                checkCudaErrors(cudaMemcpy((void *)d_dependencies, (void *)h_dependencies,
+                checkCudaErrors(cudaMemset((void*)d_flags, 0, sizeof(int) * 32));
+                checkCudaErrors(cudaMemcpy((void*)d_dependencies, (void*)h_dependencies,
                                            sizeof(int) * totalNodes, cudaMemcpyHostToDevice));
                 mustard::kernel_populate_queue<<<108, 1024>>>(queue, d_dependencies, totalNodes);
                 checkCudaErrors(cudaDeviceSynchronize());
@@ -581,7 +582,7 @@ void tiledLU(bool verify, bool subgraph, bool dot)
         checkCudaErrors(cudaFreeHost(h_dependencies));
         checkCudaErrors(cudaFree(d_subgraphsExec));
         nvshmem_free(d_dependencies);
-        nvshmem_free((void *)d_flags);
+        nvshmem_free((void*)d_flags);
         queue.free_mem();
     }
     else
@@ -610,8 +611,8 @@ void tiledLU(bool verify, bool subgraph, bool dot)
 
     if (verify)
     {
-        double *h_L = (double *)malloc(N * N * sizeof(double));
-        double *h_U = (double *)malloc(N * N * sizeof(double));
+        double* h_L = (double*)malloc(N * N * sizeof(double));
+        double* h_U = (double*)malloc(N * N * sizeof(double));
         checkCudaErrors(cudaMemcpy(h_L, d_matrix, N * N * sizeof(double), cudaMemcpyDeviceToHost));
         memset(h_U, 0, N * N * sizeof(double));
         cleanCusolverLUDecompositionResult(h_L, h_U, N);
@@ -644,10 +645,8 @@ void tiledLUStatic(bool verify, bool dot)
     // Parse measure flags — each flag corresponds to exactly one output column.
     // _ms  = CUDA event elapsed duration in milliseconds
     // _ts  = absolute Unix nanosecond timestamp (wall clock)
-    auto has_flag = [&](const char* f) {
-        return cfg.measureFlags.find(f) != std::string::npos;
-    };
-    bool col_wait_ms       = has_flag("wait_ms");
+    auto has_flag    = [&](const char* f) { return cfg.measureFlags.find(f) != std::string::npos; };
+    bool col_wait_ms = has_flag("wait_ms");
     bool col_compute_ms    = has_flag("compute_ms");
     bool col_start_ts      = has_flag("start_ts");
     bool col_end_ts        = has_flag("end_ts");
@@ -657,17 +656,17 @@ void tiledLUStatic(bool verify, bool dot)
     // Initialize data
     auto originalMatrix = std::make_unique<double[]>(N * N);
     generateRandomSymmetricPositiveDefiniteMatrix(originalMatrix.get(), N);
-    
+
     // NVSHMEM allocations (all PEs participate)
-    volatile int *d_flags         = (volatile int *)nvshmem_malloc(sizeof(int) * 32);
-    double       *d_matrices      = (double *)nvshmem_malloc(N * N * sizeof(double));
-    double       *d_matrix        = (double *)nvshmem_ptr(d_matrices, myPE);
-    double       *d_matrix_remote = nullptr;
+    volatile int* d_flags         = (volatile int*)nvshmem_malloc(sizeof(int) * 32);
+    double*       d_matrices      = (double*)nvshmem_malloc(N * N * sizeof(double));
+    double*       d_matrix        = (double*)nvshmem_ptr(d_matrices, myPE);
+    double*       d_matrix_remote = nullptr;
     checkCudaErrors(
         cudaMemcpy(d_matrix, originalMatrix.get(), N * N * sizeof(double), cudaMemcpyHostToDevice));
-    if (myPE != 0) d_matrix_remote = (double *)nvshmem_ptr(d_matrices, 0);
+    if (myPE != 0) d_matrix_remote = (double*)nvshmem_ptr(d_matrices, 0);
 
-    auto getMatrixBlock = [&](double *matrix, int i, int j) { return matrix + i * B + j * B * N; };
+    auto getMatrixBlock = [&](double* matrix, int i, int j) { return matrix + i * B + j * B * N; };
 
     // Initialize libraries
     cusolverDnHandle_t cusolverDnHandle;
@@ -685,10 +684,10 @@ void tiledLUStatic(bool verify, bool dot)
     checkCudaErrors(cusolverDnDgetrf_bufferSize(cusolverDnHandle, B, B, d_matrix, N,
                                                 &workspaceInBytesOnDevice));
 
-    double *d_workspace_cusolver;
+    double* d_workspace_cusolver;
     int     workspaces         = T * T;
-    void  **d_workspace_cublas = (void **)malloc(sizeof(void *) * workspaces);
-    int    *d_info;
+    void**  d_workspace_cublas = (void**)malloc(sizeof(void*) * workspaces);
+    int*    d_info;
     workspaceInBytesOnDevice *= 8;
     checkCudaErrors(cudaMalloc(&d_workspace_cusolver, workspaceInBytesOnDevice));
     int cublasWorkspaceSize = 1024 * workspace;
@@ -846,7 +845,7 @@ void tiledLUStatic(bool verify, bool dot)
     checkCudaErrors(cudaDeviceSynchronize());
 
     // NVSHMEM completion flags
-    int *d_completion_flags = (int *)nvshmem_malloc(sizeof(int) * totalNodes);
+    int* d_completion_flags = (int*)nvshmem_malloc(sizeof(int) * totalNodes);
     checkCudaErrors(cudaMemset(d_completion_flags, 0, sizeof(int) * totalNodes));
 
     auto scheduler = std::make_unique<mustard::StaticRoundRobinScheduler>(
@@ -861,20 +860,19 @@ void tiledLUStatic(bool verify, bool dot)
         scheduler->setTaskNotifyPEs(task, alloc.allocate(n), (int)n.size());
     }
 
-    const std::vector<int> &my_tasks_sorted = scheduler->getMyTasksOrdered();
+    const std::vector<int>& my_tasks_sorted = scheduler->getMyTasksOrdered();
 
     // Build injector chain based on measurement flags
     mustard::InjectionContext ctx(totalNodes);
     {
-        auto injector = std::unique_ptr<mustard::IInjector>(
-            new mustard::SubgraphInjector(tiledLUGraphCreator->subgraphs, *scheduler,
-                                          d_completion_flags, cfg.debugKernels));
+        auto injector = std::unique_ptr<mustard::IInjector>(new mustard::SubgraphInjector(
+            tiledLUGraphCreator->subgraphs, *scheduler, d_completion_flags, cfg.debugKernels));
         if (col_wait_start_ts || col_wait_end_ts)
             injector = std::make_unique<mustard::WaitTimestampDecorator>(
                 std::move(injector), tiledLUGraphCreator->subgraphs);
         if (col_wait_ms || col_compute_ms)
             injector = std::make_unique<mustard::WaitTimeDecorator>(std::move(injector),
-                                                                     tiledLUGraphCreator->subgraphs);
+                                                                    tiledLUGraphCreator->subgraphs);
         if (col_compute_ms)
             injector = std::make_unique<mustard::ComputeTimeDecorator>(
                 std::move(injector), tiledLUGraphCreator->subgraphs);
@@ -885,7 +883,7 @@ void tiledLUStatic(bool verify, bool dot)
     }
 
     // Instantiate and upload owned subgraphs
-    cudaGraphExec_t *h_subgraphsExec = new cudaGraphExec_t[totalNodes];
+    cudaGraphExec_t* h_subgraphsExec = new cudaGraphExec_t[totalNodes];
     for (int task : my_tasks_sorted)
     {
         if (dot)
@@ -927,7 +925,6 @@ void tiledLUStatic(bool verify, bool dot)
 
     for (int i = 0; i < runs; i++)
     {
-
         checkCudaErrors(cudaMemcpy(d_matrix, originalMatrix.get(), N * N * sizeof(double),
                                    cudaMemcpyHostToDevice));
 
@@ -975,13 +972,13 @@ void tiledLUStatic(bool verify, bool dot)
             for (int idx = 0; idx < numMyTasks; idx++)
             {
                 int         task = my_tasks_sorted[idx];
-                TaskTiming &tt   = all_timings[i][idx];
+                TaskTiming& tt   = all_timings[i][idx];
 
                 if (col_wait_ms)
                 {
                     if (ctx.task_wait_node[task] != nullptr)
-                        checkCudaErrors(cudaEventElapsedTime(&tt.wait_ms, ev_ref,
-                                                             ctx.compute_start[task]));
+                        checkCudaErrors(
+                            cudaEventElapsedTime(&tt.wait_ms, ev_ref, ctx.compute_start[task]));
                     else
                         tt.wait_ms = 0.0f;
                 }
@@ -1000,11 +997,13 @@ void tiledLUStatic(bool verify, bool dot)
             for (int idx = 0; idx < numMyTasks; idx++)
             {
                 int         task = my_tasks_sorted[idx];
-                TaskTiming &tt   = all_timings[i][idx];
+                TaskTiming& tt   = all_timings[i][idx];
                 if (col_start_ts)
-                    tt.start_ns = gpu_clock::globaltimer_to_unix_ns(h_timestamps[task * 2 + 0], ts_ref);
+                    tt.start_ns =
+                        gpu_clock::globaltimer_to_unix_ns(h_timestamps[task * 2 + 0], ts_ref);
                 if (col_end_ts)
-                    tt.end_ns   = gpu_clock::globaltimer_to_unix_ns(h_timestamps[task * 2 + 1], ts_ref);
+                    tt.end_ns =
+                        gpu_clock::globaltimer_to_unix_ns(h_timestamps[task * 2 + 1], ts_ref);
             }
         }
         if ((col_wait_start_ts || col_wait_end_ts) && ctx.d_wait_timestamps)
@@ -1015,13 +1014,13 @@ void tiledLUStatic(bool verify, bool dot)
             for (int idx = 0; idx < numMyTasks; idx++)
             {
                 int         task = my_tasks_sorted[idx];
-                TaskTiming &tt   = all_timings[i][idx];
+                TaskTiming& tt   = all_timings[i][idx];
                 if (col_wait_start_ts && h_wait_timestamps[task * 2 + 0] != 0)
-                    tt.wait_start_ns = gpu_clock::globaltimer_to_unix_ns(
-                        h_wait_timestamps[task * 2 + 0], ts_ref);
+                    tt.wait_start_ns =
+                        gpu_clock::globaltimer_to_unix_ns(h_wait_timestamps[task * 2 + 0], ts_ref);
                 if (col_wait_end_ts && h_wait_timestamps[task * 2 + 1] != 0)
-                    tt.wait_end_ns = gpu_clock::globaltimer_to_unix_ns(
-                        h_wait_timestamps[task * 2 + 1], ts_ref);
+                    tt.wait_end_ns =
+                        gpu_clock::globaltimer_to_unix_ns(h_wait_timestamps[task * 2 + 1], ts_ref);
             }
         }
 
@@ -1034,22 +1033,22 @@ void tiledLUStatic(bool verify, bool dot)
         printf("device %d | %d run | time (s): %4.4f\n", myPE, i, time);
         totalTime += time;
     }
-    
+
     printf("Total time used (s): %4.4f\n", totalTime);
 
     // Print CSV after all runs
-    if (col_wait_ms || col_compute_ms || col_start_ts || col_end_ts ||
-        col_wait_start_ts || col_wait_end_ts)
+    if (col_wait_ms || col_compute_ms || col_start_ts || col_end_ts || col_wait_start_ts ||
+        col_wait_end_ts)
     {
         PEWriter out(cfg.outputPrefix, myPE);
 
         out.print("pe,run,task_id,op_name");
-        if (col_wait_ms)       out.print(",wait_ms");
-        if (col_compute_ms)    out.print(",compute_ms");
-        if (col_start_ts)      out.print(",start_ts");
-        if (col_end_ts)        out.print(",end_ts");
+        if (col_wait_ms) out.print(",wait_ms");
+        if (col_compute_ms) out.print(",compute_ms");
+        if (col_start_ts) out.print(",start_ts");
+        if (col_end_ts) out.print(",end_ts");
         if (col_wait_start_ts) out.print(",wait_start_ts");
-        if (col_wait_end_ts)   out.print(",wait_end_ts");
+        if (col_wait_end_ts) out.print(",wait_end_ts");
         out.print("\n");
 
         for (int i = 0; i < runs; i++)
@@ -1059,12 +1058,13 @@ void tiledLUStatic(bool verify, bool dot)
                 int task = my_tasks_sorted[idx];
                 out.print("%d,%d,%d,%s", myPE, i, task,
                           tiledLUGraphCreator->subgraphOpNames[task].c_str());
-                if (col_wait_ms)       out.print(",%.4f", all_timings[i][idx].wait_ms);
-                if (col_compute_ms)    out.print(",%.4f", all_timings[i][idx].compute_ms);
-                if (col_start_ts)      out.print(",%lld", (long long)all_timings[i][idx].start_ns);
-                if (col_end_ts)        out.print(",%lld", (long long)all_timings[i][idx].end_ns);
-                if (col_wait_start_ts) out.print(",%lld", (long long)all_timings[i][idx].wait_start_ns);
-                if (col_wait_end_ts)   out.print(",%lld", (long long)all_timings[i][idx].wait_end_ns);
+                if (col_wait_ms) out.print(",%.4f", all_timings[i][idx].wait_ms);
+                if (col_compute_ms) out.print(",%.4f", all_timings[i][idx].compute_ms);
+                if (col_start_ts) out.print(",%lld", (long long)all_timings[i][idx].start_ns);
+                if (col_end_ts) out.print(",%lld", (long long)all_timings[i][idx].end_ns);
+                if (col_wait_start_ts)
+                    out.print(",%lld", (long long)all_timings[i][idx].wait_start_ns);
+                if (col_wait_end_ts) out.print(",%lld", (long long)all_timings[i][idx].wait_end_ns);
                 out.print("\n");
             }
         }
@@ -1075,8 +1075,8 @@ void tiledLUStatic(bool verify, bool dot)
 
     if (verify && myPE == 0)
     {
-        double *h_L = (double *)malloc(N * N * sizeof(double));
-        double *h_U = (double *)malloc(N * N * sizeof(double));
+        double* h_L = (double*)malloc(N * N * sizeof(double));
+        double* h_U = (double*)malloc(N * N * sizeof(double));
         checkCudaErrors(cudaMemcpy(h_L, d_matrix, N * N * sizeof(double), cudaMemcpyDeviceToHost));
         memset(h_U, 0, N * N * sizeof(double));
         cleanCusolverLUDecompositionResult(h_L, h_U, N);
@@ -1089,7 +1089,7 @@ void tiledLUStatic(bool verify, bool dot)
     delete[] h_subgraphsExec;
     nvshmem_free(d_completion_flags);
     nvshmem_free(d_matrices);
-    nvshmem_free((void *)d_flags);
+    nvshmem_free((void*)d_flags);
     checkCudaErrors(cudaFree(d_info));
     checkCudaErrors(cudaFree(d_workspace_cusolver));
     for (int i = 0; i < workspaces; i++) checkCudaErrors(cudaFree(d_workspace_cublas[i]));
@@ -1138,9 +1138,8 @@ void tiledLUPanel(bool verify, bool dot)
     printf("device %d | tiledLUPanel: building %d/%d graphs\n", myPE, numMyTasks, totalNodes);
     fflush(stdout);
 
-    LUCudaOperations ops =
-        LUCudaOperations::build(s, std::move(panels), B, N, nPEs, numMyTasks, workspace,
-                                occupancyTracker);
+    LUCudaOperations ops = LUCudaOperations::build(s, std::move(panels), B, N, nPEs, numMyTasks,
+                                                   workspace, occupancyTracker);
 
     CompletionFlags d_completion_flags(totalNodes);
 
@@ -1150,7 +1149,9 @@ void tiledLUPanel(bool verify, bool dot)
 
     OperationCapturer                             capturer(*creator, d_completion_flags.data(), s);
     KernelStopWatch                               sw(flags, capturer);
-    PartitionedCudaGraphBuilder<LUCudaOperations> graphBuilder(myPE, ops, capturer, sw);
+    DVFSSignalBuilder                             dvfsSignalBuilder(capturer);
+    PartitionedCudaGraphBuilder<LUCudaOperations> graphBuilder(myPE, ops, capturer, sw,
+                                                               dvfsSignalBuilder);
 
     for (int k = 0; k < (int)T; k++)
     {
@@ -1165,11 +1166,15 @@ void tiledLUPanel(bool verify, bool dot)
                 graphBuilder.add(j % nPEs, [=](auto& o) { return o.gemm(i, j, k); });
     }
 
-    auto executableGraphs = graphBuilder.build(*creator, s, dot);
-    auto partitionedDag   = graphBuilder.getPartitionedGraph();
-    auto ts               = sw.buffers();
-    auto my_tasks_sorted  = partitionedDag.nodes(myPE);
-    auto numTasksSorted   = (int)my_tasks_sorted.size();
+    auto                  executableGraphs = graphBuilder.build(*creator, s, dot);
+    TaskProfileRepository repo(myPE, TaskProfileRepository::Algorithm::LU);
+    if (!cfg.dbPath.empty()) repo.loadFromCSV(cfg.dbPath);
+    auto  partitionedDag  = graphBuilder.getPartitionedGraph();
+    Tuner tuner(repo, dvfsSignalBuilder.signals(), partitionedDag, myPE);
+    tuner.plan();
+    auto  ts              = sw.buffers();
+    auto  my_tasks_sorted = partitionedDag.nodes(myPE);
+    auto  numTasksSorted  = (int)my_tasks_sorted.size();
 
     printf("device %d | tiledLUPanel: graphs instantiated, entering timing loop\n", myPE);
     fflush(stdout);
@@ -1181,7 +1186,9 @@ void tiledLUPanel(bool verify, bool dot)
     printf("device %d | Setup time (s): %4.4f\n", myPE, setup_time);
     fflush(stdout);
 
-    TaskTimingCollector collector(ts, my_tasks_sorted, runs, cfg.measureFlags);
+    std::vector<int> task_indices;
+    for (auto& n : my_tasks_sorted) task_indices.push_back(n.index);
+    TaskTimingCollector collector(ts, task_indices, runs, cfg.measureFlags);
     double              totalTime = 0.0;
 
     for (int i = 0; i < runs; i++)
@@ -1201,9 +1208,12 @@ void tiledLUPanel(bool verify, bool dot)
         if (myPE == 0) print_timestamp("lu tiledPanel start_time", 7);
 
         auto t_start = std::chrono::high_resolution_clock::now();
+        tuner.reset(taskStreams);
         if (collector.active()) ts_ref = gpu_clock::calibrate(taskStreams[0]);
         for (int idx = 0; idx < numTasksSorted; idx++)
             checkCudaErrors(cudaGraphLaunch(executableGraphs[idx], taskStreams[idx % numStreams]));
+
+        tuner.run();
 
         for (int si = 0; si < numStreams; si++)
             checkCudaErrors(cudaStreamSynchronize(taskStreams[si]));
@@ -1243,7 +1253,7 @@ void LU(bool tiled, bool verify, bool subgraph, bool staticMultiGPU, bool panel,
         trivialLU(verify);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     auto wall_start    = std::chrono::system_clock::now();
     auto program_start = std::chrono::high_resolution_clock::now();

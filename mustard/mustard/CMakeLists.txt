@@ -2,6 +2,9 @@ add_executable(test_timer test_timer.cu)
 set_target_properties(test_timer PROPERTIES CUDA_SEPARABLE_COMPILATION OFF)
 target_link_libraries(test_timer CUDA::cudart)
 
+add_executable(test_spanned_dag test_spanned_dag.cpp)
+set_target_properties(test_spanned_dag PROPERTIES LINKER_LANGUAGE CXX)
+
 add_executable(cholesky_mustard cholesky_mustard.cu sync_kernels.cu
         StridedPanel.h)
 add_executable(pingpong_mustard pingpong_mustard.cu)

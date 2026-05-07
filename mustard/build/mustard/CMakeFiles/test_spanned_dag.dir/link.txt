@@ -1,0 +1,1 @@
+/usr/bin/g++ -L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib CMakeFiles/test_spanned_dag.dir/test_spanned_dag.cpp.o -o ../test_spanned_dag 

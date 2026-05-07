@@ -82,6 +82,7 @@ clean: mustard/clean
 
 # Recursive "all" directory target.
 mustard/all: mustard/CMakeFiles/test_timer.dir/all
+mustard/all: mustard/CMakeFiles/test_spanned_dag.dir/all
 mustard/all: mustard/CMakeFiles/cholesky_mustard.dir/all
 mustard/all: mustard/CMakeFiles/pingpong_mustard.dir/all
 mustard/all: mustard/CMakeFiles/lu_mustard.dir/all
@@ -95,6 +96,7 @@ mustard/preinstall:
 
 # Recursive "clean" directory target.
 mustard/clean: mustard/CMakeFiles/test_timer.dir/clean
+mustard/clean: mustard/CMakeFiles/test_spanned_dag.dir/clean
 mustard/clean: mustard/CMakeFiles/cholesky_mustard.dir/clean
 mustard/clean: mustard/CMakeFiles/pingpong_mustard.dir/clean
 mustard/clean: mustard/CMakeFiles/lu_mustard.dir/clean
@@ -109,7 +111,7 @@ mustard/clean: mustard/CMakeFiles/cg_mustard.dir/clean
 mustard/CMakeFiles/test_timer.dir/all:
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_timer.dir/build.make mustard/CMakeFiles/test_timer.dir/depend
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_timer.dir/build.make mustard/CMakeFiles/test_timer.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=18,19 "Built target test_timer"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=20,21 "Built target test_timer"
 .PHONY : mustard/CMakeFiles/test_timer.dir/all
 
 # Build rule for subdir invocation for target.
@@ -127,6 +129,32 @@ test_timer: mustard/CMakeFiles/test_timer.dir/rule
 mustard/CMakeFiles/test_timer.dir/clean:
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_timer.dir/build.make mustard/CMakeFiles/test_timer.dir/clean
 .PHONY : mustard/CMakeFiles/test_timer.dir/clean
+
+#=============================================================================
+# Target rules for target mustard/CMakeFiles/test_spanned_dag.dir
+
+# All Build rule for target.
+mustard/CMakeFiles/test_spanned_dag.dir/all:
+	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_spanned_dag.dir/build.make mustard/CMakeFiles/test_spanned_dag.dir/depend
+	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_spanned_dag.dir/build.make mustard/CMakeFiles/test_spanned_dag.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=18,19 "Built target test_spanned_dag"
+.PHONY : mustard/CMakeFiles/test_spanned_dag.dir/all
+
+# Build rule for subdir invocation for target.
+mustard/CMakeFiles/test_spanned_dag.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles 2
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mustard/CMakeFiles/test_spanned_dag.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles 0
+.PHONY : mustard/CMakeFiles/test_spanned_dag.dir/rule
+
+# Convenience name for target.
+test_spanned_dag: mustard/CMakeFiles/test_spanned_dag.dir/rule
+.PHONY : test_spanned_dag
+
+# clean rule for target.
+mustard/CMakeFiles/test_spanned_dag.dir/clean:
+	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_spanned_dag.dir/build.make mustard/CMakeFiles/test_spanned_dag.dir/clean
+.PHONY : mustard/CMakeFiles/test_spanned_dag.dir/clean
 
 #=============================================================================
 # Target rules for target mustard/CMakeFiles/cholesky_mustard.dir
