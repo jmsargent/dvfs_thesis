@@ -610,7 +610,8 @@ void tiledCholeskyPanel(bool verify, bool dot)
     TaskTimingCollector collector(ts, task_indices, runs, cfg.measureFlags);
     double              totalTime = 0.0;
 
-    Tuner tuner(repo, dvfsSignalBuilder.signals(), partitionedDag, myPE);
+    EDP   goal(cfg.goalN, cfg.goalM);
+    Tuner tuner(repo, dvfsSignalBuilder.signals(), partitionedDag, myPE, goal);
     tuner.plan();
 
     for (int i = 0; i < runs; i++)

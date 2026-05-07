@@ -780,6 +780,7 @@ mustard/CMakeFiles/cholesky_mustard.dir/cholesky_mustard.cu.o : /data/users/sarg
     /data/users/sargent/dvfs_thesis/mustard/mustard/tuner.h \
     /usr/include/c++/11/optional \
     /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/12.6/targets/x86_64-linux/include/nvml.h \
+    /data/users/sargent/dvfs_thesis/mustard/mustard/goal.h \
     /data/users/sargent/dvfs_thesis/mustard/mustard/task_profile_repository.h \
     /data/users/sargent/dvfs_thesis/mustard/include/verify.h \
     /usr/include/c++/11/cstring

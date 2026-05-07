@@ -1170,7 +1170,8 @@ void tiledLUPanel(bool verify, bool dot)
     TaskProfileRepository repo(myPE, TaskProfileRepository::Algorithm::LU);
     if (!cfg.dbPath.empty()) repo.loadFromCSV(cfg.dbPath);
     auto  partitionedDag  = graphBuilder.getPartitionedGraph();
-    Tuner tuner(repo, dvfsSignalBuilder.signals(), partitionedDag, myPE);
+    EDP   goal(cfg.goalN, cfg.goalM);
+    Tuner tuner(repo, dvfsSignalBuilder.signals(), partitionedDag, myPE, goal);
     tuner.plan();
     auto  ts              = sw.buffers();
     auto  my_tasks_sorted = partitionedDag.nodes(myPE);

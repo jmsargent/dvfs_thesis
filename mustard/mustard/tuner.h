@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cmath>
 #include <limits>
 #include <map>
 #include <optional>
@@ -8,23 +7,17 @@
 
 #include <nvml.h>
 
+#include "goal.h"
 #include "graph_assembler.h"
 #include "partitioned_dag.h"
 #include "task_profile_repository.h"
-
-namespace Goal {
-    inline double edp(uint n, uint m, double executionTime_ns, double energy_uj)
-    {
-        return std::pow(energy_uj, n) * std::pow(executionTime_ns / 1e9, m);
-    }
-}
 
 class Tuner
 {
    public:
     Tuner(const TaskProfileRepository& repo, const std::vector<DVFSSignal>& signals,
-          PartitionedDag<TileAccess> dag, const int pe)
-        : repo_(repo), signals_(signals), dag_(std::move(dag)), pe_(pe)
+          PartitionedDag<TileAccess> dag, const int pe, const DVFSGoal& goal)
+        : repo_(repo), signals_(signals), dag_(std::move(dag)), pe_(pe), goal_(goal)
     {
         nvmlInit();
         nvmlDeviceGetHandleByIndex(pe_, &nvmlDevice_);
@@ -63,7 +56,7 @@ class Tuner
         std::map<int, double> edpByFreq;
         for (auto& node : nodes)
             for (auto& p : *repo_.getProfiles(node.content.op))
-                edpByFreq[p.frequency_mhz] += Goal::edp(1, 1, p.execution_time_ns, p.energy_uj);
+                edpByFreq[p.frequency_mhz] += goal_(p.execution_time_ns, p.energy_uj);
 
         int bestFreq = std::min_element(edpByFreq.begin(), edpByFreq.end(),
                                         [](auto& a, auto& b) { return a.second < b.second; })->first;
@@ -105,6 +98,7 @@ class Tuner
     const std::vector<DVFSSignal>& signals_;
     PartitionedDag<TileAccess>     dag_;
     int                            pe_;
+    const DVFSGoal&                goal_;
     std::vector<int>               plannedFreqs_;
     nvmlDevice_t                   nvmlDevice_;
 };

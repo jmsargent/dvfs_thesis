@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cctype>
 #include <iostream>
 #include <string>
+#include <utility>
 
 #include "argh.h"
 #include "utils.h"
@@ -27,6 +29,9 @@ struct MustardConfig
     bool        measureCompute = false;
     std::string outputPrefix   = "";  // base path for per-PE output files
     std::string dbPath         = "";  // path to task profile CSV for DVFS tuner
+    std::string goalSpec       = "edp";
+    unsigned    goalN          = 1;
+    unsigned    goalM          = 1;
 };
 
 // Print common options shared by all executables.
@@ -96,6 +101,45 @@ inline void printPartitionedUsage(const char* progName)
               << std::endl;
 }
 
+// Parse a goal spec string into (energyExponent, timeExponent).
+// Supported formats:
+//   energy        → (1, 0)
+//   e[N] d[M] [p] → explicit exponents, e.g. "edp", "ed2p", "e2d3"
+// Returns false and prints an error if the spec is unrecognised.
+inline bool parseGoalExponents(const std::string& spec, unsigned& n, unsigned& m)
+{
+    if (spec == "energy") { n = 1; m = 0; return true; }
+
+    auto parseUint = [](const std::string& s, size_t& i, unsigned& out) {
+        out = 0;
+        bool any = false;
+        while (i < s.size() && std::isdigit(s[i])) { out = out * 10 + (s[i++] - '0'); any = true; }
+        return any;
+    };
+
+    size_t i = 0;
+    n = 0; m = 0;
+
+    if (i < spec.size() && spec[i] == 'e') {
+        ++i; n = 1;
+        parseUint(spec, i, n);
+    }
+
+    if (i < spec.size() && spec[i] == 'd') {
+        ++i; m = 1;
+        parseUint(spec, i, m);
+    }
+
+    if (i < spec.size() && spec[i] == 'p') ++i;
+
+    if (i != spec.size() || (n == 0 && m == 0)) {
+        std::cerr << "Error: unrecognised goal spec '" << spec << "'. "
+                  << "Examples: energy, edp, ed2p, e2d3\n";
+        return false;
+    }
+    return true;
+}
+
 // Parse the common CLI arguments shared by all mustard executables.
 // Returns false if validation fails (error already printed).
 inline bool parseCommonArgs(argh::parser& cmdl, MustardConfig& cfg)
@@ -162,6 +206,9 @@ inline bool parseCommonArgs(argh::parser& cmdl, MustardConfig& cfg)
     }
     cmdl("output", "") >> cfg.outputPrefix;
     cmdl("db", "") >> cfg.dbPath;
+    cmdl("goal", "edp") >> cfg.goalSpec;
+
+    if (!parseGoalExponents(cfg.goalSpec, cfg.goalN, cfg.goalM)) return false;
 
     return true;
 }
