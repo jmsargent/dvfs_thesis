@@ -53,3 +53,34 @@ for benchmark in ['cholesky', 'lu']:
     ylim = (0, max(np.histogram(rt, bins=bins)[0].max() for rt in data.values()) * 1.05)
     for freq, runtimes in data.items():
         runtime_histogram(runtimes, f'histogram_executiontimes_{benchmark}_{freq}.png', bins, ylim)
+        
+
+def load_waittimes(file):
+    df = pd.read_csv(file)
+    df = df[df['wait_start_ts'] != 0]
+    waittimes = (df['start_ts'].astype(int) - df['wait_start_ts'].astype(int)) / 1_000_000
+    return waittimes[waittimes >= 2000]
+
+
+def waittime_histogram(runtimes, out, bins, ylim):
+    plt.figure(figsize=(10, 5))
+    plt.hist(runtimes, bins=bins)
+    plt.xlim(bins[0], bins[-1])
+    plt.ylim(ylim)
+    plt.xlabel('waittime (ms)')
+    plt.ylabel('Count')
+    plt.title('Task waittime')
+    plt.tight_layout()
+    plt.savefig(out)
+    plt.close()
+
+
+for benchmark in ['cholesky', 'lu']:
+    data = {freq: load_waittimes(f'{BASE}/{benchmark}_{freq}/profile/profile_pe0.csv')
+            for freq in [240, 2040]}
+    all_waittimes = pd.concat(data.values())
+    xlim = (all_waittimes.min(), all_waittimes.max())
+    bins = np.linspace(*xlim, 31)
+    ylim = (0, max(np.histogram(wt, bins=bins)[0].max() for wt in data.values()) * 1.05)
+    for freq, waittimes in data.items():
+        waittime_histogram(waittimes, f'histogram_waittimes_filtered_{benchmark}_{freq}.png', bins, ylim)
