@@ -13,6 +13,19 @@ struct TileOperation
     MatrixTile              write;
     std::vector<MatrixTile> reads;
 
+    std::string toString() const
+    {
+        auto t = [](int v) { return std::to_string(v); };
+        int  r  = write.first, c = write.second;
+        if (name == "POTRF" || name == "GETRF")
+            return name + "(" + t(r) + ")";
+        if (name == "SYRK")
+            return name + "(" + t(r) + "," + t(reads[1].second) + ")";
+        if (name == "GEMM")
+            return name + "(" + t(r) + "," + t(c) + "," + t(reads[1].second) + ")";
+        return name + "(" + t(r) + "," + t(c) + ")";
+    }
+
     bool operator<(const TileOperation& other) const
     {
         if (name != other.name) return name < other.name;

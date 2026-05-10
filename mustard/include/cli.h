@@ -32,6 +32,7 @@ struct MustardConfig
     std::string goalSpec       = "edp";
     unsigned    goalN          = 1;
     unsigned    goalM          = 1;
+    bool        logPlan        = false;
 };
 
 // Print common options shared by all executables.
@@ -64,7 +65,8 @@ inline void printCommonUsage()
               << "                         cross-GPU dependency.\n"
               << "                         Example: --measure=wait_start_ts,wait_end_ts,start_ts\n"
               << "    --output=<prefix>    Write per-PE timing output to <prefix>_pe<N>.csv.\n"
-              << "                         If omitted, timing CSV is printed to stdout.\n";
+              << "                         If omitted, timing CSV is printed to stdout.\n"
+              << "    --log-plan           Log the DVFS frequency plan to <prefix>_pe<N>.log.\n";
 }
 
 // Print usage for lu_mustard / cholesky_mustard (single-node).
@@ -207,6 +209,7 @@ inline bool parseCommonArgs(argh::parser& cmdl, MustardConfig& cfg)
     cmdl("output", "") >> cfg.outputPrefix;
     cmdl("db", "") >> cfg.dbPath;
     cmdl("goal", "edp") >> cfg.goalSpec;
+    cfg.logPlan = cmdl["log-plan"];
 
     if (!parseGoalExponents(cfg.goalSpec, cfg.goalN, cfg.goalM)) return false;
 

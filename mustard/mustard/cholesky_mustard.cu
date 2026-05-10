@@ -611,7 +611,9 @@ void tiledCholeskyPanel(bool verify, bool dot)
     double              totalTime = 0.0;
 
     EDP   goal(cfg.goalN, cfg.goalM);
-    Tuner tuner(repo, dvfsSignalBuilder.signals(), partitionedDag, myPE, goal);
+    std::optional<PEWriter> planOut;
+    if (cfg.logPlan) planOut.emplace(cfg.outputPrefix, myPE, ".log");
+    Tuner tuner(repo, dvfsSignalBuilder.signals(), partitionedDag, myPE, goal, std::move(planOut));
     tuner.plan();
 
     for (int i = 0; i < runs; i++)

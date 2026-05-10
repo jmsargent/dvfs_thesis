@@ -214,14 +214,18 @@ class PartitionedCudaGraphBuilder
         TileAccess access      = f(ops_);
         int        futureIndex = (int)dag_.nodes().size();
 
-        for (const auto& readTile : access.op.reads)
+        // addNode must come before addEdge so that incoming_[futureIndex] exists
+        auto reads = access.op.reads;
+        auto write = access.op.write;
+        dag_.addNode({-1, owner, true, std::move(access)});
+
+        for (const auto& readTile : reads)
         {
             auto it = lastWriterByTile_.find(readTile);
             if (it != lastWriterByTile_.end()) dag_.addEdge({it->second, futureIndex});
         }
 
-        lastWriterByTile_[access.op.write] = futureIndex;
-        dag_.addNode({-1, owner, true, std::move(access)});
+        lastWriterByTile_[write] = futureIndex;
     }
 
     std::vector<cudaGraphExec_t> build(mustard::TiledGraphCreator& creator, cudaStream_t stream,

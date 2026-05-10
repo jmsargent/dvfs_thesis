@@ -1171,7 +1171,9 @@ void tiledLUPanel(bool verify, bool dot)
     if (!cfg.dbPath.empty()) repo.loadFromCSV(cfg.dbPath);
     auto  partitionedDag  = graphBuilder.getPartitionedGraph();
     EDP   goal(cfg.goalN, cfg.goalM);
-    Tuner tuner(repo, dvfsSignalBuilder.signals(), partitionedDag, myPE, goal);
+    std::optional<PEWriter> planOut;
+    if (cfg.logPlan) planOut.emplace(cfg.outputPrefix, myPE, ".log");
+    Tuner tuner(repo, dvfsSignalBuilder.signals(), partitionedDag, myPE, goal, std::move(planOut));
     tuner.plan();
     auto  ts              = sw.buffers();
     auto  my_tasks_sorted = partitionedDag.nodes(myPE);

@@ -15,7 +15,8 @@
 class PEWriter
 {
    public:
-    PEWriter(const std::string& prefix, int pe) : f_(nullptr), owns_file_(false)
+    PEWriter(const std::string& prefix, int pe, const std::string& suffix = ".csv")
+        : f_(nullptr), owns_file_(false)
     {
         if (prefix.empty())
         {
@@ -25,7 +26,7 @@ class PEWriter
         else
         {
             char fname[512];
-            snprintf(fname, sizeof(fname), "%s_pe%d.csv", prefix.c_str(), pe);
+            snprintf(fname, sizeof(fname), "%s_pe%d%s", prefix.c_str(), pe, suffix.c_str());
             f_         = fopen(fname, "w");
             owns_file_ = true;
             if (!f_)
@@ -41,6 +42,12 @@ class PEWriter
     {
         if (owns_file_ && f_)
             fclose(f_);
+    }
+
+    PEWriter(PEWriter&& other) noexcept : f_(other.f_), owns_file_(other.owns_file_)
+    {
+        other.f_         = nullptr;
+        other.owns_file_ = false;
     }
 
     // Not copyable; the file handle has a single owner.
