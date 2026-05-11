@@ -27,7 +27,7 @@ struct MustardConfig
     std::string measureFlags   = "";  // e.g. "task_wait_time,task_compute_time"
     bool        measureWait    = false;
     bool        measureCompute = false;
-    std::string outputPrefix   = "";  // base path for per-PE output files
+    std::string outputDir      = "";  // directory for per-PE output files
     std::string dbPath         = "";  // path to task profile CSV for DVFS tuner
     std::string goalSpec       = "edp";
     unsigned    goalN          = 1;
@@ -206,7 +206,7 @@ inline bool parseCommonArgs(argh::parser& cmdl, MustardConfig& cfg)
         cfg.measureWait    = has("wait_ms") || has("wait_start_ts") || has("wait_end_ts");
         cfg.measureCompute = has("compute_ms") || has("start_ts") || has("end_ts");
     }
-    cmdl("output", "") >> cfg.outputPrefix;
+    cmdl("output", "") >> cfg.outputDir;
     cmdl("db", "") >> cfg.dbPath;
     cmdl("goal", "edp") >> cfg.goalSpec;
     cfg.logPlan = cmdl["log-plan"];

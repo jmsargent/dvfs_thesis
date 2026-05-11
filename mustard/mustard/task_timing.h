@@ -43,11 +43,11 @@ class TaskTimingCollector
         collectWaitTimestamps(run, ts_ref);
     }
 
-    void write(const std::string& outputPrefix, int myPE,
+    void write(const std::string& outputDir, int myPE,
                const std::vector<std::string>& opNames) const
     {
         if (!active()) return;
-        PEWriter out(outputPrefix, myPE);
+        PEWriter out(outputDir, "tasks", myPE, ".csv");
         out.print("pe,run,task_id,op_name");
         for (Col col : active_cols_) out.print(",%s", colName(col));
         out.print("\n");

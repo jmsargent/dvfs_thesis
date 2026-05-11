@@ -612,7 +612,7 @@ void tiledCholeskyPanel(bool verify, bool dot)
 
     EDP   goal(cfg.goalN, cfg.goalM);
     std::optional<PEWriter> planOut;
-    if (cfg.logPlan) planOut.emplace(cfg.outputPrefix, myPE, ".log");
+    if (cfg.logPlan) planOut.emplace(cfg.outputDir, "plan", myPE, ".log");
     Tuner tuner(repo, dvfsSignalBuilder.signals(), partitionedDag, myPE, goal, std::move(planOut));
     tuner.plan();
 
@@ -659,7 +659,7 @@ void tiledCholeskyPanel(bool verify, bool dot)
     }
     printf("Total time used (s): %4.4f\n", totalTime);
 
-    collector.write(cfg.outputPrefix, myPE, creator->subgraphOpNames);
+    collector.write(cfg.outputDir, myPE, creator->subgraphOpNames);
 
     if (verify)
     {
@@ -700,10 +700,12 @@ int main(int argc, char** argv)
     auto init_end = std::chrono::high_resolution_clock::now();
 
     myPE = cfg.myPE;
-    if (!cfg.outputPrefix.empty())
+    if (!cfg.outputDir.empty())
     {
         char logname[512];
-        snprintf(logname, sizeof(logname), "%s_pe%d.log", cfg.outputPrefix.c_str(), myPE);
+        const char* sep = (cfg.outputDir.back() == '/') ? "" : "/";
+        snprintf(logname, sizeof(logname), "%s%sruntime_pe%d.log",
+                 cfg.outputDir.c_str(), sep, myPE);
         FILE* f = fopen(logname, "w");
         if (f) g_log = f;
     }

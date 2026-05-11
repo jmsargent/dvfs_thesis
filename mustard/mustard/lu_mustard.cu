@@ -1040,7 +1040,7 @@ void tiledLUStatic(bool verify, bool dot)
     if (col_wait_ms || col_compute_ms || col_start_ts || col_end_ts || col_wait_start_ts ||
         col_wait_end_ts)
     {
-        PEWriter out(cfg.outputPrefix, myPE);
+        PEWriter out(cfg.outputDir, "tasks", myPE, ".csv");
 
         out.print("pe,run,task_id,op_name");
         if (col_wait_ms) out.print(",wait_ms");
@@ -1172,7 +1172,7 @@ void tiledLUPanel(bool verify, bool dot)
     auto  partitionedDag  = graphBuilder.getPartitionedGraph();
     EDP   goal(cfg.goalN, cfg.goalM);
     std::optional<PEWriter> planOut;
-    if (cfg.logPlan) planOut.emplace(cfg.outputPrefix, myPE, ".log");
+    if (cfg.logPlan) planOut.emplace(cfg.outputDir, "plan", myPE, ".log");
     Tuner tuner(repo, dvfsSignalBuilder.signals(), partitionedDag, myPE, goal, std::move(planOut));
     tuner.plan();
     auto  ts              = sw.buffers();
@@ -1235,7 +1235,7 @@ void tiledLUPanel(bool verify, bool dot)
     }
     printf("Total time used (s): %4.4f\n", totalTime);
 
-    collector.write(cfg.outputPrefix, myPE, creator->subgraphOpNames);
+    collector.write(cfg.outputDir, myPE, creator->subgraphOpNames);
 
     if (verify)
         printf("device %d | tiledLUPanel: verification not yet implemented for panel layout\n",

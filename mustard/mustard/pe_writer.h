@@ -4,21 +4,22 @@
 #include <cstdio>
 #include <string>
 
-// PEWriter routes printf-style output to a per-PE file (<prefix>_pe<N>.csv),
-// or to stdout when no prefix is given. Eliminates collisions in multi-GPU
+// PEWriter routes printf-style output to a per-PE file (<dir>/<filename>_pe<N><extension>),
+// or to stdout when no dir is given. Eliminates collisions in multi-GPU
 // jobs where all ranks share the same Slurm output file.
 //
 // Usage:
-//   PEWriter out(cfg.outputPrefix, myPE);
+//   PEWriter out(cfg.outputDir, "tasks", myPE, ".csv");
 //   out.print("pe,run,task_id\n");
 //   out.print("%d,%d,%d\n", myPE, run, task_id);
 class PEWriter
 {
    public:
-    PEWriter(const std::string& prefix, int pe, const std::string& suffix = ".csv")
+    PEWriter(const std::string& dir, const std::string& filename, int pe,
+             const std::string& extension)
         : f_(nullptr), owns_file_(false)
     {
-        if (prefix.empty())
+        if (dir.empty())
         {
             f_          = stdout;
             owns_file_  = false;
@@ -26,7 +27,9 @@ class PEWriter
         else
         {
             char fname[512];
-            snprintf(fname, sizeof(fname), "%s_pe%d%s", prefix.c_str(), pe, suffix.c_str());
+            const char* sep = (dir.back() == '/') ? "" : "/";
+            snprintf(fname, sizeof(fname), "%s%s%s_pe%d%s",
+                     dir.c_str(), sep, filename.c_str(), pe, extension.c_str());
             f_         = fopen(fname, "w");
             owns_file_ = true;
             if (!f_)
