@@ -66,11 +66,17 @@ class PartitionedDag
         return false;
     }
 
-    // Returns the first node in the partition with no incoming edges.
+    // Returns the first node in the partition with no within-partition incoming edges.
     NodeType getRoot(int partition) const
     {
         for (auto& n : nodes_)
-            if (n.partition == partition && incomingEdges(n.index).empty()) return n;
+        {
+            if (n.partition != partition) continue;
+            bool hasIncomingSamePartition = false;
+            for (int src : incomingEdges(n.index))
+                if (nodes_[src].partition == partition) { hasIncomingSamePartition = true; break; }
+            if (!hasIncomingSamePartition) return n;
+        }
         throw std::runtime_error("no root node for partition");
     }
 

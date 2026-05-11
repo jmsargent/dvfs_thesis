@@ -113,9 +113,10 @@ inline bool parseGoalExponents(const std::string& spec, unsigned& n, unsigned& m
     if (spec == "energy") { n = 1; m = 0; return true; }
 
     auto parseUint = [](const std::string& s, size_t& i, unsigned& out) {
-        out = 0;
+        unsigned val = 0;
         bool any = false;
-        while (i < s.size() && std::isdigit(s[i])) { out = out * 10 + (s[i++] - '0'); any = true; }
+        while (i < s.size() && std::isdigit(s[i])) { val = val * 10 + (s[i++] - '0'); any = true; }
+        if (any) out = val;
         return any;
     };
 

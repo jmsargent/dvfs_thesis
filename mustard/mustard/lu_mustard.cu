@@ -1149,7 +1149,7 @@ void tiledLUPanel(bool verify, bool dot)
 
     OperationCapturer                             capturer(*creator, d_completion_flags.data(), s);
     KernelStopWatch                               sw(flags, capturer);
-    DVFSSignalBuilder                             dvfsSignalBuilder(capturer);
+    CUDASignalBuilder                             dvfsSignalBuilder(capturer);
     PartitionedCudaGraphBuilder<LUCudaOperations> graphBuilder(myPE, ops, capturer, sw,
                                                                dvfsSignalBuilder);
 
@@ -1173,8 +1173,9 @@ void tiledLUPanel(bool verify, bool dot)
     EDP   goal(cfg.goalN, cfg.goalM);
     std::optional<PEWriter> planOut;
     if (cfg.logPlan) planOut.emplace(cfg.outputDir, "plan", myPE, ".log");
-    Tuner tuner(repo, dvfsSignalBuilder.signals(), partitionedDag, myPE, goal, std::move(planOut));
-    tuner.plan();
+    FrequencyScaler scaler(repo, partitionedDag, myPE, goal, std::move(planOut));
+    RuntimeEventHandler tuner(std::move(scaler), dvfsSignalBuilder.signals());
+    tuner.init();
     auto  ts              = sw.buffers();
     auto  my_tasks_sorted = partitionedDag.nodes(myPE);
     auto  numTasksSorted  = (int)my_tasks_sorted.size();

@@ -163,30 +163,44 @@ class KernelStopWatch
     unsigned long long* d_compTs_ = nullptr;
 };
 
-struct DVFSSignal
+enum class KernelStatusUpdate { Waiting, Running };
+
+struct CUDASignal
 {
     cudaEvent_t   event;
+    cudaEvent_t   kernelStartEvent = nullptr;
     TileOperation op;
 };
 
-class DVFSSignalBuilder
+class CUDASignalBuilder
 {
    public:
-    DVFSSignalBuilder(OperationCapturer& capturer) : capturer_(capturer) {}
+    CUDASignalBuilder(OperationCapturer& capturer) : capturer_(capturer) {}
 
     void newSignal(const TileOperation& op)
     {
         cudaEvent_t ev;
         cudaEventCreateWithFlags(&ev, cudaEventDisableTiming);
         capturer_.recordEvent(ev);
-        signals_.push_back({ev, op});
+        signals_.push_back({ev, nullptr, op});
     }
 
-    const std::vector<DVFSSignal>& signals() const { return signals_; }
+    // Records the kernel-start event for the most recently opened signal.
+    // No-op if no signal has been opened or one was already committed.
+    void recordKernelStart()
+    {
+        if (signals_.empty() || signals_.back().kernelStartEvent != nullptr) return;
+        cudaEvent_t ev;
+        cudaEventCreateWithFlags(&ev, cudaEventDisableTiming);
+        capturer_.recordEvent(ev);
+        signals_.back().kernelStartEvent = ev;
+    }
+
+    const std::vector<CUDASignal>& signals() const { return signals_; }
 
    private:
     OperationCapturer&      capturer_;
-    std::vector<DVFSSignal> signals_;
+    std::vector<CUDASignal> signals_;
 };
 
 template <typename Ops>
@@ -198,11 +212,11 @@ class PartitionedCudaGraphBuilder
     Ops&                       ops_;
     OperationCapturer&         capturer_;
     KernelStopWatch&           sw_;
-    DVFSSignalBuilder&         dvfsSignalBuilder_;
+    CUDASignalBuilder&         dvfsSignalBuilder_;
 
    public:
     PartitionedCudaGraphBuilder(int myPE, Ops& ops, OperationCapturer& capturer,
-                                KernelStopWatch& sw, DVFSSignalBuilder& dvfsSignalBuilder)
+                                KernelStopWatch& sw, CUDASignalBuilder& dvfsSignalBuilder)
         : myPE_(myPE), ops_(ops), capturer_(capturer), sw_(sw),
           dvfsSignalBuilder_(dvfsSignalBuilder)
     {
@@ -261,6 +275,7 @@ class PartitionedCudaGraphBuilder
                     capturer_.launchWait(d_wait, (int)waitIndices.size());
                     sw_.waitEnd(localIdx);
                 }
+                dvfsSignalBuilder_.recordKernelStart();
                 sw_.compStart(localIdx);
                 n.content.work();
                 sw_.compEnd(localIdx);

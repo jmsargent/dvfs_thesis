@@ -16,11 +16,12 @@ struct TaskProfile
     int    frequency_mhz;
     int    energy_uj;
     double execution_time_ns;
+    std::vector<long> waittimes_ns;
 };
 
 // /data/users/sargent/dvfs_thesis/database/cholesky_database.csv
 // /data/users/sargent/dvfs_thesis/database/lu_database.csv
-// op_name,pe,freq_mhz,energy_consumed_uj,executiontime_ns
+// op_name,pe,freq_mhz,energy_consumed_uj,executiontime_ns,waittime0_ns,waittime1_ns,...
 class TaskProfileRepository
 {
    public:
@@ -28,9 +29,10 @@ class TaskProfileRepository
 
     explicit TaskProfileRepository(int pe, Algorithm alg) : pe_(pe), alg_(alg) {}
 
-    void insert(const TileOperation& op, int frequency_mhz, int energy_uj, double execution_time_ns)
+    void insert(const TileOperation& op, int frequency_mhz, int energy_uj, double execution_time_ns,
+                std::vector<long> waittimes_ns = {})
     {
-        profiles_[op].push_back({frequency_mhz, energy_uj, execution_time_ns});
+        profiles_[op].push_back({frequency_mhz, energy_uj, execution_time_ns, std::move(waittimes_ns)});
     }
 
     const std::vector<TaskProfile>* getProfiles(const TileOperation& op) const
@@ -76,7 +78,12 @@ class TaskProfileRepository
             std::getline(ss, tok, ',');
             exec_ns = std::stod(tok);
 
-            insert(TileOperation::fromString(op_name, alg_), freq_mhz, (int)std::round(energy_uj), exec_ns);
+            std::vector<long> waittimes;
+            while (std::getline(ss, tok, ','))
+                waittimes.push_back(std::stol(tok));
+
+            insert(TileOperation::fromString(op_name, alg_), freq_mhz, (int)std::round(energy_uj),
+                   exec_ns, std::move(waittimes));
         }
     }
 

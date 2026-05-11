@@ -563,7 +563,7 @@ void tiledCholeskyPanel(bool verify, bool dot)
     MeasureFlags      flags{cfg.measureWait, cfg.measureCompute};
     OperationCapturer capturer(*creator, d_completion_flags.data(), s);
     KernelStopWatch   sw(flags, capturer);
-    DVFSSignalBuilder dvfsSignalBuilder(capturer);
+    CUDASignalBuilder dvfsSignalBuilder(capturer);
     PartitionedCudaGraphBuilder<CholeskyCudaOperations> graphBuilder(myPE, ops, capturer, sw,
                                                                      dvfsSignalBuilder);
 
@@ -613,8 +613,9 @@ void tiledCholeskyPanel(bool verify, bool dot)
     EDP   goal(cfg.goalN, cfg.goalM);
     std::optional<PEWriter> planOut;
     if (cfg.logPlan) planOut.emplace(cfg.outputDir, "plan", myPE, ".log");
-    Tuner tuner(repo, dvfsSignalBuilder.signals(), partitionedDag, myPE, goal, std::move(planOut));
-    tuner.plan();
+    FrequencyScaler scaler(repo, partitionedDag, myPE, goal, std::move(planOut));
+    RuntimeEventHandler tuner(std::move(scaler), dvfsSignalBuilder.signals());
+    tuner.init();
 
     for (int i = 0; i < runs; i++)
     {
