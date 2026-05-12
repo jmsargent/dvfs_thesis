@@ -2,16 +2,21 @@
   "git_sha": "a9390bcd8265760ba52d8dbcef555f0a6940c6e7",
   "id": "100-profile-benchmarks-retune-on-synchronisation-points",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/100-profile-benchmarks-retune-on-synchronisation-points",
-  "last_update_at": "2026-05-12T15:17:08+02:00",
+  "last_update_at": "2026-05-12T16:34:41+02:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/100-profile-benchmarks-retune-on-synchronisation-points/slurm-202772.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/100-profile-benchmarks-retune-on-synchronisation-points/slurm-202772.out",
   "queued_at": "2026-05-11T23:56:17+02:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/100-profile-benchmarks-retune-on-synchronisation-points/run.sbatch",
   "slurm_info": {
-    "raw_state": "RUNNING",
-    "source": "squeue"
+    "ElapsedRaw": "4662",
+    "ExitCode": "0:0",
+    "JobIDRaw": "202772",
+    "MaxRSS": "",
+    "State": "COMPLETED",
+    "raw_state": "COMPLETED",
+    "source": "sacct"
   },
   "slurm_job_id": 202772,
-  "state": "RUNNING",
+  "state": "COMPLETED",
   "submitted_at": "2026-05-11T23:56:19+02:00"
 }
