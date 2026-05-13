@@ -1,4 +1,7 @@
 {
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff"
+    },
     "cmake.sourceDirectory": "/data/users/sargent/dvfs_thesis/mustard",
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "ms-vscode.cpptools",
