@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <vector>
 
 #include "frequency_scaler.h"
@@ -7,27 +8,22 @@
 class RuntimeEventHandler
 {
    public:
-    RuntimeEventHandler(FrequencyScaler&& scaler, const std::vector<CUDASignal>& signals)
+    RuntimeEventHandler(std::unique_ptr<IRuntimeEventHandle> scaler, const std::vector<CUDASignal>& signals)
         : scaler_(std::move(scaler)), signals_(signals)
     {}
 
-    void init() { scaler_.init(); }
-
-    const std::vector<std::vector<std::string>>& plannedNames() const
-    {
-        return scaler_.plannedNames();
-    }
+    void init() { scaler_->init(); }
 
     void run()
     {
-        if (scaler_.intervalCount() == 0) return;
+        if (signals_.empty()) return;
 
-        for (size_t i = 0; i < scaler_.intervalCount() - 1; ++i)
+        for (size_t i = 0; i < signals_.size() - 1; ++i)
         {
             while (cudaEventQuery(signals_[i].event) != cudaSuccess);
-            scaler_.onSignal(i, KernelStatusUpdate::Waiting);
+            scaler_->onSignal(i, KernelStatusUpdate::Waiting);
             while (cudaEventQuery(signals_[i].kernelStartEvent) != cudaSuccess);
-            scaler_.onSignal(i, KernelStatusUpdate::Running);
+            scaler_->onSignal(i, KernelStatusUpdate::Running);
         }
     }
 
@@ -42,6 +38,6 @@ class RuntimeEventHandler
     }
 
    private:
-    FrequencyScaler                scaler_;
-    const std::vector<CUDASignal>& signals_;
+    std::unique_ptr<IRuntimeEventHandle> scaler_;
+    const std::vector<CUDASignal>&       signals_;
 };

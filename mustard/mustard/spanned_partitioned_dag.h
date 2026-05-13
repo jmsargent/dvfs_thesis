@@ -86,6 +86,31 @@ class SpannedPartitionedDag : public PartitionedDag<Content>
         return gaps;
     }
 
+    void computeSlack()
+    {
+        int n = (int)spannedNodes_.size();
+        lst_.resize(n);
+        SpanT ms = makespan();
+        for (int i = n - 1; i >= 0; --i)
+        {
+            SpanT duration = spannedNodes_[i].span.end - spannedNodes_[i].span.start;
+            auto& out      = this->outgoingEdges(i);
+            if (out.empty())
+            {
+                lst_[i] = ms - duration;
+            }
+            else
+            {
+                SpanT earliest_child_lst = lst_[out[0]];
+                for (int j = 1; j < (int)out.size(); ++j)
+                    earliest_child_lst = std::min(earliest_child_lst, lst_[out[j]]);
+                lst_[i] = earliest_child_lst - duration;
+            }
+        }
+    }
+
+    SpanT slack(int nodeIdx) const { return lst_[nodeIdx] - spannedNodes_[nodeIdx].span.start; }
+
     std::vector<SpannedNodeType>&       spannedNodes() { return spannedNodes_; }
     const std::vector<SpannedNodeType>& spannedNodes() const { return spannedNodes_; }
 
@@ -126,5 +151,6 @@ class SpannedPartitionedDag : public PartitionedDag<Content>
     }
 
     std::vector<SpannedNodeType> spannedNodes_;
+    std::vector<SpanT>           lst_;
     SpanT                        maxEnd_ = SpanT{};
 };

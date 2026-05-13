@@ -4,7 +4,6 @@
 
 #include <atomic>
 #include <chrono>
-#include <limits>
 #include <map>
 #include <memory>
 #include <optional>
@@ -17,9 +16,18 @@
 #include "partitioned_dag.h"
 #include "pe_writer.h"
 #include "retune_delay_tracker.h"
+#include "spanned_partitioned_dag.h"
 #include "task_profile_repository.h"
 
 using namespace std::chrono_literals;
+
+class IRuntimeEventHandle
+{
+   public:
+    virtual ~IRuntimeEventHandle()                                 = default;
+    virtual void init()                                            = 0;
+    virtual void onSignal(size_t signalIdx, KernelStatusUpdate status) = 0;
+};
 
 class FrequencyUpdateScheduler
 {
@@ -72,7 +80,7 @@ struct IntervalPlan
     std::optional<int>       nextNodeIndex;
 };
 
-class FrequencyScaler
+class FrequencyScaler : public IRuntimeEventHandle
 {
    public:
     FrequencyScaler(const TaskProfileRepository& repo, PartitionedDag<TileAccess> dag, int pe,
@@ -114,8 +122,6 @@ class FrequencyScaler
                                      plannedFreqs_[signalIdx + 1]);
     }
 
-    const std::vector<std::vector<std::string>>& plannedNames() const { return plannedNames_; }
-    size_t intervalCount() const { return plannedFreqs_.size(); }
 
    private:
     void printPlan()
@@ -172,7 +178,7 @@ class FrequencyScaler
     nvmlDevice_t                          nvmlDevice_;
 };
 
-class FrequencyScalerWaittimeDowntune
+class FrequencyScalerWaittimeDowntune : public IRuntimeEventHandle
 {
    public:
     FrequencyScalerWaittimeDowntune(const TaskProfileRepository& repo,
@@ -273,8 +279,6 @@ class FrequencyScalerWaittimeDowntune
         }
     }
 
-    const std::vector<std::vector<std::string>>& plannedNames() const { return plannedNames_; }
-    size_t intervalCount() const { return plannedFreqs_.size(); }
 
    private:
     void printPlan()
@@ -364,3 +368,80 @@ class FrequencyScalerWaittimeDowntune
     std::unique_ptr<FrequencyUpdateScheduler> scheduler_;
     std::unique_ptr<IdlePower>                idlePower_;
 };
+
+
+inline SpannedPartitionedDag<TileOperation, double>
+makeSpannedDag(const PartitionedDag<TileAccess>& dag,
+               const TaskProfileRepository&      repo,
+               int                               baselineFreq)
+{
+    SpannedPartitionedDag<TileOperation, double> spanned;
+
+    std::vector<double> est(dag.nodes().size(), 0.0);
+
+    for (auto& n : dag.nodes())
+    {
+        for (int src : dag.incomingEdges(n.index))
+        {
+            auto p = repo.getProfile(dag.nodes()[src].content.op, baselineFreq);
+            double parentEnd = est[src] + (p ? p->execution_time_ns : 0.0);
+            est[n.index] = std::max(est[n.index], parentEnd);
+        }
+
+        auto p = repo.getProfile(n.content.op, baselineFreq);
+        double dur = p ? p->execution_time_ns : 0.0;
+
+        SpannedNode<TileOperation, double> sn;
+        sn.partition = n.partition;
+        sn.content   = n.content.op;
+        sn.span      = {est[n.index], est[n.index] + dur};
+        spanned.addNode(sn);
+    }
+
+    for (auto& e : dag.edges())
+        spanned.addEdge(e);
+
+    return spanned;
+}
+
+class SlackAwareFrequencyScaler : public IRuntimeEventHandle
+{
+   public:
+    SlackAwareFrequencyScaler(const TaskProfileRepository& repo,
+                               PartitionedDag<TileAccess>  dag,
+                               int                         pe,
+                               const RetuneDelayTracker&   retuneDelayTracker,
+                               int                         baselineFreq)
+        : repo_(repo),
+          dag_(std::move(dag)),
+          pe_(pe),
+          retuneDelayTracker_(retuneDelayTracker),
+          baselineFreq_(baselineFreq)
+    {}
+
+    void init() override
+    {
+        auto spanned = makeSpannedDag(dag_, repo_, baselineFreq_);
+        spanned.computeSlack();
+    }
+
+    /*
+        There are 2 kinds of intra-partition-intervals (IPI) in the PDAG
+        PI: IPIs that preceede critical path
+        NPI: IPIs that do not ( These are most interesting to retune )
+
+        NPI: does not need to tune back before entering critical path
+
+        We need a model and a strategy for retuning
+    */
+
+    void onSignal(size_t signalIdx, KernelStatusUpdate) override {}
+
+   private:
+    const TaskProfileRepository& repo_;
+    PartitionedDag<TileAccess>   dag_;
+    int                          pe_;
+    const RetuneDelayTracker&    retuneDelayTracker_;
+    int                          baselineFreq_;
+};
+
