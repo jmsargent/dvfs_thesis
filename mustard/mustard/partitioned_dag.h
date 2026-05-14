@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <set>
 #include <stdexcept>
 #include <vector>
@@ -105,6 +106,13 @@ class PartitionedDag
         for (int dst : outgoingEdges(nodeIndex))
             if (nodes_[dst].partition == partition) { nodeIndex = dst; return true; }
         return false;
+    }
+
+    std::optional<int> nextNode(int nodeIndex, int partition) const
+    {
+        for (int dst : outgoingEdges(nodeIndex))
+            if (nodes_[dst].partition == partition) return dst;
+        return std::nullopt;
     }
 
     std::vector<int> crossIncomingNodeIndices(const NodeType& n) const

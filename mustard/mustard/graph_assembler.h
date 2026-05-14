@@ -170,6 +170,7 @@ struct CUDASignal
     cudaEvent_t   event;
     cudaEvent_t   kernelStartEvent = nullptr;
     TileOperation op;
+    int           nodeIndex        = -1;
 };
 
 class CUDASignalBuilder
@@ -177,12 +178,12 @@ class CUDASignalBuilder
    public:
     CUDASignalBuilder(OperationCapturer& capturer) : capturer_(capturer) {}
 
-    void newSignal(const TileOperation& op)
+    void newSignal(const TileOperation& op, int nodeIndex)
     {
         cudaEvent_t ev;
         cudaEventCreateWithFlags(&ev, cudaEventDisableTiming);
         capturer_.recordEvent(ev);
-        signals_.push_back({ev, nullptr, op});
+        signals_.push_back({ev, nullptr, op, nodeIndex});
     }
 
     // Records the kernel-start event for the most recently opened signal.
@@ -268,7 +269,7 @@ class PartitionedCudaGraphBuilder
                 capturer_.beginCapture(n.content.op.write, n.content.op.reads, n.content.op.name);
                 if (d_wait)
                 {
-                    dvfsSignalBuilder_.newSignal(n.content.op);
+                    dvfsSignalBuilder_.newSignal(n.content.op, n.index);
 
 
                     sw_.waitStart(localIdx);

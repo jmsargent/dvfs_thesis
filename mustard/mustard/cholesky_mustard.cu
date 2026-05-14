@@ -24,6 +24,7 @@
 #include "pe_writer.h"
 #include "task_timing.h"
 #include "time_utils.cuh"
+#include "scaler_factory.h"
 #include "tuner.h"
 #include "verify.h"
 
@@ -613,7 +614,9 @@ void tiledCholeskyPanel(bool verify, bool dot)
     EDP   goal(cfg.goalN, cfg.goalM);
     std::optional<PEWriter> planOut;
     if (cfg.logPlan) planOut.emplace(cfg.outputDir, "plan", myPE, ".log");
-    FrequencyScaler scaler(repo, partitionedDag, myPE, goal, std::move(planOut));
+    L4RetuneDelayTracker retuneDelayTracker;
+    auto scaler = makeScaler(cfg, repo, partitionedDag, myPE, goal, retuneDelayTracker,
+                             makeController(cfg, myPE), std::move(planOut));
     RuntimeEventHandler tuner(std::move(scaler), dvfsSignalBuilder.signals());
     tuner.init();
 
