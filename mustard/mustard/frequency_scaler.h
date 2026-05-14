@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <deque>
 #include <map>
 #include <memory>
 #include <optional>
@@ -1033,10 +1034,16 @@ class GreedyNpiDowntuner : public IRuntimeEventHandle
     std::optional<PEWriter>                        out_;
 };
 
-// Combined slack-aware scaler that handles all three NPI regions per PE:
-//   1. Leading NPI prefix (before the first PI node) — backward-walk ramp-up
-//   2. Interior NPI gaps (PI → NPI → PI sandwiches) — backward-walk within each gap
-//   3. Trailing NPI suffix (after the last PI node) — single downtune, no uptune needed
+// Combined slack-aware scaler implementing a three-zone strategy per PE.
+// All frequency transitions are ordered events in freqQueue_ (deque of (nodeId, freq)).
+// nodeId == -1 is a sentinel for the zone A downtune, consumed once in init().
+// During runtime, onSignal pops the front of the queue when the signalling node matches.
+//   Zone A (1x): NPI prefix before the first CP entry. Downtune at sentinel -1, applied
+//                in init(); backward-walk ramp-up schedules uptunes on NPI nodes.
+//   Zone B (0+): NPI gap(s) between consecutive CP segments. Downtune on region[0],
+//                uptune(s) from backward walk. Closing PI node carries a safety reset.
+//   Zone C (1x): trailing NPI suffix after the last CP exit. Step-downs assigned
+//                to their estimated nodes; no uptune needed.
 class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
 {
    public:
@@ -1060,25 +1067,34 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
     {
         spanned_ = makeSpannedDag(dag_, repo_, baselineFreq_);
         spanned_.computeSlack();
-
-        startFreq_ = baselineFreq_;
-        buildLeadingPrefix();
-        buildInteriorGaps();
-        buildTrailingSuffix();
-
+        buildSchedule();
         if (out_) printPlan();
-        ctrl_->setFrequency(startFreq_);
+        int zoneAFreq = baselineFreq_;
+        if (!freqQueue_.empty() && freqQueue_.front().first == -1)
+        {
+            zoneAFreq = freqQueue_.front().second;
+            freqQueue_.pop_front();
+        }
+        currentFreq_ = zoneAFreq;
+        ctrl_->setFrequency(zoneAFreq);
     }
 
     void onSignal(size_t, int nodeIdx, KernelStatusUpdate status) override
     {
         if (status != KernelStatusUpdate::Waiting) return;
-        auto it = retuneSchedule_.find(nodeIdx);
-        if (it != retuneSchedule_.end())
-            ctrl_->setFrequency(it->second);
+        if (freqQueue_.empty() || freqQueue_.front().first != nodeIdx) return;
+        int freq = freqQueue_.front().second;
+        freqQueue_.pop_front();
+        if (freq != currentFreq_)
+        {
+            currentFreq_ = freq;
+            ctrl_->setFrequency(freq);
+        }
     }
 
    private:
+    using FreqEvent = std::pair<int, int>;  // (nodeId, freq); nodeId == -1 means zone A init
+
     std::vector<int> getAvailableFreqs(int nodeIdx) const
     {
         std::vector<int> freqs;
@@ -1100,181 +1116,134 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
         return targetFreq;
     }
 
-    // Walk backward through intervalStarts[N-1..1], scheduling uptunes toward targetFreq.
-    // Returns the lowest feasible starting frequency for intervalStarts[0].
-    int applyBackwardWalk(const std::vector<int>& intervalStarts,
-                          const std::vector<int>& availableFreqs,
-                          int                     targetFreq)
+    // All PE nodes that have a cross-partition incoming edge, sorted by span.start.
+    // This visits parallel/isolated nodes that dag_.next traversal would miss.
+    std::vector<int> collectSchedulingPoints() const
     {
-        for (int i = (int)intervalStarts.size() - 1; i > 0; --i)
+        std::vector<int> pts;
+        for (auto& n : dag_.nodes())
         {
-            int node     = intervalStarts[i];
+            if (n.partition != pe_) continue;
+            if (!dag_.hasIncomingXPartition(n)) continue;
+            pts.push_back(n.index);
+        }
+        std::sort(pts.begin(), pts.end(), [this](int a, int b) {
+            return spanned_.spannedNodes()[a].span.start < spanned_.spannedNodes()[b].span.start;
+        });
+        return pts;
+    }
+
+    // Backward walk through region[N-1..1], collecting uptunes toward baselineFreq_.
+    // Returns the lowest feasible starting frequency for the zone.
+    int applyBackwardWalk(const std::vector<int>& region, const std::vector<int>& availableFreqs,
+                          std::vector<FreqEvent>& out)
+    {
+        int targetFreq = baselineFreq_;
+        for (int i = (int)region.size() - 1; i > 0; --i)
+        {
+            int node     = region[i];
             int fromFreq = lowestFeasibleFrom(availableFreqs, targetFreq, spanned_.slack(node));
             if (fromFreq != targetFreq)
-                retuneSchedule_[node] = targetFreq;
+                out.push_back({node, targetFreq});
             targetFreq = fromFreq;
         }
         return targetFreq;
     }
 
-    // Leading NPI prefix: all NPI intervals from the root up to the first PI node.
-    // One big downtune at the start, backward-walk ramp-up to arrive at baseline
-    // by the time the first PI node runs. If the first NPI node has no cross-partition
-    // incoming edge (i.e. it is the root), the downtune is applied at init time via startFreq_.
-    void buildLeadingPrefix()
+    // Zone A: NPI prefix before the first CP entry.
+    // Emits a (-1, freq) sentinel consumed in init(); uptunes go to their nodes.
+    void buildZoneA(const std::vector<int>& region, const std::vector<int>& availableFreqs,
+                    std::vector<FreqEvent>& out)
     {
-        int nodeIdx = dag_.getRoot(pe_).index;
-        if (spanned_.slack(nodeIdx) <= 0.0) return;
+        if (region.empty()) return;
+        int startingFreq = applyBackwardWalk(region, availableFreqs, out);
+        if (startingFreq != baselineFreq_)
+            out.push_back({-1, startingFreq});
+    }
 
-        std::vector<int> intervalStarts;
-        while (true)
+    // Zone B: NPI gap between two CP segments.
+    // Closing PI node gets a safety reset; region[0] gets the downtune.
+    void buildZoneB(const std::vector<int>& region, const std::vector<int>& availableFreqs,
+                    int piNodeIdx, std::vector<FreqEvent>& out)
+    {
+        out.push_back({piNodeIdx, baselineFreq_});
+        if (region.empty()) return;
+        int startingFreq = applyBackwardWalk(region, availableFreqs, out);
+        if (startingFreq != baselineFreq_)
+            out.push_back({region[0], startingFreq});
+    }
+
+    // Zone C: trailing NPI suffix after the last CP exit — no uptune needed.
+    void buildZoneC(const std::vector<int>& region, const std::vector<int>& availableFreqs,
+                    std::vector<FreqEvent>& out)
+    {
+        if (region.empty()) return;
+        int currentFreq = baselineFreq_;
+        for (int nodeIdx : region)
         {
-            if (spanned_.slack(nodeIdx) <= 0.0) break;
-            intervalStarts.push_back(nodeIdx);
-            auto interval = dag_.untilIncomingXEdge(dag_.nodes()[nodeIdx]);
-            if (interval.empty()) break;
-            int last = interval.back().index;
-            if (!dag_.next(last, pe_)) break;
-            nodeIdx = last;
+            double budget   = spanned_.slack(nodeIdx);
+            int    nextFreq = currentFreq;
+            for (int freq : availableFreqs)
+            {
+                if (freq >= currentFreq) break;
+                double cost = (double)retuneDelayTracker_.getRetuneDelay(currentFreq, freq).count();
+                if (cost <= budget)
+                {
+                    nextFreq = freq;
+                    break;
+                }
+            }
+            if (nextFreq == currentFreq) continue;
+            out.push_back({nodeIdx, nextFreq});
+            currentFreq = nextFreq;
+            if (currentFreq == availableFreqs.front()) break;
         }
+    }
 
-        if (intervalStarts.empty()) return;
+    void buildSchedule()
+    {
+        auto pts = collectSchedulingPoints();
+        if (pts.empty()) return;
 
-        auto availableFreqs = getAvailableFreqs(intervalStarts[0]);
+        auto availableFreqs = getAvailableFreqs(pts[0]);
         if (availableFreqs.empty()) return;
 
-        int startingFreq = applyBackwardWalk(intervalStarts, availableFreqs, baselineFreq_);
+        std::vector<FreqEvent> events;
+        std::vector<int>       region;
+        bool                   seenPI = false;
 
-        if (startingFreq != baselineFreq_)
+        for (int nodeIdx : pts)
         {
-            retuneSchedule_[intervalStarts[0]] = startingFreq;
-            if (!dag_.hasIncomingXPartition(dag_.nodes()[intervalStarts[0]]))
-                startFreq_ = startingFreq;
+            if (spanned_.slack(nodeIdx) > 0.0)
+            {
+                region.push_back(nodeIdx);
+            }
+            else
+            {
+                if (!seenPI)
+                {
+                    buildZoneA(region, availableFreqs, events);
+                    events.push_back({nodeIdx, baselineFreq_});  // safety for zone A boundary
+                }
+                else
+                {
+                    buildZoneB(region, availableFreqs, nodeIdx, events);
+                }
+                seenPI = true;
+                region.clear();
+            }
         }
-    }
+        buildZoneC(region, availableFreqs, events);
 
-    // Interior NPI gaps: NPI regions sandwiched between two PI segments (PI → NPI → PI).
-    // For each gap, one big downtune at the gap start and a backward-walk ramp-up to
-    // arrive at baseline before the PI re-entry node.
-    void buildInteriorGaps()
-    {
-        struct NpiGap { int gapStart; int piReentry; };
-        std::vector<NpiGap> gaps;
+        // Sort into execution order: -1 sentinel first, then by span.start.
+        std::sort(events.begin(), events.end(), [this](const FreqEvent& a, const FreqEvent& b) {
+            if (a.first == -1) return true;
+            if (b.first == -1) return false;
+            return spanned_.spannedNodes()[a.first].span.start
+                 < spanned_.spannedNodes()[b.first].span.start;
+        });
 
-        int  nodeIdx  = dag_.getRoot(pe_).index;
-        bool inNpi    = false;
-        int  gapStart = -1;
-        bool seenPi   = false;
-
-        do {
-            bool isNpi = spanned_.slack(nodeIdx) > 0.0;
-            if (!isNpi)
-            {
-                seenPi = true;
-                if (inNpi)
-                {
-                    inNpi = false;
-                    for (int src : dag_.incomingEdges(nodeIdx))
-                    {
-                        if (dag_.nodes()[src].partition != pe_ && spanned_.slack(src) <= 0.0)
-                        {
-                            gaps.push_back({gapStart, nodeIdx});
-                            break;
-                        }
-                    }
-                }
-            }
-            else if (seenPi && !inNpi)
-            {
-                if (dag_.hasIncomingXPartition(dag_.nodes()[nodeIdx]))
-                {
-                    inNpi    = true;
-                    gapStart = nodeIdx;
-                }
-            }
-        } while (dag_.next(nodeIdx, pe_));
-
-        for (auto& gap : gaps)
-        {
-            std::vector<int> intervalStarts;
-            int n = gap.gapStart;
-            while (n != gap.piReentry)
-            {
-                intervalStarts.push_back(n);
-                auto interval = dag_.untilIncomingXEdge(dag_.nodes()[n]);
-                if (interval.empty()) break;
-                int last = interval.back().index;
-                if (!dag_.next(last, pe_)) break;
-                n = last;
-            }
-
-            if (intervalStarts.empty()) continue;
-
-            auto availableFreqs = getAvailableFreqs(intervalStarts[0]);
-            if (availableFreqs.empty()) continue;
-
-            int targetFreq = baselineFreq_;
-
-            // piReentry has slack ≤ 0, so this typically schedules nothing —
-            // the final uptune to baseline happens at the last NPI interval start.
-            {
-                int fromFreq = lowestFeasibleFrom(availableFreqs, targetFreq,
-                                                  spanned_.slack(gap.piReentry));
-                if (fromFreq != targetFreq)
-                    retuneSchedule_[gap.piReentry] = targetFreq;
-                targetFreq = fromFreq;
-            }
-
-            int startingFreq = applyBackwardWalk(intervalStarts, availableFreqs, targetFreq);
-
-            if (startingFreq != baselineFreq_)
-                retuneSchedule_[gap.gapStart] = startingFreq;
-        }
-    }
-
-    // Trailing NPI suffix: NPI nodes after the last PI node on this PE.
-    // No uptune is needed; finds the first trailing NPI node with a cross-partition
-    // incoming edge and downtunes to the lowest frequency whose retune cost fits
-    // within that node's slack budget.
-    void buildTrailingSuffix()
-    {
-        int nodeIdx    = dag_.getRoot(pe_).index;
-        int lastPiNode = -1;
-        do {
-            if (spanned_.slack(nodeIdx) <= 0.0)
-                lastPiNode = nodeIdx;
-        } while (dag_.next(nodeIdx, pe_));
-
-        if (lastPiNode == -1) return;
-
-        nodeIdx = lastPiNode;
-        if (!dag_.next(nodeIdx, pe_)) return;
-
-        do {
-            if (dag_.hasIncomingXPartition(dag_.nodes()[nodeIdx]))
-            {
-                auto availableFreqs = getAvailableFreqs(nodeIdx);
-                if (availableFreqs.empty()) return;
-
-                double budget  = spanned_.slack(nodeIdx);
-                int    lowFreq = baselineFreq_;
-                for (int freq : availableFreqs)
-                {
-                    if (freq >= baselineFreq_) break;
-                    double cost =
-                        (double)retuneDelayTracker_.getRetuneDelay(baselineFreq_, freq).count();
-                    if (cost <= budget)
-                    {
-                        lowFreq = freq;
-                        break;
-                    }
-                }
-
-                if (lowFreq != baselineFreq_)
-                    retuneSchedule_[nodeIdx] = lowFreq;
-                return;
-            }
-        } while (dag_.next(nodeIdx, pe_));
+        freqQueue_.assign(events.begin(), events.end());
     }
 
     void printPlan()
@@ -1286,10 +1255,29 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
             out_->print("slack node %d (%s): %.2f ms\n", sn.index,
                         sn.content.toString().c_str(), slackMs);
         }
-        out_->print("start_freq: %d MHz\n", startFreq_);
-        for (auto& [node, freq] : retuneSchedule_)
-            out_->print("node %d (%s) -> %d MHz\n", node,
-                        dag_.nodes()[node].content.op.toString().c_str(), freq);
+        int zoneAFreq = baselineFreq_;
+        if (!freqQueue_.empty() && freqQueue_.front().first == -1)
+            zoneAFreq = freqQueue_.front().second;
+        out_->print("zone_A_start_freq: %d MHz\n", zoneAFreq);
+
+        auto pts = collectSchedulingPoints();
+        out_->print("scheduling_points (execution order):\n");
+        for (int idx : pts)
+        {
+            double      slackMs = spanned_.slack(idx) / 1e6;
+            const char* kind    = (slackMs > 0.0) ? "NPI" : "PI ";
+            out_->print("  %s node %d (%s) slack=%.2fms", kind, idx,
+                        dag_.nodes()[idx].content.op.toString().c_str(), slackMs);
+            for (auto& [nid, freq] : freqQueue_)
+            {
+                if (nid == idx)
+                {
+                    out_->print(" [retune=%d MHz]", freq);
+                    break;
+                }
+            }
+            out_->print("\n");
+        }
     }
 
     const TaskProfileRepository&                 repo_;
@@ -1299,8 +1287,7 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
     int                                          baselineFreq_;
     std::unique_ptr<IFrequencyController>        ctrl_;
     SpannedPartitionedDag<TileOperation, double> spanned_;
-    std::map<int, int>                           retuneSchedule_;
-    int                                          startFreq_{};
+    std::deque<FreqEvent>                        freqQueue_;  // ordered retune events; front consumed first
+    int                                          currentFreq_{};
     std::optional<PEWriter>                      out_;
 };
-
