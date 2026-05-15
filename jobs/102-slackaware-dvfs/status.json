@@ -1,0 +1,13 @@
+{
+  "git_sha": "0038baa5fd81a8e5d4353cffb19e24e9311ec0f9",
+  "id": "102-slackaware-dvfs",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/102-slackaware-dvfs",
+  "last_update_at": "2026-05-15T15:23:28+02:00",
+  "log_err": "/data/users/chjing/dvfs_thesis/jobs/102-slackaware-dvfs/slurm-204824.err",
+  "log_out": "/data/users/chjing/dvfs_thesis/jobs/102-slackaware-dvfs/slurm-204824.out",
+  "queued_at": "2026-05-15T15:23:22+02:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/102-slackaware-dvfs/run.sbatch",
+  "slurm_job_id": 204824,
+  "state": "SUBMITTED",
+  "submitted_at": "2026-05-15T15:23:25+02:00"
+}
