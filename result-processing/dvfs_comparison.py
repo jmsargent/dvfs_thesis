@@ -68,9 +68,8 @@ def get_available_freqs(HOMO_BASE, BENCHMARK):
     return freqs
 
 
-
 HOMO_BASE = "/Users/jonathansargent/dvfs_thesis/homogenous-retune-best-parameters"
-BENCHMARK = "lu"
+BENCHMARK = "cholesky"
 
 freqs = get_available_freqs(HOMO_BASE, BENCHMARK)
 
