@@ -1,0 +1,9 @@
+{
+  "git_sha": "ecb047e0ff4984c601c1ab4934562cf1bb289f46",
+  "id": "103-slackaware-dvfs",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/103-slackaware-dvfs",
+  "last_update_at": "2026-05-19T10:10:58+02:00",
+  "queued_at": "2026-05-19T10:10:58+02:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/103-slackaware-dvfs/run.sbatch",
+  "state": "QUEUED"
+}
