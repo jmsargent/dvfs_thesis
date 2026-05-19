@@ -31,10 +31,16 @@ class PartitionedDag
     void addNode(NodeType n)
     {
         n.index = (int)nodes_.size();
+        partitions_.insert(n.partition);
         incoming_.push_back({});
         outgoing_.push_back({});
         nodes_.push_back(std::move(n));
     }
+
+    int nrPartitions() const { return (int)partitions_.size(); }
+
+    NodeType&       operator[](int idx) { return nodes_[idx]; }
+    const NodeType& operator[](int idx) const { return nodes_[idx]; }
     void addEdge(Edge e)
     {
         nodes_[e.from].tail = false;
@@ -65,6 +71,18 @@ class PartitionedDag
         for (int src : incomingEdges(n.index))
             if (nodes_[src].partition != n.partition) return true;
         return false;
+    }
+
+    bool hasOutgoingXPartition(const NodeType& n) const
+    {
+        for (int dst : outgoingEdges(n.index))
+            if (nodes_[dst].partition != n.partition) return true;
+        return false;
+    }
+
+    bool hasXPartitionEdge(const NodeType& n) const
+    {
+        return hasIncomingXPartition(n) || hasOutgoingXPartition(n);
     }
 
     // Returns the first node in the partition with no within-partition incoming edges.
@@ -150,8 +168,9 @@ class PartitionedDag
     }
 
    private:
-    std::vector<NodeType>        nodes_;
-    std::vector<Edge>            edges_;
+    std::vector<NodeType>         nodes_;
+    std::vector<Edge>             edges_;
     std::vector<std::vector<int>> incoming_;
     std::vector<std::vector<int>> outgoing_;
+    std::set<int>                 partitions_;
 };

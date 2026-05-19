@@ -163,11 +163,11 @@ class KernelStopWatch
     unsigned long long* d_compTs_ = nullptr;
 };
 
-enum class KernelStatusUpdate { Waiting, Running };
+enum class KernelStatusUpdate { Completed, Running };
 
 struct CUDASignal
 {
-    cudaEvent_t   event;
+    cudaEvent_t   kernelEndEvent   = nullptr;
     cudaEvent_t   kernelStartEvent = nullptr;
     TileOperation op;
     int           nodeIndex        = -1;
@@ -178,16 +178,11 @@ class CUDASignalBuilder
    public:
     CUDASignalBuilder(OperationCapturer& capturer) : capturer_(capturer) {}
 
-    void newSignal(const TileOperation& op, int nodeIndex)
+    void openSignal(const TileOperation& op, int nodeIndex)
     {
-        cudaEvent_t ev;
-        cudaEventCreateWithFlags(&ev, cudaEventDisableTiming);
-        capturer_.recordEvent(ev);
-        signals_.push_back({ev, nullptr, op, nodeIndex});
+        signals_.push_back({nullptr, nullptr, op, nodeIndex});
     }
 
-    // Records the kernel-start event for the most recently opened signal.
-    // No-op if no signal has been opened or one was already committed.
     void recordKernelStart()
     {
         if (signals_.empty() || signals_.back().kernelStartEvent != nullptr) return;
@@ -195,6 +190,15 @@ class CUDASignalBuilder
         cudaEventCreateWithFlags(&ev, cudaEventDisableTiming);
         capturer_.recordEvent(ev);
         signals_.back().kernelStartEvent = ev;
+    }
+
+    void recordKernelEnd()
+    {
+        if (signals_.empty() || signals_.back().kernelEndEvent != nullptr) return;
+        cudaEvent_t ev;
+        cudaEventCreateWithFlags(&ev, cudaEventDisableTiming);
+        capturer_.recordEvent(ev);
+        signals_.back().kernelEndEvent = ev;
     }
 
     const std::vector<CUDASignal>& signals() const { return signals_; }
@@ -269,9 +273,7 @@ class PartitionedCudaGraphBuilder
                 capturer_.beginCapture(n.content.op.write, n.content.op.reads, n.content.op.name);
                 if (d_wait)
                 {
-                    dvfsSignalBuilder_.newSignal(n.content.op, n.index);
-
-
+                    dvfsSignalBuilder_.openSignal(n.content.op, n.index);
                     sw_.waitStart(localIdx);
                     capturer_.launchWait(d_wait, (int)waitIndices.size());
                     sw_.waitEnd(localIdx);
@@ -280,6 +282,7 @@ class PartitionedCudaGraphBuilder
                 sw_.compStart(localIdx);
                 n.content.work();
                 sw_.compEnd(localIdx);
+                dvfsSignalBuilder_.recordKernelEnd();
                 if (d_signal) capturer_.launchSignal(n.index, d_signal, (int)signalParts.size());
                 capturer_.endCapture();
                 localIdx++;

@@ -20,10 +20,10 @@ class RuntimeEventHandler
 
         for (size_t i = 0; i < signals_.size() - 1; ++i)
         {
-            while (cudaEventQuery(signals_[i].event) != cudaSuccess);
-            scaler_->onSignal(i, signals_[i].nodeIndex, KernelStatusUpdate::Waiting);
             while (cudaEventQuery(signals_[i].kernelStartEvent) != cudaSuccess);
             scaler_->onSignal(i, signals_[i].nodeIndex, KernelStatusUpdate::Running);
+            while (cudaEventQuery(signals_[i].kernelEndEvent) != cudaSuccess);
+            scaler_->onSignal(i, signals_[i].nodeIndex, KernelStatusUpdate::Completed);
         }
     }
 
@@ -31,9 +31,10 @@ class RuntimeEventHandler
     {
         for (size_t i = 0; i < signals_.size(); ++i)
         {
-            cudaEventRecord(signals_[i].event, streams[i % streams.size()]);
             if (signals_[i].kernelStartEvent)
                 cudaEventRecord(signals_[i].kernelStartEvent, streams[i % streams.size()]);
+            if (signals_[i].kernelEndEvent)
+                cudaEventRecord(signals_[i].kernelEndEvent, streams[i % streams.size()]);
         }
     }
 

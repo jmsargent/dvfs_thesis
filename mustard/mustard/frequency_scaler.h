@@ -236,7 +236,7 @@ class FrequencyScalerWaittimeDowntune : public IRuntimeEventHandle
             int bestFreq = reoptimizeCurrentInterval(signalIdx);
             scheduler_->scheduleFrequencyUpdate(bestFreq, 0ns);
         }
-        if (status == KernelStatusUpdate::Waiting)
+        if (status == KernelStatusUpdate::Completed)
         {
             planNext(signalIdx);
         }
@@ -427,7 +427,7 @@ class CriticalPathRampUpScaler : public IRuntimeEventHandle
 
     void onSignal(size_t, int nodeIdx, KernelStatusUpdate status) override
     {
-        if (status != KernelStatusUpdate::Waiting) return;
+        if (status != KernelStatusUpdate::Completed) return;
         auto it = rampUpSchedule_.find(nodeIdx);
         if (it != rampUpSchedule_.end())
             ctrl_->setFrequency(it->second);
@@ -582,7 +582,7 @@ class NpiGapScaler : public IRuntimeEventHandle
 
     void onSignal(size_t, int nodeIdx, KernelStatusUpdate status) override
     {
-        if (status != KernelStatusUpdate::Waiting) return;
+        if (status != KernelStatusUpdate::Completed) return;
         auto it = retuneSchedule_.find(nodeIdx);
         if (it != retuneSchedule_.end())
             ctrl_->setFrequency(it->second);
@@ -742,7 +742,7 @@ class NpiGapRampScaler : public IRuntimeEventHandle
 
     void onSignal(size_t, int nodeIdx, KernelStatusUpdate status) override
     {
-        if (status != KernelStatusUpdate::Waiting) return;
+        if (status != KernelStatusUpdate::Completed) return;
         auto it = retuneSchedule_.find(nodeIdx);
         if (it != retuneSchedule_.end())
             ctrl_->setFrequency(it->second);
@@ -927,7 +927,7 @@ class GreedyNpiDowntuner : public IRuntimeEventHandle
 
     void onSignal(size_t, int nodeIdx, KernelStatusUpdate status) override
     {
-        if (status != KernelStatusUpdate::Waiting) return;
+        if (status != KernelStatusUpdate::Completed) return;
         auto it = retuneSchedule_.find(nodeIdx);
         if (it != retuneSchedule_.end())
             ctrl_->setFrequency(it->second);
@@ -1081,7 +1081,7 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
 
     void onSignal(size_t, int nodeIdx, KernelStatusUpdate status) override
     {
-        if (status != KernelStatusUpdate::Waiting) return;
+        if (status != KernelStatusUpdate::Completed) return;
         if (freqQueue_.empty() || freqQueue_.front().first != nodeIdx) return;
         int freq = freqQueue_.front().second;
         freqQueue_.pop_front();
@@ -1104,16 +1104,30 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
         return freqs;
     }
 
-    int lowestFeasibleFrom(const std::vector<int>& freqs, int targetFreq, double budget) const
+    std::chrono::nanoseconds effectiveBudget(int nodeIdx) const
     {
-        for (int freq : freqs)
-        {
-            if (freq >= targetFreq) break;
-            double cost = (double)retuneDelayTracker_.getRetuneDelay(freq, targetFreq).count();
-            if (cost <= budget)
-                return freq;
-        }
-        return targetFreq;
+        double s = spanned_.slack(nodeIdx);
+        if (dag_.hasXPartitionEdge(dag_[nodeIdx]))
+            s /= dag_.nrPartitions();
+        return std::chrono::nanoseconds(static_cast<long long>(s));
+    }
+
+    std::chrono::nanoseconds execTime(int nodeIdx, int freqMhz) const
+    {
+        auto profs = repo_.getProfiles(dag_[nodeIdx].content.op);
+        if (!profs) return 0ns;
+        for (auto& p : *profs)
+            if (p.frequency_mhz == freqMhz)
+                return std::chrono::nanoseconds(static_cast<long long>(p.execution_time_ns));
+        return 0ns;
+    }
+
+    std::chrono::nanoseconds regionSlowdown(const std::vector<int>& region, int tuneFreq) const
+    {
+        std::chrono::nanoseconds delta = 0ns;
+        for (int nodeIdx : region)
+            delta += execTime(nodeIdx, tuneFreq) - execTime(nodeIdx, baselineFreq_);
+        return std::max(0ns, delta);
     }
 
     // All PE nodes that have a cross-partition incoming edge, sorted by span.start.
@@ -1133,71 +1147,135 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
         return pts;
     }
 
-    // Backward walk through region[N-1..1], collecting uptunes toward baselineFreq_.
-    // Returns the lowest feasible starting frequency for the zone.
-    int applyBackwardWalk(const std::vector<int>& region, const std::vector<int>& availableFreqs,
-                          std::vector<FreqEvent>& out)
-    {
-        int targetFreq = baselineFreq_;
-        for (int i = (int)region.size() - 1; i > 0; --i)
-        {
-            int node     = region[i];
-            int fromFreq = lowestFeasibleFrom(availableFreqs, targetFreq, spanned_.slack(node));
-            if (fromFreq != targetFreq)
-                out.push_back({node, targetFreq});
-            targetFreq = fromFreq;
-        }
-        return targetFreq;
-    }
-
-    // Zone A: NPI prefix before the first CP entry.
-    // Emits a (-1, freq) sentinel consumed in init(); uptunes go to their nodes.
+    // Zone A: prefix before the first critical path entry.
+    // Emits a (-1, freq) sentinel consumed in init(). Uses the same single downtune +
+    // single uptune forward check as Zone B: downCost fits in region.front()'s budget,
+    // total debt fits in the tune-up node's budget.
     void buildZoneA(const std::vector<int>& region, const std::vector<int>& availableFreqs,
-                    std::vector<FreqEvent>& out)
+                    int piNodeIdx, std::vector<FreqEvent>& out)
     {
         if (region.empty()) return;
-        int startingFreq = applyBackwardWalk(region, availableFreqs, out);
-        if (startingFreq != baselineFreq_)
-            out.push_back({-1, startingFreq});
+
+        int tuneUpNode;
+        if (region.size() > 1)
+            tuneUpNode = region.back();
+        else
+            tuneUpNode = piNodeIdx;
+
+        auto downBudget = effectiveBudget(region.front());
+        auto upBudget   = effectiveBudget(tuneUpNode);
+
+        int tuneFreq = baselineFreq_;
+        for (int freq : availableFreqs)
+        {
+            if (freq >= baselineFreq_) break;
+            auto downCost = retuneDelayTracker_.getRetuneDelay(baselineFreq_, freq);
+            auto upCost   = retuneDelayTracker_.getRetuneDelay(freq, baselineFreq_);
+            auto slowdown = regionSlowdown(region, freq);
+            if (downCost <= downBudget && downCost + slowdown + upCost <= upBudget)
+            {
+                tuneFreq = freq;
+                break;
+            }
+        }
+
+        if (tuneFreq == baselineFreq_) return;
+        out.push_back({-1, tuneFreq});
+        if (region.size() > 1)
+            out.push_back({region.back(), baselineFreq_});
     }
 
-    // Zone B: NPI gap between two CP segments.
-    // Closing PI node gets a safety reset; region[0] gets the downtune.
+    /*
+
+        Just exiting critical path => frequency is at baseline
+        We want to downtune, we know there is another upcomming critical path.
+
+        Therefore what we are attempting to optimize here is, how can we save as much energy as possible,
+        within the slack budget that we have. The cost here will have to include a downtune and an uptune
+
+        We do not want to tune up when the interval however we could assert that the previous scheduling decision was a tune to baseline
+
+        Nodes with cross-partition edges use slack / nrPartitions() as their budget to bound the
+        debt that propagates to other PEs. This is conservative but correct: at most nrPartitions()-1
+        PEs can affect any given node, so each PE's share never exceeds total available slack.
+
+    */
     void buildZoneB(const std::vector<int>& region, const std::vector<int>& availableFreqs,
                     int piNodeIdx, std::vector<FreqEvent>& out)
     {
         out.push_back({piNodeIdx, baselineFreq_});
+
+        /*
+            Find the biggest tune-down for the initial node such that we can match it with a tune-up
+            at the last node of the slack interval.
+
+            The backward walk previously used here was incorrect: slack values are static (pre-computed
+            at baseline), but slowing down a node increases execution time and propagates debt forward
+            through the DAG. A forward check on just the two endpoints is used instead, which is correct
+            given that we only emit a single tune-down at region.front() and a single tune-up at
+            region.back().
+
+            For single-node regions region.front() == region.back(), but the two events fire at
+            different nodes: tune-down on region[0] Completed, tune-up on piNodeIdx Completed.
+            onSignal pops one event per Completed signal so this is safe.
+
+            region can be empty when two consecutive critical path nodes appear with no slack nodes
+            between them.
+        */
         if (region.empty()) return;
-        int startingFreq = applyBackwardWalk(region, availableFreqs, out);
-        if (startingFreq != baselineFreq_)
-            out.push_back({region[0], startingFreq});
+
+        int tuneUpNode;
+        if (region.size() > 1)
+            tuneUpNode = region.back();
+        else
+            tuneUpNode = piNodeIdx;
+
+        auto downBudget = effectiveBudget(region.front());
+        auto upBudget   = effectiveBudget(tuneUpNode);
+
+        int tuneFreq = baselineFreq_;
+        for (int freq : availableFreqs)
+        {
+            if (freq >= baselineFreq_) break;
+            auto downCost = retuneDelayTracker_.getRetuneDelay(baselineFreq_, freq);
+            auto upCost   = retuneDelayTracker_.getRetuneDelay(freq, baselineFreq_);
+            auto slowdown = regionSlowdown(region, freq);
+            if (downCost <= downBudget && downCost + slowdown + upCost <= upBudget)
+            {
+                tuneFreq = freq;
+                break;
+            }
+        }
+
+        if (tuneFreq == baselineFreq_) return;
+        out.push_back({region.front(), tuneFreq});
+        if (region.back() != region.front())
+            out.push_back({region.back(), baselineFreq_});
     }
 
-    // Zone C: trailing NPI suffix after the last CP exit — no uptune needed.
+    /*
+        Here we do not have to worry about tuning up again.
+        However we still have to worry about effective slack & we have to worry about how future slack is affected
+        from spending slack 
+    */
     void buildZoneC(const std::vector<int>& region, const std::vector<int>& availableFreqs,
                     std::vector<FreqEvent>& out)
     {
         if (region.empty()) return;
-        int currentFreq = baselineFreq_;
-        for (int nodeIdx : region)
+        auto budget  = effectiveBudget(region.front());
+        int tuneFreq = baselineFreq_;
+        for (int freq : availableFreqs)
         {
-            double budget   = spanned_.slack(nodeIdx);
-            int    nextFreq = currentFreq;
-            for (int freq : availableFreqs)
+            if (freq >= baselineFreq_) break;
+            auto downCost = retuneDelayTracker_.getRetuneDelay(baselineFreq_, freq);
+            if (downCost <= budget)
             {
-                if (freq >= currentFreq) break;
-                double cost = (double)retuneDelayTracker_.getRetuneDelay(currentFreq, freq).count();
-                if (cost <= budget)
-                {
-                    nextFreq = freq;
-                    break;
-                }
+                tuneFreq = freq;
+                break;
             }
-            if (nextFreq == currentFreq) continue;
-            out.push_back({nodeIdx, nextFreq});
-            currentFreq = nextFreq;
-            if (currentFreq == availableFreqs.front()) break;
         }
+        if (tuneFreq == baselineFreq_) return;
+        out.push_back({region.front(), tuneFreq});
     }
 
     void buildSchedule()
@@ -1222,7 +1300,7 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
             {
                 if (!seenPI)
                 {
-                    buildZoneA(region, availableFreqs, events);
+                    buildZoneA(region, availableFreqs, nodeIdx, events);
                     events.push_back({nodeIdx, baselineFreq_});  // safety for zone A boundary
                 }
                 else
