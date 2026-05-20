@@ -85,6 +85,11 @@ class TaskProfileRepository
             insert(TileOperation::fromString(op_name, alg_), freq_mhz, (int)std::round(energy_uj),
                    exec_ns, std::move(waittimes));
         }
+
+        for (auto& [op, profs] : profiles_)
+            std::sort(profs.begin(), profs.end(), [](const TaskProfile& a, const TaskProfile& b) {
+                return a.frequency_mhz > b.frequency_mhz;
+            });
     }
 
     int size() const { return (int)profiles_.size(); }

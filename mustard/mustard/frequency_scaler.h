@@ -1148,22 +1148,13 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
     }
 
     // Zone A: prefix before the first critical path entry.
-    // Emits a (-1, freq) sentinel consumed in init(). Uses the same single downtune +
-    // single uptune forward check as Zone B: downCost fits in region.front()'s budget,
-    // total debt fits in the tune-up node's budget.
+    // Emits a (-1, freq) sentinel consumed in init(). Checks every node in the region:
+    // accumulated debt (downCost + per-node slowdown) plus upCost must fit each node's
+    // effectiveBudget, which accounts for cross-partition edge constraints.
     void buildZoneA(const std::vector<int>& region, const std::vector<int>& availableFreqs,
                     int piNodeIdx, std::vector<FreqEvent>& out)
     {
         if (region.empty()) return;
-
-        int tuneUpNode;
-        if (region.size() > 1)
-            tuneUpNode = region.back();
-        else
-            tuneUpNode = piNodeIdx;
-
-        auto downBudget = effectiveBudget(region.front());
-        auto upBudget   = effectiveBudget(tuneUpNode);
 
         int tuneFreq = baselineFreq_;
         for (int freq : availableFreqs)
@@ -1171,8 +1162,19 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
             if (freq >= baselineFreq_) break;
             auto downCost = retuneDelayTracker_.getRetuneDelay(baselineFreq_, freq);
             auto upCost   = retuneDelayTracker_.getRetuneDelay(freq, baselineFreq_);
-            auto slowdown = regionSlowdown(region, freq);
-            if (downCost <= downBudget && downCost + slowdown + upCost <= upBudget)
+            if (downCost > effectiveBudget(region.front())) continue;
+            auto debt     = downCost;
+            bool feasible = true;
+            for (int nodeIdx : region)
+            {
+                debt += std::max(0ns, execTime(nodeIdx, freq) - execTime(nodeIdx, baselineFreq_));
+                if (debt + upCost > effectiveBudget(nodeIdx))
+                {
+                    feasible = false;
+                    break;
+                }
+            }
+            if (feasible)
             {
                 tuneFreq = freq;
                 break;
@@ -1206,14 +1208,9 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
         out.push_back({piNodeIdx, baselineFreq_});
 
         /*
-            Find the biggest tune-down for the initial node such that we can match it with a tune-up
-            at the last node of the slack interval.
-
-            The backward walk previously used here was incorrect: slack values are static (pre-computed
-            at baseline), but slowing down a node increases execution time and propagates debt forward
-            through the DAG. A forward check on just the two endpoints is used instead, which is correct
-            given that we only emit a single tune-down at region.front() and a single tune-up at
-            region.back().
+            Find the biggest tune-down such that accumulated debt (downCost + per-node slowdown)
+            plus upCost fits every node's effectiveBudget. Nodes with cross-partition edges have a
+            tighter budget (slack / nrPartitions()) so each node must be checked individually.
 
             For single-node regions region.front() == region.back(), but the two events fire at
             different nodes: tune-down on region[0] Completed, tune-up on piNodeIdx Completed.
@@ -1224,23 +1221,25 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
         */
         if (region.empty()) return;
 
-        int tuneUpNode;
-        if (region.size() > 1)
-            tuneUpNode = region.back();
-        else
-            tuneUpNode = piNodeIdx;
-
-        auto downBudget = effectiveBudget(region.front());
-        auto upBudget   = effectiveBudget(tuneUpNode);
-
         int tuneFreq = baselineFreq_;
         for (int freq : availableFreqs)
         {
             if (freq >= baselineFreq_) break;
             auto downCost = retuneDelayTracker_.getRetuneDelay(baselineFreq_, freq);
             auto upCost   = retuneDelayTracker_.getRetuneDelay(freq, baselineFreq_);
-            auto slowdown = regionSlowdown(region, freq);
-            if (downCost <= downBudget && downCost + slowdown + upCost <= upBudget)
+            if (downCost > effectiveBudget(region.front())) continue;
+            auto debt     = downCost;
+            bool feasible = true;
+            for (int nodeIdx : region)
+            {
+                debt += std::max(0ns, execTime(nodeIdx, freq) - execTime(nodeIdx, baselineFreq_));
+                if (debt + upCost > effectiveBudget(nodeIdx))
+                {
+                    feasible = false;
+                    break;
+                }
+            }
+            if (feasible)
             {
                 tuneFreq = freq;
                 break;
@@ -1256,19 +1255,31 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
     /*
         Here we do not have to worry about tuning up again.
         However we still have to worry about effective slack & we have to worry about how future slack is affected
-        from spending slack 
+        from spending slack. Each node is checked individually since cross-partition nodes have a
+        tighter budget (slack / nrPartitions()).
     */
     void buildZoneC(const std::vector<int>& region, const std::vector<int>& availableFreqs,
                     std::vector<FreqEvent>& out)
     {
         if (region.empty()) return;
-        auto budget  = effectiveBudget(region.front());
         int tuneFreq = baselineFreq_;
         for (int freq : availableFreqs)
         {
             if (freq >= baselineFreq_) break;
             auto downCost = retuneDelayTracker_.getRetuneDelay(baselineFreq_, freq);
-            if (downCost <= budget)
+            if (downCost > effectiveBudget(region.front())) continue;
+            auto debt     = downCost;
+            bool feasible = true;
+            for (int nodeIdx : region)
+            {
+                debt += std::max(0ns, execTime(nodeIdx, freq) - execTime(nodeIdx, baselineFreq_));
+                if (debt > effectiveBudget(nodeIdx))
+                {
+                    feasible = false;
+                    break;
+                }
+            }
+            if (feasible)
             {
                 tuneFreq = freq;
                 break;
