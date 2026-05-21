@@ -1093,7 +1093,7 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
     }
 
    private:
-    using FreqEvent = std::pair<int, int>;  // (nodeId, freq); nodeId == -1 means zone A init
+    using   FreqEvent = std::pair<int, int>;  // (nodeId, freq); nodeId == -1 means zone A init
 
     std::vector<int> getAvailableFreqs(int nodeIdx) const
     {
