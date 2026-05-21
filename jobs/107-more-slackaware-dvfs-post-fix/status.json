@@ -2,16 +2,21 @@
   "git_sha": "1d2f51bb1a2c37a08778a9be84bbdb9aef324967",
   "id": "107-more-slackaware-dvfs-post-fix",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/107-more-slackaware-dvfs-post-fix",
-  "last_update_at": "2026-05-21T01:28:08+02:00",
+  "last_update_at": "2026-05-21T03:18:14+02:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/107-more-slackaware-dvfs-post-fix/slurm-213744.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/107-more-slackaware-dvfs-post-fix/slurm-213744.out",
   "queued_at": "2026-05-20T20:57:41+02:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/107-more-slackaware-dvfs-post-fix/run.sbatch",
   "slurm_info": {
-    "raw_state": "RUNNING",
-    "source": "squeue"
+    "ElapsedRaw": "6605",
+    "ExitCode": "0:0",
+    "JobIDRaw": "213744",
+    "MaxRSS": "",
+    "State": "COMPLETED",
+    "raw_state": "COMPLETED",
+    "source": "sacct"
   },
   "slurm_job_id": 213744,
-  "state": "RUNNING",
+  "state": "COMPLETED",
   "submitted_at": "2026-05-20T20:57:41+02:00"
 }
