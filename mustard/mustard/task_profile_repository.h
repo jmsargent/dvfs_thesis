@@ -88,7 +88,7 @@ class TaskProfileRepository
 
         for (auto& [op, profs] : profiles_)
             std::sort(profs.begin(), profs.end(), [](const TaskProfile& a, const TaskProfile& b) {
-                return a.frequency_mhz > b.frequency_mhz;
+                return a.frequency_mhz < b.frequency_mhz;
             });
     }
 

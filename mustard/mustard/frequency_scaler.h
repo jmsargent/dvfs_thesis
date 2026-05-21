@@ -1122,6 +1122,12 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
         return 0ns;
     }
 
+    // Extra execution time of nodeIdx at freqMhz compared to baseline.
+    std::chrono::nanoseconds executionTimeSlowdown(int nodeIdx, int freqMhz) const
+    {
+        return std::max(0ns, execTime(nodeIdx, freqMhz) - execTime(nodeIdx, baselineFreq_));
+    }
+
     std::chrono::nanoseconds regionSlowdown(const std::vector<int>& region, int tuneFreq) const
     {
         std::chrono::nanoseconds delta = 0ns;
@@ -1130,15 +1136,13 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
         return std::max(0ns, delta);
     }
 
-    // All PE nodes that have a cross-partition incoming edge, sorted by span.start.
-    // This visits parallel/isolated nodes that dag_.next traversal would miss.
+    // All nodes on this PE, sorted by span.start (execution order from baseline schedule).
     std::vector<int> collectSchedulingPoints() const
     {
         std::vector<int> pts;
         for (auto& n : dag_.nodes())
         {
             if (n.partition != pe_) continue;
-            if (!dag_.hasIncomingXPartition(n)) continue;
             pts.push_back(n.index);
         }
         std::sort(pts.begin(), pts.end(), [this](int a, int b) {
@@ -1152,7 +1156,7 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
     // accumulated debt (downCost + per-node slowdown) plus upCost must fit each node's
     // effectiveBudget, which accounts for cross-partition edge constraints.
     void buildZoneA(const std::vector<int>& region, const std::vector<int>& availableFreqs,
-                    int piNodeIdx, std::vector<FreqEvent>& out)
+                    std::vector<FreqEvent>& out)
     {
         if (region.empty()) return;
 
@@ -1160,14 +1164,12 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
         for (int freq : availableFreqs)
         {
             if (freq >= baselineFreq_) break;
-            auto downCost = retuneDelayTracker_.getRetuneDelay(baselineFreq_, freq);
-            auto upCost   = retuneDelayTracker_.getRetuneDelay(freq, baselineFreq_);
-            if (downCost > effectiveBudget(region.front())) continue;
-            auto debt     = downCost;
+            auto upCost  = retuneDelayTracker_.getRetuneDelay(freq, baselineFreq_);
+            auto debt    = 0ns;
             bool feasible = true;
             for (int nodeIdx : region)
             {
-                debt += std::max(0ns, execTime(nodeIdx, freq) - execTime(nodeIdx, baselineFreq_));
+                debt += executionTimeSlowdown(nodeIdx, freq);
                 if (debt + upCost > effectiveBudget(nodeIdx))
                 {
                     feasible = false;
@@ -1183,8 +1185,7 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
 
         if (tuneFreq == baselineFreq_) return;
         out.push_back({-1, tuneFreq});
-        if (region.size() > 1)
-            out.push_back({region.back(), baselineFreq_});
+        out.push_back({region.back(), baselineFreq_});
     }
 
     /*
@@ -1203,21 +1204,20 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
 
     */
     void buildZoneB(const std::vector<int>& region, const std::vector<int>& availableFreqs,
-                    int piNodeIdx, std::vector<FreqEvent>& out)
+                    int lastNodeOnCriticalPath, std::vector<FreqEvent>& out)
     {
-        out.push_back({piNodeIdx, baselineFreq_});
-
         /*
-            Find the biggest tune-down such that accumulated debt (downCost + per-node slowdown)
-            plus upCost fits every node's effectiveBudget. Nodes with cross-partition edges have a
-            tighter budget (slack / nrPartitions()) so each node must be checked individually.
+            Downtune fires when lastNodeOnCriticalPath completes so the entire region runs at the lower
+            frequency. Uptune fires when region.back() completes, restoring baseline before the
+            next critical path node starts.
 
-            For single-node regions region.front() == region.back(), but the two events fire at
-            different nodes: tune-down on region[0] Completed, tune-up on piNodeIdx Completed.
-            onSignal pops one event per Completed signal so this is safe.
+            Accumulated debt: downCost (retune overhead before region starts) plus per-node
+            slowdown. Every node's effectiveBudget must cover debt + upCost. Nodes with
+            cross-partition edges have a tighter budget (slack / nrPartitions()) so each node
+            must be checked individually.
 
-            region can be empty when two consecutive critical path nodes appear with no slack nodes
-            between them.
+            region can be empty when two consecutive critical path nodes appear with no slack
+            nodes between them.
         */
         if (region.empty()) return;
 
@@ -1232,7 +1232,7 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
             bool feasible = true;
             for (int nodeIdx : region)
             {
-                debt += std::max(0ns, execTime(nodeIdx, freq) - execTime(nodeIdx, baselineFreq_));
+                debt += executionTimeSlowdown(nodeIdx, freq);
                 if (debt + upCost > effectiveBudget(nodeIdx))
                 {
                     feasible = false;
@@ -1247,9 +1247,8 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
         }
 
         if (tuneFreq == baselineFreq_) return;
-        out.push_back({region.front(), tuneFreq});
-        if (region.back() != region.front())
-            out.push_back({region.back(), baselineFreq_});
+        out.push_back({lastNodeOnCriticalPath, tuneFreq});
+        out.push_back({region.back(), baselineFreq_});
     }
 
     /*
@@ -1259,7 +1258,7 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
         tighter budget (slack / nrPartitions()).
     */
     void buildZoneC(const std::vector<int>& region, const std::vector<int>& availableFreqs,
-                    std::vector<FreqEvent>& out)
+                    int lastNodeOnCriticalPath, std::vector<FreqEvent>& out)
     {
         if (region.empty()) return;
         int tuneFreq = baselineFreq_;
@@ -1272,7 +1271,7 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
             bool feasible = true;
             for (int nodeIdx : region)
             {
-                debt += std::max(0ns, execTime(nodeIdx, freq) - execTime(nodeIdx, baselineFreq_));
+                debt += executionTimeSlowdown(nodeIdx, freq);
                 if (debt > effectiveBudget(nodeIdx))
                 {
                     feasible = false;
@@ -1286,7 +1285,7 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
             }
         }
         if (tuneFreq == baselineFreq_) return;
-        out.push_back({region.front(), tuneFreq});
+        out.push_back({lastNodeOnCriticalPath, tuneFreq});
     }
 
     void buildSchedule()
@@ -1299,7 +1298,8 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
 
         std::vector<FreqEvent> events;
         std::vector<int>       region;
-        bool                   seenPI = false;
+        bool                   isInitialSegment = true;
+        int                    lastNodeOnCriticalPath       = -1;
 
         for (int nodeIdx : pts)
         {
@@ -1309,20 +1309,21 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
             }
             else
             {
-                if (!seenPI)
+                if (isInitialSegment)
                 {
-                    buildZoneA(region, availableFreqs, nodeIdx, events);
-                    events.push_back({nodeIdx, baselineFreq_});  // safety for zone A boundary
+                    buildZoneA(region, availableFreqs, events);
                 }
                 else
                 {
-                    buildZoneB(region, availableFreqs, nodeIdx, events);
+                    buildZoneB(region, availableFreqs, lastNodeOnCriticalPath, events);
                 }
-                seenPI = true;
+                isInitialSegment = false;
+                lastNodeOnCriticalPath       = nodeIdx;
                 region.clear();
             }
         }
-        buildZoneC(region, availableFreqs, events);
+        if (!isInitialSegment)
+            buildZoneC(region, availableFreqs, lastNodeOnCriticalPath, events);
 
         // Sort into execution order: -1 sentinel first, then by span.start.
         std::sort(events.begin(), events.end(), [this](const FreqEvent& a, const FreqEvent& b) {
