@@ -36,8 +36,17 @@ apptainer_run() {
     apptainer exec --nv --bind /dev/shm,/data "$CONTAINER_PATH" "$@"
 }
 
+apptainer_run_privileged() {
+    APPTAINERENV_LD_LIBRARY_PATH="${NVSHMEM_LIB}:${CONTAINER_LD}" \
+    apptainer exec --nv --add-caps CAP_SYS_ADMIN --bind /dev/shm,/data "$CONTAINER_PATH" "$@"
+}
+
 run() {
     apptainer_run "${PROJECT_DIR}/benchscripts/mpirun.sh" "$@"
+}
+
+run_privileged() {
+    apptainer_run_privileged "${PROJECT_DIR}/benchscripts/mpirun.sh" "$@"
 }
 
 BENCHMARK="${PROJECT_DIR}/benchscripts/benchmark.sh"
