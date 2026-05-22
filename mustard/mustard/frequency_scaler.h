@@ -762,7 +762,7 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
             {
                 currentFreq_ = freq;
                 ctrl_->setFrequency(freq);
-                if(out_) out_->print("setting frequency to: %d", freq);
+                if(out_) out_->print("setting frequency to: %d\n", freq);
             }
         }
     }

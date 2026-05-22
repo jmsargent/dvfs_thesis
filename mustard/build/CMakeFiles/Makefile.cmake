@@ -160,6 +160,7 @@ set(CMAKE_MAKEFILE_PRODUCTS
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
   "mustard/CMakeFiles/test_timer.dir/DependInfo.cmake"
+  "mustard/CMakeFiles/test_freq_controller.dir/DependInfo.cmake"
   "mustard/CMakeFiles/test_spanned_dag.dir/DependInfo.cmake"
   "mustard/CMakeFiles/cholesky_mustard.dir/DependInfo.cmake"
   "mustard/CMakeFiles/pingpong_mustard.dir/DependInfo.cmake"

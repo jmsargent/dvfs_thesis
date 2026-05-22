@@ -133,6 +133,19 @@ test_timer/fast:
 .PHONY : test_timer/fast
 
 #=============================================================================
+# Target rules for targets named test_freq_controller
+
+# Build rule for target.
+test_freq_controller: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_freq_controller
+.PHONY : test_freq_controller
+
+# fast build rule for target.
+test_freq_controller/fast:
+	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_freq_controller.dir/build.make mustard/CMakeFiles/test_freq_controller.dir/build
+.PHONY : test_freq_controller/fast
+
+#=============================================================================
 # Target rules for targets named test_spanned_dag
 
 # Build rule for target.
@@ -223,6 +236,7 @@ help:
 	@echo "... lu_mustard"
 	@echo "... p_lu_mustard"
 	@echo "... pingpong_mustard"
+	@echo "... test_freq_controller"
 	@echo "... test_spanned_dag"
 	@echo "... test_timer"
 .PHONY : help

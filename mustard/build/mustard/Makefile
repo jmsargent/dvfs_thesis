@@ -134,6 +134,20 @@ test_timer/fast:
 .PHONY : test_timer/fast
 
 # Convenience name for target.
+mustard/CMakeFiles/test_freq_controller.dir/rule:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mustard/CMakeFiles/test_freq_controller.dir/rule
+.PHONY : mustard/CMakeFiles/test_freq_controller.dir/rule
+
+# Convenience name for target.
+test_freq_controller: mustard/CMakeFiles/test_freq_controller.dir/rule
+.PHONY : test_freq_controller
+
+# fast build rule for target.
+test_freq_controller/fast:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_freq_controller.dir/build.make mustard/CMakeFiles/test_freq_controller.dir/build
+.PHONY : test_freq_controller/fast
+
+# Convenience name for target.
 mustard/CMakeFiles/test_spanned_dag.dir/rule:
 	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mustard/CMakeFiles/test_spanned_dag.dir/rule
 .PHONY : mustard/CMakeFiles/test_spanned_dag.dir/rule
@@ -364,6 +378,30 @@ sync_kernels.cu.s:
 	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/lu_mustard.dir/build.make mustard/CMakeFiles/lu_mustard.dir/sync_kernels.cu.s
 .PHONY : sync_kernels.cu.s
 
+test_freq_controller.o: test_freq_controller.cu.o
+.PHONY : test_freq_controller.o
+
+# target to build an object file
+test_freq_controller.cu.o:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_freq_controller.dir/build.make mustard/CMakeFiles/test_freq_controller.dir/test_freq_controller.cu.o
+.PHONY : test_freq_controller.cu.o
+
+test_freq_controller.i: test_freq_controller.cu.i
+.PHONY : test_freq_controller.i
+
+# target to preprocess a source file
+test_freq_controller.cu.i:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_freq_controller.dir/build.make mustard/CMakeFiles/test_freq_controller.dir/test_freq_controller.cu.i
+.PHONY : test_freq_controller.cu.i
+
+test_freq_controller.s: test_freq_controller.cu.s
+.PHONY : test_freq_controller.s
+
+# target to generate assembly for a file
+test_freq_controller.cu.s:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_freq_controller.dir/build.make mustard/CMakeFiles/test_freq_controller.dir/test_freq_controller.cu.s
+.PHONY : test_freq_controller.cu.s
+
 test_spanned_dag.o: test_spanned_dag.cpp.o
 .PHONY : test_spanned_dag.o
 
@@ -425,6 +463,7 @@ help:
 	@echo "... lu_mustard"
 	@echo "... p_lu_mustard"
 	@echo "... pingpong_mustard"
+	@echo "... test_freq_controller"
 	@echo "... test_spanned_dag"
 	@echo "... test_timer"
 	@echo "... cg_mustard.o"
@@ -445,6 +484,9 @@ help:
 	@echo "... sync_kernels.o"
 	@echo "... sync_kernels.i"
 	@echo "... sync_kernels.s"
+	@echo "... test_freq_controller.o"
+	@echo "... test_freq_controller.i"
+	@echo "... test_freq_controller.s"
 	@echo "... test_spanned_dag.o"
 	@echo "... test_spanned_dag.i"
 	@echo "... test_spanned_dag.s"

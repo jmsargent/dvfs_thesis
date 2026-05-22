@@ -1,6 +1,7 @@
 /data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles/edit_cache.dir
 /data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles/rebuild_cache.dir
 /data/users/sargent/dvfs_thesis/mustard/build/mustard/CMakeFiles/test_timer.dir
+/data/users/sargent/dvfs_thesis/mustard/build/mustard/CMakeFiles/test_freq_controller.dir
 /data/users/sargent/dvfs_thesis/mustard/build/mustard/CMakeFiles/test_spanned_dag.dir
 /data/users/sargent/dvfs_thesis/mustard/build/mustard/CMakeFiles/cholesky_mustard.dir
 /data/users/sargent/dvfs_thesis/mustard/build/mustard/CMakeFiles/pingpong_mustard.dir

@@ -2,6 +2,10 @@ add_executable(test_timer test_timer.cu)
 set_target_properties(test_timer PROPERTIES CUDA_SEPARABLE_COMPILATION OFF)
 target_link_libraries(test_timer CUDA::cudart)
 
+add_executable(test_freq_controller test_freq_controller.cu)
+set_target_properties(test_freq_controller PROPERTIES CUDA_SEPARABLE_COMPILATION OFF)
+target_link_libraries(test_freq_controller CUDA::cudart CUDA::nvml MPI::MPI_CXX)
+
 add_executable(test_spanned_dag test_spanned_dag.cpp)
 set_target_properties(test_spanned_dag PROPERTIES LINKER_LANGUAGE CXX)
 
