@@ -38,6 +38,8 @@ apptainer_run() {
 
 apptainer_run_privileged() {
     APPTAINERENV_LD_LIBRARY_PATH="${NVSHMEM_LIB}:${CONTAINER_LD}" \
+    APPTAINERENV_OMPI_ALLOW_RUN_AS_ROOT=1 \
+    APPTAINERENV_OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 \
     sudo -E apptainer exec --nv --bind /dev/shm,/data "$CONTAINER_PATH" "$@"
 }
 
