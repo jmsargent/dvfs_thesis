@@ -1,9 +1,11 @@
 #include <cuda_runtime.h>
 #include <mpi.h>
 #include <nvml.h>
+#include <cerrno>
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <string>
 #include <thread>
 
@@ -45,6 +47,12 @@ int main(int argc, char** argv)
 
     std::string logPath = outDir + "/test_freq_pe" + std::to_string(pe) + ".log";
     log_ = fopen(logPath.c_str(), "w");
+    if (!log_)
+    {
+        fprintf(stderr, "PE %d: failed to open log %s: %s\n", pe, logPath.c_str(), strerror(errno));
+        MPI_Finalize();
+        return 1;
+    }
 
     fprintf(log_, "PE %d/%d  CUDA_VISIBLE_DEVICES=%s  testFreq=%d\n\n",
             pe, nPes,
