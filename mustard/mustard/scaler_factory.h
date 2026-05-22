@@ -56,6 +56,9 @@ inline std::unique_ptr<IRuntimeEventHandle> makeScaler(
             return std::make_unique<CombinedSlackAwareFrequencyScaler>(
                 repo, std::move(dag), pe, retuneDelayTracker, cfg.baselineFreq,
                 std::move(ctrl), std::move(planOut));
+
+        case ScalerMode::ConstantFrequency:
+            return std::make_unique<ScalerConstantFrequency>(cfg.baselineFreq, std::move(ctrl));
     }
     return nullptr;
 }

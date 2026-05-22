@@ -1053,3 +1053,19 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
     int                                          currentFreq_{};
     std::optional<PEWriter>                      out_;
 };
+
+class ScalerConstantFrequency : public IRuntimeEventHandle
+{
+   public:
+    ScalerConstantFrequency(int freq, std::unique_ptr<IFrequencyController> ctrl)
+        : freq_(freq), ctrl_(std::move(ctrl))
+    {}
+
+    void init() override { ctrl_->setFrequency(freq_); }
+
+    void onSignal(size_t, int, KernelStatusUpdate) override {}
+
+   private:
+    int                                   freq_;
+    std::unique_ptr<IFrequencyController> ctrl_;
+};

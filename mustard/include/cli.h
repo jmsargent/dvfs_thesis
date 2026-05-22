@@ -14,6 +14,7 @@ enum class ScalerMode {
     NpiGap,
     NpiGapRamp,
     CombinedSlackAware,
+    ConstantFrequency,
 };
 
 // Common configuration shared by all mustard executables.
@@ -84,6 +85,7 @@ inline void printCommonUsage()
               << "                           npi-gap       Gap flat downtune\n"
               << "                           npi-gap-ramp  Gap backward-walk ramp\n"
               << "                           combined-slack Combined slack-aware (prefix + gaps + suffix)\n"
+              << "                           constant       Tune to --baseline-freq at init, no further retuning\n"
               << "    --baseline-freq=<mhz> Baseline GPU frequency for slack-based scalers [default: 1980]\n"
               << "    --fake-tuner         Inject logging frequency controller (no real NVML calls)\n";
 }
@@ -241,10 +243,11 @@ inline bool parseCommonArgs(argh::parser& cmdl, MustardConfig& cfg)
         else if (scalerSpec == "npi-gap")       cfg.scalerMode = ScalerMode::NpiGap;
         else if (scalerSpec == "npi-gap-ramp")  cfg.scalerMode = ScalerMode::NpiGapRamp;
         else if (scalerSpec == "combined-slack") cfg.scalerMode = ScalerMode::CombinedSlackAware;
+        else if (scalerSpec == "constant")       cfg.scalerMode = ScalerMode::ConstantFrequency;
         else
         {
             std::cerr << "Error: unrecognised scaler '" << scalerSpec
-                      << "'. Valid: greedy-npi, cp-ramp-up, npi-gap, npi-gap-ramp, combined-slack\n";
+                      << "'. Valid: greedy-npi, cp-ramp-up, npi-gap, npi-gap-ramp, combined-slack, constant\n";
             return false;
         }
     }
