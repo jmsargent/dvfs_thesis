@@ -23,6 +23,7 @@ class IRuntimeEventHandle
    public:
     virtual ~IRuntimeEventHandle()                                 = default;
     virtual void init()                                            = 0;
+    virtual void reset()                                           {}
     virtual void onSignal(size_t signalIdx, int nodeIdx, KernelStatusUpdate status) = 0;
 };
 
@@ -740,25 +741,20 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
         spanned_.computeSlack();
         buildSchedule();
         if (out_) printPlan();
-        eventIdx_          = 0;
-        lastSignalNodeIdx_ = std::numeric_limits<int>::max();
-        currentFreq_       = zoneAFreq_;
+        reset();
+    }
+
+    void reset() override
+    {
+        eventIdx_    = 0;
+        currentFreq_ = zoneAFreq_;
         ctrl_->setFrequency(zoneAFreq_);
+        if(out_) out_->print("reset");
     }
 
     void onSignal(size_t, int nodeIdx, KernelStatusUpdate status) override
     {
         if (status != KernelStatusUpdate::Completed) return;
-        if (nodeIdx <= lastSignalNodeIdx_)  // new iteration detected — wrap ring buffer
-        {
-            eventIdx_ = 0;
-            if (zoneAFreq_ != currentFreq_)
-            {
-                currentFreq_ = zoneAFreq_;
-                ctrl_->setFrequency(zoneAFreq_);
-            }
-        }
-        lastSignalNodeIdx_ = nodeIdx;
         if (eventIdx_ < freqEvents_.size() && freqEvents_[eventIdx_].nodeId == nodeIdx)
         {
             int freq = freqEvents_[eventIdx_++].freq;
@@ -766,6 +762,7 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
             {
                 currentFreq_ = freq;
                 ctrl_->setFrequency(freq);
+                if(out_) out_->print("setting frequency to: %d", freq);
             }
         }
     }
@@ -985,7 +982,6 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
     std::vector<FreqEvent>                       freqEvents_;
     size_t                                       eventIdx_{0};
     int                                          zoneAFreq_{};
-    int                                          lastSignalNodeIdx_{};
     int                                          currentFreq_{};
     std::optional<PEWriter>                      out_;
 };

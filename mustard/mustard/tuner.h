@@ -29,6 +29,7 @@ class RuntimeEventHandler
 
     void reset(const std::vector<cudaStream_t>& streams)
     {
+        scaler_->reset();
         for (size_t i = 0; i < signals_.size(); ++i)
         {
             if (signals_[i].kernelStartEvent)
