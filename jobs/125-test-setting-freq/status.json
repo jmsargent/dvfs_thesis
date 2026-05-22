@@ -1,0 +1,9 @@
+{
+  "git_sha": "8235c278001f3785d4c3aa2a45f750f7a8327d3d",
+  "id": "125-test-setting-freq",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/125-test-setting-freq",
+  "last_update_at": "2026-05-22T23:35:59+02:00",
+  "queued_at": "2026-05-22T23:35:59+02:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/125-test-setting-freq/run.sbatch",
+  "state": "QUEUED"
+}
