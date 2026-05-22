@@ -2,16 +2,21 @@
   "git_sha": "fc24d01bff1c4a7c40a822acf5bc7b6ddfd6d38d",
   "id": "115-test-setting-freq",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/115-test-setting-freq",
-  "last_update_at": "2026-05-22T21:10:56+02:00",
+  "last_update_at": "2026-05-22T21:11:11+02:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/115-test-setting-freq/slurm-215757.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/115-test-setting-freq/slurm-215757.out",
   "queued_at": "2026-05-22T21:10:46+02:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/115-test-setting-freq/run.sbatch",
   "slurm_info": {
-    "raw_state": "PENDING",
-    "source": "squeue"
+    "ElapsedRaw": "7",
+    "ExitCode": "1:0",
+    "JobIDRaw": "215757",
+    "MaxRSS": "",
+    "State": "FAILED",
+    "raw_state": "FAILED",
+    "source": "sacct"
   },
   "slurm_job_id": 215757,
-  "state": "PENDING",
+  "state": "FAILED",
   "submitted_at": "2026-05-22T21:10:49+02:00"
 }
