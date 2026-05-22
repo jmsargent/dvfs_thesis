@@ -13,11 +13,13 @@ using namespace std::chrono_literals;
 
 static FILE* log_ = nullptr;
 
-static unsigned int clockMHz(nvmlDevice_t dev)
+static void logClocks(nvmlDevice_t dev)
 {
-    unsigned int clk;
-    nvmlDeviceGetClockInfo(dev, NVML_CLOCK_GRAPHICS, &clk);
-    return clk;
+    unsigned int graphics, sm, mem;
+    nvmlDeviceGetClockInfo(dev, NVML_CLOCK_GRAPHICS, &graphics);
+    nvmlDeviceGetClockInfo(dev, NVML_CLOCK_SM,       &sm);
+    nvmlDeviceGetClockInfo(dev, NVML_CLOCK_MEM,      &mem);
+    fprintf(log_, "  graphics=%u MHz  sm=%u MHz  mem=%u MHz\n", graphics, sm, mem);
 }
 
 static void settle(int pe)
@@ -51,24 +53,48 @@ int main(int argc, char** argv)
 
     cudaSetDevice(pe);
 
+    // Log CUDA device identity
+    cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, pe);
+    fprintf(log_, "CUDA device %d: %s  PCI %04x:%02x:%02x\n",
+            pe, prop.name, prop.pciDomainID, prop.pciBusID, prop.pciDeviceID);
+
     NvmlFrequencyController ctrl(pe);
 
     nvmlDevice_t dev = ctrl.device().value();
 
-    unsigned int before = clockMHz(dev);
-    fprintf(log_, "clock before setFrequency(%d): %u MHz\n", testFreq, before);
+    // Log NVML device identity (PCI bus ID and name)
+    nvmlPciInfo_t pci;
+    nvmlDeviceGetPciInfo(dev, &pci);
+    char nvmlName[96];
+    nvmlDeviceGetName(dev, nvmlName, sizeof(nvmlName));
+    fprintf(log_, "NVML device:   %s  PCI %s\n\n", nvmlName, pci.busId);
 
-    ctrl.setFrequency(testFreq);
+    fprintf(log_, "before setFrequency(%d):\n", testFreq);
+    logClocks(dev);
+
+    try { ctrl.setFrequency(testFreq); }
+    catch (const std::exception& e) { fprintf(log_, "setFrequency(%d) threw: %s\n", testFreq, e.what()); }
     settle(pe);
 
-    unsigned int after = clockMHz(dev);
-    fprintf(log_, "clock after  setFrequency(%d): %u MHz  %s\n", testFreq, after,
-            (after != before) ? "ok" : "NO CHANGE");
+    fprintf(log_, "after setFrequency(%d):\n", testFreq);
+    logClocks(dev);
 
-    ctrl.setFrequency(2040);
+    // also try a mid-range frequency that is definitely in range
+    int midFreq = 1500;
+    try { ctrl.setFrequency(midFreq); }
+    catch (const std::exception& e) { fprintf(log_, "setFrequency(%d) threw: %s\n", midFreq, e.what()); }
     settle(pe);
 
-    fprintf(log_, "clock after  setFrequency(2040): %u MHz\n", clockMHz(dev));
+    fprintf(log_, "after setFrequency(%d):\n", midFreq);
+    logClocks(dev);
+
+    try { ctrl.setFrequency(2040); }
+    catch (const std::exception& e) { fprintf(log_, "setFrequency(2040) threw: %s\n", e.what()); }
+    settle(pe);
+
+    fprintf(log_, "after setFrequency(2040):\n");
+    logClocks(dev);
 
     fclose(log_);
     MPI_Finalize();

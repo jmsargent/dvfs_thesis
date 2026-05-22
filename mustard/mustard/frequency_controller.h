@@ -33,7 +33,11 @@ class NvmlFrequencyController : public IFrequencyController
 
     void setFrequency(int freqMhz) override
     {
-        nvmlDeviceSetGpuLockedClocks(device_, freqMhz, freqMhz);
+        nvmlReturn_t r = nvmlDeviceSetGpuLockedClocks(device_, freqMhz, freqMhz);
+        if (r != NVML_SUCCESS)
+            throw std::runtime_error(
+                std::string("NvmlFrequencyController: setFrequency failed: ") +
+                nvmlErrorString(r));
     }
 
     std::optional<nvmlDevice_t> device() const override { return device_; }
