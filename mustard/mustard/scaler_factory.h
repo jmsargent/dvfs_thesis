@@ -32,14 +32,6 @@ inline std::unique_ptr<IRuntimeEventHandle> makeScaler(
 {
     switch (cfg.scalerMode)
     {
-        case ScalerMode::Interval:
-            return std::make_unique<FrequencyScaler>(
-                repo, std::move(dag), pe, goal, std::move(ctrl), std::move(planOut));
-
-        case ScalerMode::WaittimeDowntune:
-            return std::make_unique<FrequencyScalerWaittimeDowntune>(
-                repo, std::move(dag), pe, goal, retuneDelayTracker, std::move(ctrl), std::move(planOut));
-
         case ScalerMode::GreedyNpiDowntune:
             return std::make_unique<GreedyNpiDowntuner>(
                 repo, std::move(dag), pe, goal, retuneDelayTracker, cfg.baselineFreq,

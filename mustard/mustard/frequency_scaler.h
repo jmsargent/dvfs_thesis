@@ -1,12 +1,10 @@
 #pragma once
 
-#include <atomic>
 #include <chrono>
 #include <deque>
 #include <map>
 #include <memory>
 #include <optional>
-#include <thread>
 #include <vector>
 
 #include "frequency_controller.h"
@@ -29,332 +27,6 @@ class IRuntimeEventHandle
     virtual void onSignal(size_t signalIdx, int nodeIdx, KernelStatusUpdate status) = 0;
 };
 
-class FrequencyUpdateScheduler
-{
-   public:
-    FrequencyUpdateScheduler(IFrequencyController& ctrl) : ctrl_(ctrl) {}
-
-    ~FrequencyUpdateScheduler() { cancel(); }
-
-    FrequencyUpdateScheduler(const FrequencyUpdateScheduler&)            = delete;
-    FrequencyUpdateScheduler& operator=(const FrequencyUpdateScheduler&) = delete;
-
-    void scheduleFrequencyUpdate(int freqMhz, std::chrono::nanoseconds delay)
-    {
-        if (delay.count() == 0)
-        {
-            ctrl_.setFrequency(freqMhz);
-            return;
-        }
-        cancel();
-
-        completed_.store(false);
-        thread_ = std::thread(
-            [this, freqMhz, delay]()
-            {
-                std::this_thread::sleep_for(delay);
-                if (!completed_.load(std::memory_order_relaxed))
-                    ctrl_.setFrequency(freqMhz);
-                completed_.store(true, std::memory_order_release);
-            });
-    }
-
-    void cancel()
-    {
-        completed_.store(true);
-        if (thread_.joinable()) thread_.join();
-    }
-
-    bool didComplete() const { return completed_.load(std::memory_order_acquire); }
-
-   private:
-    IFrequencyController& ctrl_;
-    std::thread           thread_;
-    std::atomic<bool>     completed_{true};
-};
-
-struct IntervalPlan
-{
-    int                      bestFreq;
-    std::vector<std::string> nodeNames;
-    std::optional<int>       nextNodeIndex;
-};
-
-class FrequencyScaler : public IRuntimeEventHandle
-{
-   public:
-    FrequencyScaler(const TaskProfileRepository& repo, PartitionedDag<TileAccess> dag, int pe,
-                    const DVFSGoal& goal, std::unique_ptr<IFrequencyController> ctrl,
-                    std::optional<PEWriter> out = std::nullopt)
-        : repo_(repo), dag_(std::move(dag)), pe_(pe), goal_(goal),
-          ctrl_(std::move(ctrl)), out_(std::move(out))
-    {}
-
-    FrequencyScaler(FrequencyScaler&&) = default;
-
-    void init()
-    {
-        std::optional<int> idx = dag_.getRoot(pe_).index;
-        while (idx)
-        {
-            auto [bestFreq, nodeNames, next] = optimizeNextInterval(*idx);
-            plannedFreqs_.push_back(bestFreq);
-            plannedNames_.push_back(std::move(nodeNames));
-            idx = next;
-        }
-
-        if (out_) printPlan();
-
-        if (!plannedFreqs_.empty())
-            ctrl_->setFrequency(plannedFreqs_[0]);
-    }
-
-    void onSignal(size_t signalIdx, int, KernelStatusUpdate)
-    {
-        ctrl_->setFrequency(plannedFreqs_[signalIdx + 1]);
-    }
-
-
-   private:
-    void printPlan()
-    {
-        auto& out = *out_;
-        for (size_t i = 0; i < plannedFreqs_.size(); ++i)
-        {
-            out.print("interval %zu: %d MHz\n", i, plannedFreqs_[i]);
-            for (const auto& node : plannedNames_[i]) out.print("  * %s\n", node.c_str());
-        }
-    }
-
-    IntervalPlan optimizeNextInterval(int nodeIndex)
-    {
-        auto nodes = dag_.untilIncomingXEdge(dag_.nodes()[nodeIndex]);
-
-        std::map<int, std::pair<double, double>> totalsByFreq;  // {energy_uj, time_ns}
-
-        for (auto& node : nodes)
-            for (auto& p : *repo_.getProfiles(node.content.op))
-            {
-                totalsByFreq[p.frequency_mhz].first += p.energy_uj;
-                totalsByFreq[p.frequency_mhz].second += p.execution_time_ns;
-            }
-
-        int bestFreq = std::min_element(totalsByFreq.begin(), totalsByFreq.end(),
-                                        [&](auto& a, auto& b)
-                                        {
-                                            return goal_(a.second.second, a.second.first) <
-                                                   goal_(b.second.second, b.second.first);
-                                        })
-                           ->first;
-
-        std::vector<std::string> nodeNames;
-        for (auto& node : nodes) nodeNames.push_back(node.content.op.toString());
-
-        std::optional<int> next;
-        if (!nodes.empty())
-        {
-            int idx = nodes.back().index;
-            if (dag_.next(idx, nodes.back().partition)) next = idx;
-        }
-
-        return {bestFreq, std::move(nodeNames), next};
-    }
-
-    const TaskProfileRepository&              repo_;
-    PartitionedDag<TileAccess>                dag_;
-    int                                       pe_;
-    const DVFSGoal&                           goal_;
-    std::unique_ptr<IFrequencyController>     ctrl_;
-    std::optional<PEWriter>                   out_;
-    std::vector<int>                          plannedFreqs_;
-    std::vector<std::vector<std::string>>     plannedNames_;
-};
-
-class FrequencyScalerWaittimeDowntune : public IRuntimeEventHandle
-{
-   public:
-    FrequencyScalerWaittimeDowntune(const TaskProfileRepository& repo,
-                                    PartitionedDag<TileAccess> dag, int pe, const DVFSGoal& goal,
-                                    const RetuneDelayTracker&             retuneDelayTracker,
-                                    std::unique_ptr<IFrequencyController> ctrl,
-                                    std::optional<PEWriter>               out = std::nullopt)
-        : repo_(repo),
-          dag_(std::move(dag)),
-          pe_(pe),
-          goal_(goal),
-          retuneDelayTracker_(retuneDelayTracker),
-          ctrl_(std::move(ctrl)),
-          out_(std::move(out))
-    {
-        scheduler_ = std::make_unique<FrequencyUpdateScheduler>(*ctrl_);
-    }
-
-    FrequencyScalerWaittimeDowntune(FrequencyScalerWaittimeDowntune&&) = default;
-
-    void init()
-    {
-        std::optional<int> idx = dag_.getRoot(pe_).index;
-        while (idx)
-        {
-            plannedNodeIndices_.push_back(*idx);
-            auto [bestFreq, nodeNames, next] = optimizeNextInterval(*idx);
-            plannedFreqs_.push_back(bestFreq);
-            plannedNames_.push_back(std::move(nodeNames));
-            idx = next;
-        }
-
-        if (out_) printPlan();
-
-        if (auto dev = ctrl_->device())
-            idlePower_ = IdlePower::forDevice(*dev);
-
-        if (!plannedFreqs_.empty())
-            ctrl_->setFrequency(plannedFreqs_[0]);
-    }
-
-    /*
-        =====================================================================================================================
-        On unexpectedly early return, minimize goal-function:
-
-        total execution-time = \sum [ executionTime ] + retune_latency( from: CORE_FREQUENCY.MIN,
-       to:freq ) total energy         = \sum [ energy        ] + static_energy( retune_latency(
-       from: CORE_FREQUENCY.MIN, to: freq ) )
-
-        =====================================================================================================================
-        On wait-event:
-
-        estimated_wait_time(node) retune_latency( from: current_freq, to: CORE_FREQUENCY.MIN )
-                                + retune_latency( from: CORE_FREQUENCY.MIN, to: next_freq )
-                                - estimated_wait_time(node)
-
-        =====================================================================================================================
-    */
-    void onSignal(size_t signalIdx, int, KernelStatusUpdate status)
-    {
-        if (!scheduler_->didComplete() && status == KernelStatusUpdate::Running)
-        {
-            int bestFreq = reoptimizeCurrentInterval(signalIdx);
-            scheduler_->scheduleFrequencyUpdate(bestFreq, 0ns);
-        }
-        if (status == KernelStatusUpdate::Completed)
-        {
-            planNext(signalIdx);
-        }
-    }
-
-    void planNext(size_t signalIdx)
-    {
-        const int FREQ_LOW_MHZ   = 210;
-        const int currentFreqMhz = plannedFreqs_[signalIdx];
-        const int nextFreqMhz    = plannedFreqs_[signalIdx + 1];
-
-        const auto latencyTuneDown =
-            retuneDelayTracker_.getRetuneDelay(currentFreqMhz, FREQ_LOW_MHZ);
-        const auto latencyTuneUp = retuneDelayTracker_.getRetuneDelay(FREQ_LOW_MHZ, nextFreqMhz);
-
-        const auto estWaitTime     = 0ns;
-        const auto idleWaitingTime = latencyTuneUp + latencyTuneDown - estWaitTime;
-
-        if (idleWaitingTime > 0ns)
-        {
-            scheduler_->scheduleFrequencyUpdate(nextFreqMhz, estWaitTime - latencyTuneUp);
-            scheduler_->scheduleFrequencyUpdate(FREQ_LOW_MHZ, 0ns);
-        }
-        else
-        {
-            scheduler_->scheduleFrequencyUpdate(nextFreqMhz, 0ns);
-        }
-    }
-
-
-   private:
-    void printPlan()
-    {
-        auto& out = *out_;
-        for (size_t i = 0; i < plannedFreqs_.size(); ++i)
-        {
-            out.print("interval %zu: %d MHz\n", i, plannedFreqs_[i]);
-            for (const auto& node : plannedNames_[i]) out.print("  * %s\n", node.c_str());
-        }
-    }
-
-    IntervalPlan optimizeNextInterval(int nodeIndex)
-    {
-        auto nodes = dag_.untilIncomingXEdge(dag_.nodes()[nodeIndex]);
-
-        std::map<int, std::pair<double, double>> totalsByFreq;  // {energy_uj, time_ns}
-
-        for (auto& node : nodes)
-            for (auto& p : *repo_.getProfiles(node.content.op))
-            {
-                totalsByFreq[p.frequency_mhz].first += p.energy_uj;
-                totalsByFreq[p.frequency_mhz].second += p.execution_time_ns;
-            }
-
-        int bestFreq = std::min_element(totalsByFreq.begin(), totalsByFreq.end(),
-                                        [&](auto& a, auto& b)
-                                        {
-                                            return goal_(a.second.second, a.second.first) <
-                                                   goal_(b.second.second, b.second.first);
-                                        })
-                           ->first;
-
-        std::vector<std::string> nodeNames;
-        for (auto& node : nodes) nodeNames.push_back(node.content.op.toString());
-
-        std::optional<int> next;
-        if (!nodes.empty())
-        {
-            int idx = nodes.back().index;
-            if (dag_.next(idx, nodes.back().partition)) next = idx;
-        }
-
-        return {bestFreq, std::move(nodeNames), next};
-    }
-
-    int reoptimizeCurrentInterval(size_t intervalIdx)
-    {
-        const int FREQ_LOW_MHZ = 210;
-        auto      nodes =
-            dag_.untilIncomingXEdge(dag_.nodes()[plannedNodeIndices_[intervalIdx]]);
-
-        std::map<int, std::pair<double, double>> totalsByFreq;  // {energy_uj, time_ns}
-        for (auto& node : nodes)
-            for (auto& p : *repo_.getProfiles(node.content.op))
-            {
-                totalsByFreq[p.frequency_mhz].first += p.energy_uj;
-                totalsByFreq[p.frequency_mhz].second += p.execution_time_ns;
-            }
-
-        for (auto& [freq, totals] : totalsByFreq)
-        {
-            double retune_ns =
-                static_cast<double>(retuneDelayTracker_.getRetuneDelay(FREQ_LOW_MHZ, freq).count());
-            totals.second += retune_ns;
-            if (idlePower_) totals.first += idlePower_->energyUj(retune_ns);
-        }
-
-        return std::min_element(totalsByFreq.begin(), totalsByFreq.end(),
-                                [&](auto& a, auto& b) {
-                                    return goal_(a.second.second, a.second.first) <
-                                           goal_(b.second.second, b.second.first);
-                                })
-            ->first;
-    }
-
-    const TaskProfileRepository&              repo_;
-    PartitionedDag<TileAccess>                dag_;
-    int                                       pe_;
-    const DVFSGoal&                           goal_;
-    const RetuneDelayTracker&                 retuneDelayTracker_;
-    std::unique_ptr<IFrequencyController>     ctrl_;
-    std::optional<PEWriter>                   out_;
-    std::vector<int>                          plannedFreqs_;
-    std::vector<int>                          plannedNodeIndices_;
-    std::vector<std::vector<std::string>>     plannedNames_;
-    std::unique_ptr<FrequencyUpdateScheduler> scheduler_;
-    std::unique_ptr<IdlePower>                idlePower_;
-};
 
 
 inline SpannedPartitionedDag<TileOperation, double>
@@ -1038,12 +710,12 @@ class GreedyNpiDowntuner : public IRuntimeEventHandle
 // All frequency transitions are ordered events in freqQueue_ (deque of (nodeId, freq)).
 // nodeId == -1 is a sentinel for the zone A downtune, consumed once in init().
 // During runtime, onSignal pops the front of the queue when the signalling node matches.
-//   Zone A (1x): NPI prefix before the first CP entry. Downtune at sentinel -1, applied
-//                in init(); backward-walk ramp-up schedules uptunes on NPI nodes.
-//   Zone B (0+): NPI gap(s) between consecutive CP segments. Downtune on region[0],
-//                uptune(s) from backward walk. Closing PI node carries a safety reset.
-//   Zone C (1x): trailing NPI suffix after the last CP exit. Step-downs assigned
-//                to their estimated nodes; no uptune needed.
+//   Zone A (1x): slack prefix before the first CP entry. Downtune at sentinel -1, applied
+//                in init(); uptune resets at the closing CP node (cross-partition incoming).
+//   Zone B (0+): slack gap(s) between consecutive CP segments. Downtune on the preceding
+//                CP node (if it has cross-partition incoming); uptune at the closing CP node.
+//   Zone C (1x): trailing slack suffix after the last CP exit. Downtune on the preceding
+//                CP node (if it has cross-partition incoming); no uptune needed.
 class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
 {
    public:
@@ -1151,7 +823,7 @@ class CombinedSlackAwareFrequencyScaler : public IRuntimeEventHandle
         return pts;
     }
 
-    // Zone A: prefix before the first critical path entry.
+    // Zone A: slack prefix before the first CP entry.
     // Emits a (-1, freq) sentinel consumed in init(). Checks every node in the region:
     // accumulated debt (downCost + per-node slowdown) plus upCost must fit each node's
     // effectiveBudget, which accounts for cross-partition edge constraints.

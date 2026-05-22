@@ -9,8 +9,6 @@
 #include "utils.h"
 
 enum class ScalerMode {
-    Interval,
-    WaittimeDowntune,
     GreedyNpiDowntune,
     CriticalPathRampUp,
     NpiGap,
@@ -43,7 +41,7 @@ struct MustardConfig
     unsigned    goalN          = 1;
     unsigned    goalM          = 1;
     bool        logPlan        = false;
-    ScalerMode  scalerMode     = ScalerMode::Interval;
+    ScalerMode  scalerMode     = ScalerMode::CombinedSlackAware;
     int         baselineFreq   = 2040;
     bool        fakeTuner      = false;
 };
@@ -80,13 +78,11 @@ inline void printCommonUsage()
               << "    --output=<prefix>    Write per-PE timing output to <prefix>_pe<N>.csv.\n"
               << "                         If omitted, timing CSV is printed to stdout.\n"
               << "    --log-plan           Log the DVFS frequency plan to <prefix>_pe<N>.log.\n"
-              << "    --scaler=<name>      DVFS scaler to use                  [default: interval]\n"
-              << "                           interval      Interval goal optimizer\n"
-              << "                           waittime      Waittime-downtuner\n"
-              << "                           greedy-npi    Greedy NPI downtuner\n"
+              << "    --scaler=<name>      DVFS scaler to use             [default: combined-slack]\n"
+              << "                           greedy-npi    Greedy downtuner\n"
               << "                           cp-ramp-up    Critical-path ramp-up\n"
-              << "                           npi-gap       NPI gap flat downtune\n"
-              << "                           npi-gap-ramp  NPI gap backward-walk ramp\n"
+              << "                           npi-gap       Gap flat downtune\n"
+              << "                           npi-gap-ramp  Gap backward-walk ramp\n"
               << "                           combined-slack Combined slack-aware (prefix + gaps + suffix)\n"
               << "    --baseline-freq=<mhz> Baseline GPU frequency for slack-based scalers [default: 1980]\n"
               << "    --fake-tuner         Inject logging frequency controller (no real NVML calls)\n";
@@ -239,18 +235,16 @@ inline bool parseCommonArgs(argh::parser& cmdl, MustardConfig& cfg)
 
     {
         std::string scalerSpec;
-        cmdl("scaler", "interval") >> scalerSpec;
-        if      (scalerSpec == "interval")      cfg.scalerMode = ScalerMode::Interval;
-        else if (scalerSpec == "waittime")      cfg.scalerMode = ScalerMode::WaittimeDowntune;
-        else if (scalerSpec == "greedy-npi")    cfg.scalerMode = ScalerMode::GreedyNpiDowntune;
+        cmdl("scaler", "combined-slack") >> scalerSpec;
+        if      (scalerSpec == "greedy-npi")    cfg.scalerMode = ScalerMode::GreedyNpiDowntune;
         else if (scalerSpec == "cp-ramp-up")    cfg.scalerMode = ScalerMode::CriticalPathRampUp;
         else if (scalerSpec == "npi-gap")       cfg.scalerMode = ScalerMode::NpiGap;
-        else if (scalerSpec == "npi-gap-ramp")   cfg.scalerMode = ScalerMode::NpiGapRamp;
+        else if (scalerSpec == "npi-gap-ramp")  cfg.scalerMode = ScalerMode::NpiGapRamp;
         else if (scalerSpec == "combined-slack") cfg.scalerMode = ScalerMode::CombinedSlackAware;
         else
         {
             std::cerr << "Error: unrecognised scaler '" << scalerSpec
-                      << "'. Valid: interval, waittime, greedy-npi, cp-ramp-up, npi-gap, npi-gap-ramp, combined-slack\n";
+                      << "'. Valid: greedy-npi, cp-ramp-up, npi-gap, npi-gap-ramp, combined-slack\n";
             return false;
         }
     }

@@ -271,9 +271,9 @@ class PartitionedCudaGraphBuilder
                 int* d_signal    = OperationCapturer::upload(signalParts);
 
                 capturer_.beginCapture(n.content.op.write, n.content.op.reads, n.content.op.name);
+                dvfsSignalBuilder_.openSignal(n.content.op, n.index);
                 if (d_wait)
                 {
-                    dvfsSignalBuilder_.openSignal(n.content.op, n.index);
                     sw_.waitStart(localIdx);
                     capturer_.launchWait(d_wait, (int)waitIndices.size());
                     sw_.waitEnd(localIdx);
