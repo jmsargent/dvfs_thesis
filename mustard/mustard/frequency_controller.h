@@ -5,6 +5,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "pe_writer.h"
 
@@ -23,17 +24,22 @@ class NvmlFrequencyController : public IFrequencyController
     {
         nvmlInit();
         device_ = cudaDeviceToNvmlDevice(pe);
+        unsigned int count = 0;
+        nvmlDeviceGetSupportedMemoryClocks(device_, &count, nullptr);
+        std::vector<unsigned int> memClks(count);
+        nvmlDeviceGetSupportedMemoryClocks(device_, &count, memClks.data());
+        memClkMHz_ = memClks[0]; // supported clocks are returned highest-first
     }
 
     ~NvmlFrequencyController()
     {
-        nvmlDeviceResetGpuLockedClocks(device_);
+        nvmlDeviceResetApplicationsClocks(device_);
         nvmlShutdown();
     }
 
     void setFrequency(int freqMhz) override
     {
-        nvmlReturn_t r = nvmlDeviceSetGpuLockedClocks(device_, freqMhz, freqMhz);
+        nvmlReturn_t r = nvmlDeviceSetApplicationsClocks(device_, memClkMHz_, freqMhz);
         if (r != NVML_SUCCESS)
             throw std::runtime_error(
                 std::string("NvmlFrequencyController: setFrequency failed: ") +
@@ -63,7 +69,8 @@ class NvmlFrequencyController : public IFrequencyController
         return dev;
     }
 
-    nvmlDevice_t device_;
+    nvmlDevice_t  device_;
+    unsigned int  memClkMHz_ = 0;
 };
 
 class MockFrequencyController : public IFrequencyController
