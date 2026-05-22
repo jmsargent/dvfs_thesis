@@ -38,7 +38,7 @@ apptainer_run() {
 
 apptainer_run_privileged() {
     APPTAINERENV_LD_LIBRARY_PATH="${NVSHMEM_LIB}:${CONTAINER_LD}" \
-    apptainer exec --nv --add-caps CAP_SYS_ADMIN --bind /dev/shm,/data,/var/run/nvidia-persistenced "$CONTAINER_PATH" "$@"
+    sudo -E apptainer exec --nv --bind /dev/shm,/data "$CONTAINER_PATH" "$@"
 }
 
 run() {
