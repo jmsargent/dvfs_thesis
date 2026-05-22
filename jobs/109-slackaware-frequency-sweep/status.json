@@ -1,0 +1,17 @@
+{
+  "git_sha": "7e1df91c8fcfff78559afef77daff7ab54be0a0b",
+  "id": "109-slackaware-frequency-sweep",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/109-slackaware-frequency-sweep",
+  "last_update_at": "2026-05-22T18:35:35+02:00",
+  "log_err": "/data/users/chjing/dvfs_thesis/jobs/109-slackaware-frequency-sweep/slurm-215617.err",
+  "log_out": "/data/users/chjing/dvfs_thesis/jobs/109-slackaware-frequency-sweep/slurm-215617.out",
+  "queued_at": "2026-05-22T18:35:28+02:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/109-slackaware-frequency-sweep/run.sbatch",
+  "slurm_info": {
+    "raw_state": "PENDING",
+    "source": "squeue"
+  },
+  "slurm_job_id": 215617,
+  "state": "PENDING",
+  "submitted_at": "2026-05-22T18:35:31+02:00"
+}
