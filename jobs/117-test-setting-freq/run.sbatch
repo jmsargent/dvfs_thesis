@@ -17,6 +17,6 @@ CLEAN_GPUS=$(select_gpus 4)
 echo "got clean gpus: $CLEAN_GPUS"
 
 run --np "$SLURM_NTASKS" --gpus "$CLEAN_GPUS" --symmetric-size 1G \
-    "$BIN_DIR/test_freq_controller" 240 /data/users/sargent/dvfs_thesis/jobs/116-test-setting-freq
+    "$BIN_DIR/test_freq_controller" 240 /data/users/sargent/dvfs_thesis/jobs/117-test-setting-freq
 
 reset_gpu_clocks "$CLEAN_GPUS"
