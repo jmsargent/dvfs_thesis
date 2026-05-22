@@ -2,12 +2,16 @@
   "git_sha": "33b30e93fcc681a100982e1f472caa8951ed7293",
   "id": "108-slackaware-after-tuning-events-fix",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/108-slackaware-after-tuning-events-fix",
-  "last_update_at": "2026-05-22T13:56:03+02:00",
+  "last_update_at": "2026-05-22T13:56:11+02:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/108-slackaware-after-tuning-events-fix/slurm-215371.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/108-slackaware-after-tuning-events-fix/slurm-215371.out",
   "queued_at": "2026-05-22T13:55:59+02:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/108-slackaware-after-tuning-events-fix/run.sbatch",
+  "slurm_info": {
+    "raw_state": "PENDING",
+    "source": "squeue"
+  },
   "slurm_job_id": 215371,
-  "state": "SUBMITTED",
+  "state": "PENDING",
   "submitted_at": "2026-05-22T13:56:01+02:00"
 }
