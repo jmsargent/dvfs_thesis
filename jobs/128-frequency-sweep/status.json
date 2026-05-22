@@ -1,0 +1,9 @@
+{
+  "git_sha": "a9b71eedf5694fa6f81701069da003cd0bf68a0f",
+  "id": "128-frequency-sweep",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/128-frequency-sweep",
+  "last_update_at": "2026-05-23T01:07:24+02:00",
+  "queued_at": "2026-05-23T01:07:24+02:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/128-frequency-sweep/run.sbatch",
+  "state": "QUEUED"
+}
