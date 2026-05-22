@@ -1,0 +1,9 @@
+{
+  "git_sha": "e2475dd01e3be77a361defde5357c629567bef05",
+  "id": "112-slackaware-after-tuning-use-array-iof-queue",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/112-slackaware-after-tuning-use-array-iof-queue",
+  "last_update_at": "2026-05-22T17:05:57+02:00",
+  "queued_at": "2026-05-22T17:05:57+02:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/112-slackaware-after-tuning-use-array-iof-queue/run.sbatch",
+  "state": "QUEUED"
+}
