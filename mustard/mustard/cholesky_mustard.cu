@@ -613,7 +613,7 @@ void tiledCholeskyPanel(bool verify, bool dot)
 
     EDP   goal(cfg.goalN, cfg.goalM);
     std::optional<PEWriter> planOut;
-    if (cfg.logPlan) planOut.emplace(cfg.outputDir, "plan", myPE, ".log");
+    if (cfg.logPlan) planOut.emplace(cfg.outputDir, "frequency_scaler", myPE, ".log");
     L4RetuneDelayTracker retuneDelayTracker;
     auto scaler = makeScaler(cfg, repo, partitionedDag, myPE, goal, retuneDelayTracker,
                              makeController(cfg, myPE), std::move(planOut));
