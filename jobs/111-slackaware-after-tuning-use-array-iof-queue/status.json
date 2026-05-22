@@ -2,12 +2,16 @@
   "git_sha": "83f323f0820c5cc0db87fee875c71ba78dd97d40",
   "id": "111-slackaware-after-tuning-use-array-iof-queue",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/111-slackaware-after-tuning-use-array-iof-queue",
-  "last_update_at": "2026-05-22T17:01:43+02:00",
+  "last_update_at": "2026-05-22T17:01:47+02:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/111-slackaware-after-tuning-use-array-iof-queue/slurm-215579.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/111-slackaware-after-tuning-use-array-iof-queue/slurm-215579.out",
   "queued_at": "2026-05-22T17:01:42+02:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/111-slackaware-after-tuning-use-array-iof-queue/run.sbatch",
+  "slurm_info": {
+    "raw_state": "PENDING",
+    "source": "squeue"
+  },
   "slurm_job_id": 215579,
-  "state": "SUBMITTED",
+  "state": "PENDING",
   "submitted_at": "2026-05-22T17:01:43+02:00"
 }
