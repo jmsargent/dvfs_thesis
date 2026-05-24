@@ -2,16 +2,21 @@
   "git_sha": "85573ae9fb985e4aecf36d9cdd2eac68de4f0465",
   "id": "130-slackaware-lower-freq2",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/130-slackaware-lower-freq2",
-  "last_update_at": "2026-05-24T19:04:58+02:00",
+  "last_update_at": "2026-05-24T19:05:43+02:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/130-slackaware-lower-freq2/slurm-217245.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/130-slackaware-lower-freq2/slurm-217245.out",
   "queued_at": "2026-05-24T19:04:49+02:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/130-slackaware-lower-freq2/run.sbatch",
   "slurm_info": {
-    "raw_state": "RUNNING",
-    "source": "squeue"
+    "ElapsedRaw": "37",
+    "ExitCode": "0:0",
+    "JobIDRaw": "217245",
+    "MaxRSS": "",
+    "State": "COMPLETED",
+    "raw_state": "COMPLETED",
+    "source": "sacct"
   },
   "slurm_job_id": 217245,
-  "state": "RUNNING",
+  "state": "COMPLETED",
   "submitted_at": "2026-05-24T19:04:51+02:00"
 }
