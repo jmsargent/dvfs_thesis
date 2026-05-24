@@ -1,0 +1,17 @@
+{
+  "git_sha": "585a307d5d6958c1ab77fd0ef8b7569b31c5bfb7",
+  "id": "129-slackaware-lower-freq",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/129-slackaware-lower-freq",
+  "last_update_at": "2026-05-24T18:44:12+02:00",
+  "log_err": "/data/users/chjing/dvfs_thesis/jobs/129-slackaware-lower-freq/slurm-217232.err",
+  "log_out": "/data/users/chjing/dvfs_thesis/jobs/129-slackaware-lower-freq/slurm-217232.out",
+  "queued_at": "2026-05-24T18:44:11+02:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/129-slackaware-lower-freq/run.sbatch",
+  "slurm_info": {
+    "raw_state": "PENDING",
+    "source": "squeue"
+  },
+  "slurm_job_id": 217232,
+  "state": "PENDING",
+  "submitted_at": "2026-05-24T18:44:11+02:00"
+}
