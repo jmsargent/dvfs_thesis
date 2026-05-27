@@ -2,8 +2,16 @@
   "git_sha": "c7f701850e7ce6cc408371b14c5289e3f19ae0f1",
   "id": "133-profiling-nvshmem",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/133-profiling-nvshmem",
-  "last_update_at": "2026-05-27T16:12:10+02:00",
+  "last_update_at": "2026-05-27T16:12:19+02:00",
+  "log_err": "/data/users/chjing/dvfs_thesis/jobs/133-profiling-nvshmem/slurm-220649.err",
+  "log_out": "/data/users/chjing/dvfs_thesis/jobs/133-profiling-nvshmem/slurm-220649.out",
   "queued_at": "2026-05-27T16:12:10+02:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/133-profiling-nvshmem/run.sbatch",
-  "state": "QUEUED"
+  "slurm_info": {
+    "raw_state": "RUNNING",
+    "source": "squeue"
+  },
+  "slurm_job_id": 220649,
+  "state": "RUNNING",
+  "submitted_at": "2026-05-27T16:12:12+02:00"
 }
