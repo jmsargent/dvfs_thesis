@@ -6,11 +6,17 @@ import os
 
 BASE = "/Users/jonathansargent/dvfs_thesis/experiments"
 
+_COMBINED_SLACK = "combined-slack"
+_CONSTANT       = "constant"
+_TASKS_PROFILE  = "tasks_pe{pe}.csv"
+_HOMO_PROFILE   = "profile_pe{pe}.csv"
+
 HOMO_BASE = f"{BASE}/homogenous-retune-best-parameters"
 SYNC_BASE = f"{BASE}/retune_on_sync2"
 SLACKAWARE_BASE = f"{BASE}/slackaware3"
 IMPROVED_SLACKAWARE = f"{BASE}/improved-slackawareness"
 IMPROVED_SLACKAWARE_POST_BUGFIX = f"{BASE}/improved-slackawareness-post-bugfix"
+FREQ_SWEEP_BASE = f"{BASE}/freq-sweep"
 
 BENCHMARKS = ["cholesky", "lu"]
 PES = [0, 1, 2, 3]
@@ -38,6 +44,7 @@ def load_profiles(base, pes, energy_name="gpu_{pe}.csv", profile_name="profile_p
         make_energy_func(pd.read_csv(f"{base}/energy/{energy_name.format(pe=pe)}"))
         for pe in pes
     ]
+
     df_profile = pd.concat(
         [pd.read_csv(f"{base}/profile/{profile_name.format(pe=pe)}") for pe in pes]
     )
@@ -56,7 +63,8 @@ def score_runs(energy_funcs, df_profile, goal_func):
     delay = run_bounds["last_task_end"] - run_bounds["first_task_start"]
     energy = run_bounds.apply(
         lambda row: sum(
-            ef(row["last_task_end"]) - ef(row["first_task_start"]) for ef in energy_funcs
+            energy_func(row["last_task_end"]) - energy_func(row["first_task_start"])
+            for energy_func in energy_funcs
         ),
         axis=1,
     )
@@ -98,24 +106,10 @@ def load_sync_scores(benchmark):
     scores = {}
     for name, goal_func in GOAL_FUNCS.items():
         energy_funcs, df_profile = load_profiles(
-            f"{SYNC_BASE}/{benchmark}/{name}", PES, profile_name="tasks_pe{pe}.csv"
+            f"{SYNC_BASE}/{benchmark}/{name}", PES, profile_name=_TASKS_PROFILE
         )
         scores[name] = score_runs(energy_funcs, df_profile, goal_func)["mean"]
     return scores
-
-
-def load_combined_slack_df(base, benchmark):
-    """Combined-slack freq sweep — DataFrame indexed by frequency (MHz)."""
-    freqs = _list_int_subdirs(f"{base}/{benchmark}/combined-slack")
-    rows = []
-    for freq in freqs:
-        energy_funcs, df_profile = load_profiles(
-            f"{base}/{benchmark}/combined-slack/{freq}",
-            PES,
-            profile_name="tasks_pe{pe}.csv",
-        )
-        rows.append({"freq": freq, **score_all_metrics(energy_funcs, df_profile)})
-    return pd.DataFrame(rows).set_index("freq")
 
 
 def best_scores(df):
@@ -123,21 +117,32 @@ def best_scores(df):
     return {name: df.loc[df[name].idxmin(), name] for name in GOAL_FUNCS}
 
 
+def _freq_subdir(exp_base, benchmark):
+    """Return (per-freq base path, sorted freqs) for subdir-based layouts, or (None, [])."""
+    for subdir in (_COMBINED_SLACK, _CONSTANT):
+        path = f"{exp_base}/{benchmark}/{subdir}"
+        if os.path.isdir(path):
+            return path, _list_int_subdirs(path)
+    return None, []
+
+
 def load_scores_df(exp_base, benchmark):
     """Return a DataFrame of metric scores indexed by frequency, auto-detecting layout."""
-    combined_path = f"{exp_base}/{benchmark}/combined-slack"
-    if os.path.isdir(combined_path):
-        return load_combined_slack_df(exp_base, benchmark)
+    freq_base, freqs = _freq_subdir(exp_base, benchmark)
+    if freq_base:
+        rows = [
+            {"freq": freq, **score_all_metrics(*load_profiles(f"{freq_base}/{freq}", PES, profile_name=_TASKS_PROFILE))}
+            for freq in freqs
+        ]
+        return pd.DataFrame(rows).set_index("freq")
 
     homo_dirs = [d for d in os.listdir(exp_base) if d.startswith(f"{benchmark}_")]
     if homo_dirs:
         freqs = sorted(int(d.split("_")[1]) for d in homo_dirs)
-        rows = []
-        for freq in freqs:
-            energy_funcs, df_profile = load_profiles(
-                f"{exp_base}/{benchmark}_{freq}", PES
-            )
-            rows.append({"freq": freq, **score_all_metrics(energy_funcs, df_profile)})
+        rows = [
+            {"freq": freq, **score_all_metrics(*load_profiles(f"{exp_base}/{benchmark}_{freq}", PES))}
+            for freq in freqs
+        ]
         return pd.DataFrame(rows).set_index("freq")
 
     raise ValueError(f"Unrecognised experiment layout in {exp_base} for benchmark '{benchmark}'")
@@ -157,17 +162,11 @@ def _mean_run_time_from_tasks(profile_dir, profile_name="tasks_pe{pe}.csv"):
 
 
 def load_exec_times(exp_base, benchmark):
-    """Return a Series of mean run time (s) indexed by frequency (MHz).
-
-    Detects layout automatically:
-      - combined-slack: {benchmark}/combined-slack/{freq}/profile/
-      - homogeneous:    {benchmark}_{freq}/profile/
-    """
-    combined_path = f"{exp_base}/{benchmark}/combined-slack"
-    if os.path.isdir(combined_path):
-        freqs = _list_int_subdirs(combined_path)
+    """Return a Series of mean run time (s) indexed by frequency (MHz), auto-detecting layout."""
+    freq_base, freqs = _freq_subdir(exp_base, benchmark)
+    if freq_base:
         return pd.Series(
-            {freq: _mean_run_time_from_tasks(f"{combined_path}/{freq}/profile") for freq in freqs},
+            {freq: _mean_run_time_from_tasks(f"{freq_base}/{freq}/profile") for freq in freqs},
             name=os.path.basename(exp_base),
         )
 
@@ -175,13 +174,8 @@ def load_exec_times(exp_base, benchmark):
     if homo_dirs:
         freqs = sorted(int(d.split("_")[1]) for d in homo_dirs)
         return pd.Series(
-            {
-                freq: _mean_run_time_from_tasks(
-                    f"{exp_base}/{benchmark}_{freq}/profile",
-                    profile_name="profile_pe{pe}.csv",
-                )
-                for freq in freqs
-            },
+            {freq: _mean_run_time_from_tasks(f"{exp_base}/{benchmark}_{freq}/profile", _HOMO_PROFILE)
+             for freq in freqs},
             name=os.path.basename(exp_base),
         )
 
@@ -195,9 +189,9 @@ def load_exec_times(exp_base, benchmark):
 def print_comparison(benchmark):
     df_homo = load_homo_df(benchmark)
     sync = load_sync_scores(benchmark)
-    v1 = best_scores(load_combined_slack_df(SLACKAWARE_BASE, benchmark))
-    v2 = best_scores(load_combined_slack_df(IMPROVED_SLACKAWARE, benchmark))
-    v2_fix = best_scores(load_combined_slack_df(IMPROVED_SLACKAWARE_POST_BUGFIX, benchmark))
+    v1     = best_scores(load_scores_df(SLACKAWARE_BASE, benchmark))
+    v2     = best_scores(load_scores_df(IMPROVED_SLACKAWARE, benchmark))
+    v2_fix = best_scores(load_scores_df(IMPROVED_SLACKAWARE_POST_BUGFIX, benchmark))
 
     header = (
         f"{'metric':<8}  {'slack_v1':>12}  {'slack_v2':>12}  {'v2_fix':>12}  "
@@ -218,11 +212,11 @@ def print_comparison(benchmark):
         )
 
 
-def print_freq_sweep(df, label, benchmark, freq=None):
-    if freq is not None:
-        df = df.loc[[freq]] if freq in df.index else df.iloc[0:0]
+def print_freq_sweep(df, label, benchmark, freq_filter=None):
+    if freq_filter is not None:
+        df = df.loc[[freq_filter]] if freq_filter in df.index else df.iloc[0:0]
 
-    best_at = {fq: [] for fq in df.index}
+    best_at = {freq: [] for freq in df.index}
     for name in GOAL_FUNCS:
         if not df.empty:
             best_at[df[name].idxmin()].append(name)
@@ -231,10 +225,10 @@ def print_freq_sweep(df, label, benchmark, freq=None):
     print(f"\n=== {label} — {benchmark} (freq sweep) ===")
     print(header)
     print("-" * len(header))
-    for fq, row in df.iterrows():
-        metrics = ", ".join(best_at[fq]) if best_at[fq] else ""
+    for freq, row in df.iterrows():
+        metrics = ", ".join(best_at[freq]) if best_at[freq] else ""
         print(
-            f"{str(fq) + ' MHz':>8}  "
+            f"{str(freq) + ' MHz':>8}  "
             + "  ".join(f"{row[name]:>12.3e}" for name in GOAL_FUNCS)
             + f"  {metrics}"
         )
@@ -242,7 +236,7 @@ def print_freq_sweep(df, label, benchmark, freq=None):
 
 def print_best_vs_homo(benchmark):
     df_homo = load_homo_df(benchmark)
-    df_v2_fix = load_combined_slack_df(IMPROVED_SLACKAWARE_POST_BUGFIX, benchmark)
+    df_v2_fix = load_scores_df(IMPROVED_SLACKAWARE_POST_BUGFIX, benchmark)
 
     header = (
         f"{'metric':<8}  {'best_fix':>12}  {'fix_freq':>10}  "
@@ -262,54 +256,38 @@ def print_best_vs_homo(benchmark):
         )
 
 
-def print_metric_scores(experiment_names, benchmarks, metrics, freq=None):
+def print_metric_scores(experiment_names, benchmarks, metrics, freq_filter=None):
     for benchmark in benchmarks:
         series = {}
         for name in experiment_names:
             try:
-                df = load_scores_df(f"{BASE}/{name}", benchmark)
-                series[name] = df[metrics] if len(metrics) > 1 else df[metrics[0]]
+                series[name] = load_scores_df(f"{BASE}/{name}", benchmark)[metrics]
             except Exception as exc:
                 print(f"[skipped {name}: {exc}]")
 
         if not series:
             continue
 
-        all_freqs = sorted(set().union(*[
-            set(s.index if isinstance(s, (pd.DataFrame, pd.Series)) else []) for s in series.values()
-        ]))
-        if freq is not None:
-            all_freqs = [freq] if freq in all_freqs else []
+        all_freqs = sorted(set().union(*[set(s.index) for s in series.values()]))
+        if freq_filter is not None:
+            all_freqs = [freq_filter] if freq_filter in all_freqs else []
 
         col_w = 14
-        if len(metrics) == 1:
+        for metric in metrics:
             header = f"{'freq':>8}  " + "  ".join(f"{n:>{col_w}}" for n in series)
-            print(f"\n=== {benchmark} — {metrics[0]} scores ===")
+            print(f"\n=== {benchmark} — {metric} scores ===")
             print(header)
             print("-" * len(header))
-            for fq in all_freqs:
-                row = f"{str(fq) + ' MHz':>8}  "
+            for freq in all_freqs:
+                row = f"{str(freq) + ' MHz':>8}  "
                 row += "  ".join(
-                    f"{series[n].loc[fq]:>{col_w}.3e}" if fq in series[n].index else f"{'N/A':>{col_w}}"
+                    f"{series[n][metric].loc[freq]:>{col_w}.3e}" if freq in series[n].index else f"{'N/A':>{col_w}}"
                     for n in series
                 )
                 print(row)
-        else:
-            for metric in metrics:
-                header = f"{'freq':>8}  " + "  ".join(f"{n:>{col_w}}" for n in series)
-                print(f"\n=== {benchmark} — {metric} scores ===")
-                print(header)
-                print("-" * len(header))
-                for fq in all_freqs:
-                    row = f"{str(fq) + ' MHz':>8}  "
-                    row += "  ".join(
-                        f"{series[n][metric].loc[fq]:>{col_w}.3e}" if fq in series[n].index else f"{'N/A':>{col_w}}"
-                        for n in series
-                    )
-                    print(row)
 
 
-def print_execution_times(experiment_names, benchmarks, freq=None):
+def print_execution_times(experiment_names, benchmarks, freq_filter=None):
     for benchmark in benchmarks:
         series = {}
         for name in experiment_names:
@@ -322,18 +300,18 @@ def print_execution_times(experiment_names, benchmarks, freq=None):
             continue
 
         all_freqs = sorted(set().union(*[set(s.index) for s in series.values()]))
-        if freq is not None:
-            all_freqs = [freq] if freq in all_freqs else []
+        if freq_filter is not None:
+            all_freqs = [freq_filter] if freq_filter in all_freqs else []
 
         col_w = 14
         header = f"{'freq':>8}  " + "  ".join(f"{n:>{col_w}}" for n in series)
         print(f"\n=== {benchmark} — execution times (s, mean across PEs & runs) ===")
         print(header)
         print("-" * len(header))
-        for fq in all_freqs:
-            row = f"{str(fq) + ' MHz':>8}  "
+        for freq in all_freqs:
+            row = f"{str(freq) + ' MHz':>8}  "
             row += "  ".join(
-                f"{s.loc[fq]:>{col_w}.2f}" if fq in s.index else f"{'N/A':>{col_w}}"
+                f"{s.loc[freq]:>{col_w}.2f}" if freq in s.index else f"{'N/A':>{col_w}}"
                 for s in series.values()
             )
             print(row)
@@ -347,6 +325,7 @@ DEFAULT_EXPERIMENTS = [
     os.path.basename(SLACKAWARE_BASE),
     os.path.basename(IMPROVED_SLACKAWARE),
     os.path.basename(IMPROVED_SLACKAWARE_POST_BUGFIX),
+    os.path.basename(FREQ_SWEEP_BASE),
 ]
 
 
@@ -400,8 +379,11 @@ if __name__ == "__main__":
         print()
         for benchmark in args.benchmarks:
             for name in args.experiments:
-                df = load_combined_slack_df(f"{BASE}/{name}", benchmark)
-                print_freq_sweep(df, name, benchmark, freq=args.freq)
+                try:
+                    df = load_scores_df(f"{BASE}/{name}", benchmark)
+                    print_freq_sweep(df, name, benchmark, freq_filter=args.freq)
+                except Exception as exc:
+                    print(f"[skipped {name}: {exc}]")
 
     if "best-vs-homo" in measures:
         print()
@@ -410,9 +392,9 @@ if __name__ == "__main__":
 
     if "execution-times" in measures:
         print()
-        print_execution_times(args.experiments, args.benchmarks, freq=args.freq)
+        print_execution_times(args.experiments, args.benchmarks, freq_filter=args.freq)
 
     metric_measures = [m for m in args.measure if m in GOAL_FUNCS]
     if metric_measures:
         print()
-        print_metric_scores(args.experiments, args.benchmarks, metric_measures, freq=args.freq)
+        print_metric_scores(args.experiments, args.benchmarks, metric_measures, freq_filter=args.freq)
