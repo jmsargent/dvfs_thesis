@@ -27,3 +27,4 @@ homogenous-retune-best-parameters
 .DS_Store
 **/.nwave/
 experiments/**/**
+perftest
