@@ -19,6 +19,7 @@ GPUS=""
 SYMMETRIC_SIZE=""
 DEBUG_FILE=""
 DEBUG_LEVEL=""
+NSYS_OUTPUT=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -27,6 +28,7 @@ while [[ $# -gt 0 ]]; do
         --symmetric-size) SYMMETRIC_SIZE="$2"; shift 2 ;;
         --debug-file)     DEBUG_FILE="$2";    shift 2 ;;
         --debug-level)    DEBUG_LEVEL="$2";   shift 2 ;;
+        --nsys-output)    NSYS_OUTPUT="$2";   shift 2 ;;
         --) shift; break ;;
         *) break ;;
     esac
@@ -47,6 +49,13 @@ NVSHMEM_ARGS=(
 [[ -n "$DEBUG_FILE" ]]  && NVSHMEM_ARGS+=(-x NVSHMEM_DEBUG_FILE="$DEBUG_FILE")
 [[ -n "$DEBUG_LEVEL" ]] && NVSHMEM_ARGS+=(-x NVSHMEM_DEBUG="$DEBUG_LEVEL")
 
+NSYS_PREFIX=()
+[[ -n "$NSYS_OUTPUT" ]] && NSYS_PREFIX=(
+    nsys profile
+    "--trace=cuda,mpi,oshmem"
+    -o "${NSYS_OUTPUT}_%q{OMPI_COMM_WORLD_RANK}"
+)
+
 mpirun -np "$NP" \
     --bind-to core \
     -x LD_LIBRARY_PATH \
@@ -57,4 +66,5 @@ mpirun -np "$NP" \
     -mca pml ob1 \
     -mca btl self,vader \
     -mca coll_hcoll_enable 0 \
+    "${NSYS_PREFIX[@]}" \
     "$@"
