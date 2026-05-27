@@ -86,6 +86,8 @@ mustard/all: mustard/CMakeFiles/test_freq_controller.dir/all
 mustard/all: mustard/CMakeFiles/test_spanned_dag.dir/all
 mustard/all: mustard/CMakeFiles/cholesky_mustard.dir/all
 mustard/all: mustard/CMakeFiles/pingpong_mustard.dir/all
+mustard/all: mustard/CMakeFiles/latency_signal.dir/all
+mustard/all: mustard/CMakeFiles/latency_tile_pull.dir/all
 mustard/all: mustard/CMakeFiles/lu_mustard.dir/all
 mustard/all: mustard/CMakeFiles/p_lu_mustard.dir/all
 mustard/all: mustard/CMakeFiles/cg_mustard.dir/all
@@ -101,6 +103,8 @@ mustard/clean: mustard/CMakeFiles/test_freq_controller.dir/clean
 mustard/clean: mustard/CMakeFiles/test_spanned_dag.dir/clean
 mustard/clean: mustard/CMakeFiles/cholesky_mustard.dir/clean
 mustard/clean: mustard/CMakeFiles/pingpong_mustard.dir/clean
+mustard/clean: mustard/CMakeFiles/latency_signal.dir/clean
+mustard/clean: mustard/CMakeFiles/latency_tile_pull.dir/clean
 mustard/clean: mustard/CMakeFiles/lu_mustard.dir/clean
 mustard/clean: mustard/CMakeFiles/p_lu_mustard.dir/clean
 mustard/clean: mustard/CMakeFiles/cg_mustard.dir/clean
@@ -113,7 +117,7 @@ mustard/clean: mustard/CMakeFiles/cg_mustard.dir/clean
 mustard/CMakeFiles/test_timer.dir/all:
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_timer.dir/build.make mustard/CMakeFiles/test_timer.dir/depend
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_timer.dir/build.make mustard/CMakeFiles/test_timer.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=22,23 "Built target test_timer"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=28,29 "Built target test_timer"
 .PHONY : mustard/CMakeFiles/test_timer.dir/all
 
 # Build rule for subdir invocation for target.
@@ -139,7 +143,7 @@ mustard/CMakeFiles/test_timer.dir/clean:
 mustard/CMakeFiles/test_freq_controller.dir/all:
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_freq_controller.dir/build.make mustard/CMakeFiles/test_freq_controller.dir/depend
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_freq_controller.dir/build.make mustard/CMakeFiles/test_freq_controller.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=18,19 "Built target test_freq_controller"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=24,25 "Built target test_freq_controller"
 .PHONY : mustard/CMakeFiles/test_freq_controller.dir/all
 
 # Build rule for subdir invocation for target.
@@ -165,7 +169,7 @@ mustard/CMakeFiles/test_freq_controller.dir/clean:
 mustard/CMakeFiles/test_spanned_dag.dir/all:
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_spanned_dag.dir/build.make mustard/CMakeFiles/test_spanned_dag.dir/depend
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_spanned_dag.dir/build.make mustard/CMakeFiles/test_spanned_dag.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=20,21 "Built target test_spanned_dag"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=26,27 "Built target test_spanned_dag"
 .PHONY : mustard/CMakeFiles/test_spanned_dag.dir/all
 
 # Build rule for subdir invocation for target.
@@ -217,7 +221,7 @@ mustard/CMakeFiles/cholesky_mustard.dir/clean:
 mustard/CMakeFiles/pingpong_mustard.dir/all:
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/pingpong_mustard.dir/build.make mustard/CMakeFiles/pingpong_mustard.dir/depend
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/pingpong_mustard.dir/build.make mustard/CMakeFiles/pingpong_mustard.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=15,16,17 "Built target pingpong_mustard"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=21,22,23 "Built target pingpong_mustard"
 .PHONY : mustard/CMakeFiles/pingpong_mustard.dir/all
 
 # Build rule for subdir invocation for target.
@@ -237,13 +241,65 @@ mustard/CMakeFiles/pingpong_mustard.dir/clean:
 .PHONY : mustard/CMakeFiles/pingpong_mustard.dir/clean
 
 #=============================================================================
+# Target rules for target mustard/CMakeFiles/latency_signal.dir
+
+# All Build rule for target.
+mustard/CMakeFiles/latency_signal.dir/all:
+	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/latency_signal.dir/build.make mustard/CMakeFiles/latency_signal.dir/depend
+	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/latency_signal.dir/build.make mustard/CMakeFiles/latency_signal.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=8,9,10 "Built target latency_signal"
+.PHONY : mustard/CMakeFiles/latency_signal.dir/all
+
+# Build rule for subdir invocation for target.
+mustard/CMakeFiles/latency_signal.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles 3
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mustard/CMakeFiles/latency_signal.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles 0
+.PHONY : mustard/CMakeFiles/latency_signal.dir/rule
+
+# Convenience name for target.
+latency_signal: mustard/CMakeFiles/latency_signal.dir/rule
+.PHONY : latency_signal
+
+# clean rule for target.
+mustard/CMakeFiles/latency_signal.dir/clean:
+	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/latency_signal.dir/build.make mustard/CMakeFiles/latency_signal.dir/clean
+.PHONY : mustard/CMakeFiles/latency_signal.dir/clean
+
+#=============================================================================
+# Target rules for target mustard/CMakeFiles/latency_tile_pull.dir
+
+# All Build rule for target.
+mustard/CMakeFiles/latency_tile_pull.dir/all:
+	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/latency_tile_pull.dir/build.make mustard/CMakeFiles/latency_tile_pull.dir/depend
+	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/latency_tile_pull.dir/build.make mustard/CMakeFiles/latency_tile_pull.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=11,12,13 "Built target latency_tile_pull"
+.PHONY : mustard/CMakeFiles/latency_tile_pull.dir/all
+
+# Build rule for subdir invocation for target.
+mustard/CMakeFiles/latency_tile_pull.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles 3
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mustard/CMakeFiles/latency_tile_pull.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles 0
+.PHONY : mustard/CMakeFiles/latency_tile_pull.dir/rule
+
+# Convenience name for target.
+latency_tile_pull: mustard/CMakeFiles/latency_tile_pull.dir/rule
+.PHONY : latency_tile_pull
+
+# clean rule for target.
+mustard/CMakeFiles/latency_tile_pull.dir/clean:
+	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/latency_tile_pull.dir/build.make mustard/CMakeFiles/latency_tile_pull.dir/clean
+.PHONY : mustard/CMakeFiles/latency_tile_pull.dir/clean
+
+#=============================================================================
 # Target rules for target mustard/CMakeFiles/lu_mustard.dir
 
 # All Build rule for target.
 mustard/CMakeFiles/lu_mustard.dir/all:
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/lu_mustard.dir/build.make mustard/CMakeFiles/lu_mustard.dir/depend
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/lu_mustard.dir/build.make mustard/CMakeFiles/lu_mustard.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=8,9,10,11 "Built target lu_mustard"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=14,15,16,17 "Built target lu_mustard"
 .PHONY : mustard/CMakeFiles/lu_mustard.dir/all
 
 # Build rule for subdir invocation for target.
@@ -269,7 +325,7 @@ mustard/CMakeFiles/lu_mustard.dir/clean:
 mustard/CMakeFiles/p_lu_mustard.dir/all:
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/p_lu_mustard.dir/build.make mustard/CMakeFiles/p_lu_mustard.dir/depend
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/p_lu_mustard.dir/build.make mustard/CMakeFiles/p_lu_mustard.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=12,13,14 "Built target p_lu_mustard"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=18,19,20 "Built target p_lu_mustard"
 .PHONY : mustard/CMakeFiles/p_lu_mustard.dir/all
 
 # Build rule for subdir invocation for target.

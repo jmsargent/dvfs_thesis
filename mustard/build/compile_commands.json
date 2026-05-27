@@ -37,6 +37,18 @@
   },
   {
     "directory": "/data/users/sargent/dvfs_thesis/mustard/build/mustard",
+    "command": "/usr/bin/g++ -isystem /data/users/sargent/dvfs_thesis/mustard/include -isystem \"/data/users/sargent/.local/include/cuda\" -isystem \"/data/users/sargent/.local/include/ompi\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi/opal/mca/hwloc/hwloc201/hwloc/include\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi/opal/mca/event/libevent2022/libevent\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi/opal/mca/event/libevent2022/libevent/include\" -I/data/users/sargent/.local/include/nvshmem -L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib -lnvshmem_host -lnvshmem_device -lcuda -D_FORCE_INLINES -DVERBOSE -Xcompiler -pthread -c /data/users/sargent/dvfs_thesis/mustard/mustard/latency_signal.cu -o CMakeFiles/latency_signal.dir/latency_signal.cu.o",
+    "file": "/data/users/sargent/dvfs_thesis/mustard/mustard/latency_signal.cu",
+    "output": "mustard/CMakeFiles/latency_signal.dir/latency_signal.cu.o"
+  },
+  {
+    "directory": "/data/users/sargent/dvfs_thesis/mustard/build/mustard",
+    "command": "/usr/bin/g++ -isystem /data/users/sargent/dvfs_thesis/mustard/include -isystem \"/data/users/sargent/.local/include/cuda\" -isystem \"/data/users/sargent/.local/include/ompi\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi/opal/mca/hwloc/hwloc201/hwloc/include\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi/opal/mca/event/libevent2022/libevent\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi/opal/mca/event/libevent2022/libevent/include\" -I/data/users/sargent/.local/include/nvshmem -L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib -lnvshmem_host -lnvshmem_device -lcuda -D_FORCE_INLINES -DVERBOSE -Xcompiler -pthread -c /data/users/sargent/dvfs_thesis/mustard/mustard/latency_tile_pull.cu -o CMakeFiles/latency_tile_pull.dir/latency_tile_pull.cu.o",
+    "file": "/data/users/sargent/dvfs_thesis/mustard/mustard/latency_tile_pull.cu",
+    "output": "mustard/CMakeFiles/latency_tile_pull.dir/latency_tile_pull.cu.o"
+  },
+  {
+    "directory": "/data/users/sargent/dvfs_thesis/mustard/build/mustard",
     "command": "/usr/bin/g++ -isystem /data/users/sargent/dvfs_thesis/mustard/include -isystem \"/data/users/sargent/.local/include/cuda\" -isystem \"/data/users/sargent/.local/include/ompi\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi/opal/mca/hwloc/hwloc201/hwloc/include\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi/opal/mca/event/libevent2022/libevent\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi/opal/mca/event/libevent2022/libevent/include\" -I/data/users/sargent/.local/include/nvshmem -L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib -lnvshmem_host -lnvshmem_device -lcuda -D_FORCE_INLINES -DVERBOSE -Xcompiler -pthread -c /data/users/sargent/dvfs_thesis/mustard/mustard/lu_mustard.cu -o CMakeFiles/lu_mustard.dir/lu_mustard.cu.o",
     "file": "/data/users/sargent/dvfs_thesis/mustard/mustard/lu_mustard.cu",
     "output": "mustard/CMakeFiles/lu_mustard.dir/lu_mustard.cu.o"

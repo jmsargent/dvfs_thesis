@@ -5,6 +5,8 @@
 /data/users/sargent/dvfs_thesis/mustard/build/mustard/CMakeFiles/test_spanned_dag.dir
 /data/users/sargent/dvfs_thesis/mustard/build/mustard/CMakeFiles/cholesky_mustard.dir
 /data/users/sargent/dvfs_thesis/mustard/build/mustard/CMakeFiles/pingpong_mustard.dir
+/data/users/sargent/dvfs_thesis/mustard/build/mustard/CMakeFiles/latency_signal.dir
+/data/users/sargent/dvfs_thesis/mustard/build/mustard/CMakeFiles/latency_tile_pull.dir
 /data/users/sargent/dvfs_thesis/mustard/build/mustard/CMakeFiles/lu_mustard.dir
 /data/users/sargent/dvfs_thesis/mustard/build/mustard/CMakeFiles/p_lu_mustard.dir
 /data/users/sargent/dvfs_thesis/mustard/build/mustard/CMakeFiles/cg_mustard.dir

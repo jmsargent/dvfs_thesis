@@ -190,6 +190,34 @@ pingpong_mustard/fast:
 .PHONY : pingpong_mustard/fast
 
 # Convenience name for target.
+mustard/CMakeFiles/latency_signal.dir/rule:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mustard/CMakeFiles/latency_signal.dir/rule
+.PHONY : mustard/CMakeFiles/latency_signal.dir/rule
+
+# Convenience name for target.
+latency_signal: mustard/CMakeFiles/latency_signal.dir/rule
+.PHONY : latency_signal
+
+# fast build rule for target.
+latency_signal/fast:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/latency_signal.dir/build.make mustard/CMakeFiles/latency_signal.dir/build
+.PHONY : latency_signal/fast
+
+# Convenience name for target.
+mustard/CMakeFiles/latency_tile_pull.dir/rule:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mustard/CMakeFiles/latency_tile_pull.dir/rule
+.PHONY : mustard/CMakeFiles/latency_tile_pull.dir/rule
+
+# Convenience name for target.
+latency_tile_pull: mustard/CMakeFiles/latency_tile_pull.dir/rule
+.PHONY : latency_tile_pull
+
+# fast build rule for target.
+latency_tile_pull/fast:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/latency_tile_pull.dir/build.make mustard/CMakeFiles/latency_tile_pull.dir/build
+.PHONY : latency_tile_pull/fast
+
+# Convenience name for target.
 mustard/CMakeFiles/lu_mustard.dir/rule:
 	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mustard/CMakeFiles/lu_mustard.dir/rule
 .PHONY : mustard/CMakeFiles/lu_mustard.dir/rule
@@ -278,6 +306,54 @@ cholesky_mustard.s: cholesky_mustard.cu.s
 cholesky_mustard.cu.s:
 	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cholesky_mustard.dir/build.make mustard/CMakeFiles/cholesky_mustard.dir/cholesky_mustard.cu.s
 .PHONY : cholesky_mustard.cu.s
+
+latency_signal.o: latency_signal.cu.o
+.PHONY : latency_signal.o
+
+# target to build an object file
+latency_signal.cu.o:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/latency_signal.dir/build.make mustard/CMakeFiles/latency_signal.dir/latency_signal.cu.o
+.PHONY : latency_signal.cu.o
+
+latency_signal.i: latency_signal.cu.i
+.PHONY : latency_signal.i
+
+# target to preprocess a source file
+latency_signal.cu.i:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/latency_signal.dir/build.make mustard/CMakeFiles/latency_signal.dir/latency_signal.cu.i
+.PHONY : latency_signal.cu.i
+
+latency_signal.s: latency_signal.cu.s
+.PHONY : latency_signal.s
+
+# target to generate assembly for a file
+latency_signal.cu.s:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/latency_signal.dir/build.make mustard/CMakeFiles/latency_signal.dir/latency_signal.cu.s
+.PHONY : latency_signal.cu.s
+
+latency_tile_pull.o: latency_tile_pull.cu.o
+.PHONY : latency_tile_pull.o
+
+# target to build an object file
+latency_tile_pull.cu.o:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/latency_tile_pull.dir/build.make mustard/CMakeFiles/latency_tile_pull.dir/latency_tile_pull.cu.o
+.PHONY : latency_tile_pull.cu.o
+
+latency_tile_pull.i: latency_tile_pull.cu.i
+.PHONY : latency_tile_pull.i
+
+# target to preprocess a source file
+latency_tile_pull.cu.i:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/latency_tile_pull.dir/build.make mustard/CMakeFiles/latency_tile_pull.dir/latency_tile_pull.cu.i
+.PHONY : latency_tile_pull.cu.i
+
+latency_tile_pull.s: latency_tile_pull.cu.s
+.PHONY : latency_tile_pull.s
+
+# target to generate assembly for a file
+latency_tile_pull.cu.s:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/latency_tile_pull.dir/build.make mustard/CMakeFiles/latency_tile_pull.dir/latency_tile_pull.cu.s
+.PHONY : latency_tile_pull.cu.s
 
 lu_mustard.o: lu_mustard.cu.o
 .PHONY : lu_mustard.o
@@ -460,6 +536,8 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... cg_mustard"
 	@echo "... cholesky_mustard"
+	@echo "... latency_signal"
+	@echo "... latency_tile_pull"
 	@echo "... lu_mustard"
 	@echo "... p_lu_mustard"
 	@echo "... pingpong_mustard"
@@ -472,6 +550,12 @@ help:
 	@echo "... cholesky_mustard.o"
 	@echo "... cholesky_mustard.i"
 	@echo "... cholesky_mustard.s"
+	@echo "... latency_signal.o"
+	@echo "... latency_signal.i"
+	@echo "... latency_signal.s"
+	@echo "... latency_tile_pull.o"
+	@echo "... latency_tile_pull.i"
+	@echo "... latency_tile_pull.s"
 	@echo "... lu_mustard.o"
 	@echo "... lu_mustard.i"
 	@echo "... lu_mustard.s"

@@ -185,6 +185,32 @@ pingpong_mustard/fast:
 .PHONY : pingpong_mustard/fast
 
 #=============================================================================
+# Target rules for targets named latency_signal
+
+# Build rule for target.
+latency_signal: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 latency_signal
+.PHONY : latency_signal
+
+# fast build rule for target.
+latency_signal/fast:
+	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/latency_signal.dir/build.make mustard/CMakeFiles/latency_signal.dir/build
+.PHONY : latency_signal/fast
+
+#=============================================================================
+# Target rules for targets named latency_tile_pull
+
+# Build rule for target.
+latency_tile_pull: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 latency_tile_pull
+.PHONY : latency_tile_pull
+
+# fast build rule for target.
+latency_tile_pull/fast:
+	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/latency_tile_pull.dir/build.make mustard/CMakeFiles/latency_tile_pull.dir/build
+.PHONY : latency_tile_pull/fast
+
+#=============================================================================
 # Target rules for targets named lu_mustard
 
 # Build rule for target.
@@ -233,6 +259,8 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... cg_mustard"
 	@echo "... cholesky_mustard"
+	@echo "... latency_signal"
+	@echo "... latency_tile_pull"
 	@echo "... lu_mustard"
 	@echo "... p_lu_mustard"
 	@echo "... pingpong_mustard"
