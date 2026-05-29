@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <optional>
+#include <stdexcept>
 
 #include "cli.h"
 #include "frequency_controller.h"
@@ -32,26 +33,6 @@ inline std::unique_ptr<IRuntimeEventHandle> makeScaler(
 {
     switch (cfg.scalerMode)
     {
-        case ScalerMode::GreedyNpiDowntune:
-            return std::make_unique<GreedyNpiDowntuner>(
-                repo, std::move(dag), pe, goal, retuneDelayTracker, cfg.baselineFreq,
-                std::move(ctrl), std::move(planOut));
-
-        case ScalerMode::CriticalPathRampUp:
-            return std::make_unique<CriticalPathRampUpScaler>(
-                repo, std::move(dag), pe, retuneDelayTracker, cfg.baselineFreq,
-                std::move(ctrl), std::move(planOut));
-
-        case ScalerMode::NpiGap:
-            return std::make_unique<NpiGapScaler>(
-                repo, std::move(dag), pe, retuneDelayTracker, cfg.baselineFreq,
-                std::move(ctrl), std::move(planOut));
-
-        case ScalerMode::NpiGapRamp:
-            return std::make_unique<NpiGapRampScaler>(
-                repo, std::move(dag), pe, retuneDelayTracker, cfg.baselineFreq,
-                std::move(ctrl), std::move(planOut));
-
         case ScalerMode::CombinedSlackAware:
             return std::make_unique<CombinedSlackAwareFrequencyScaler>(
                 repo, std::move(dag), pe, retuneDelayTracker, cfg.baselineFreq,
@@ -59,6 +40,7 @@ inline std::unique_ptr<IRuntimeEventHandle> makeScaler(
 
         case ScalerMode::ConstantFrequency:
             return std::make_unique<ScalerConstantFrequency>(cfg.baselineFreq, std::move(ctrl));
+        default:
+            throw std::invalid_argument("unknown ScalerMode");
     }
-    return nullptr;
 }
