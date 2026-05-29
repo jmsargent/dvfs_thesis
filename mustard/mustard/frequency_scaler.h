@@ -80,6 +80,23 @@ class ScalerConstantFrequency : public IRuntimeEventHandle
 };
 
 
+class BoostingFrequencyScaler : public IRuntimeEventHandle
+{
+   public:
+    BoostingFrequencyScaler(int freq, std::unique_ptr<IFrequencyController> ctrl)
+        : freq_(freq), ctrl_(std::move(ctrl))
+    {}
+
+    void init() override { ctrl_->setFrequency(freq_); }
+
+    void onSignal(size_t, int, KernelStatusUpdate) override {}
+
+   private:
+    int                                   freq_;
+    std::unique_ptr<IFrequencyController> ctrl_;
+};
+
+
 // Combined slack-aware scaler implementing a three-zone strategy per PE.
 // buildSchedule() populates freqEvents_ (a persistent ring buffer) and zoneAFreq_.
 // onSignal() advances eventIdx_ through freqEvents_ each iteration; wrap is detected

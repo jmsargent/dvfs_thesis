@@ -270,7 +270,7 @@ class PartitionedCudaGraphBuilder
                 int* d_wait      = OperationCapturer::upload(waitIndices);
                 int* d_signal    = OperationCapturer::upload(signalParts);
 
-                capturer_.beginCapture(n.content.op.write, n.content.op.reads, n.content.op.name);
+                capturer_.beginCapture(n.content.op.write, n.content.op.reads, n.content.op.toString());
                 dvfsSignalBuilder_.openSignal(n.content.op, n.index);
                 if (d_wait)
                 {
@@ -289,7 +289,7 @@ class PartitionedCudaGraphBuilder
             }
             else
             {
-                capturer_.phantom(n.content.op.write, n.content.op.reads, n.content.op.name);
+                capturer_.phantom(n.content.op.write, n.content.op.reads, n.content.op.toString());
             }
         }
 
