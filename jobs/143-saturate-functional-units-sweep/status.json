@@ -1,0 +1,9 @@
+{
+  "git_sha": "9b33afd7e60e8bd36cabbb4a32889dfe4fce1292",
+  "id": "143-saturate-functional-units-sweep",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/143-saturate-functional-units-sweep",
+  "last_update_at": "2026-05-30T12:35:09+02:00",
+  "queued_at": "2026-05-30T12:35:09+02:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/143-saturate-functional-units-sweep/run.sbatch",
+  "state": "QUEUED"
+}
