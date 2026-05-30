@@ -2,16 +2,21 @@
   "git_sha": "7c7790bfcd0edd4e482ad558df34578dbdd3a308",
   "id": "144-slackaware-larger-kernels-cholesky",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/144-slackaware-larger-kernels-cholesky",
-  "last_update_at": "2026-05-31T00:43:21+02:00",
+  "last_update_at": "2026-05-31T00:53:52+02:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/144-slackaware-larger-kernels-cholesky/slurm-224111.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/144-slackaware-larger-kernels-cholesky/slurm-224111.out",
   "queued_at": "2026-05-31T00:43:11+02:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/144-slackaware-larger-kernels-cholesky/run.sbatch",
   "slurm_info": {
-    "raw_state": "RUNNING",
-    "source": "squeue"
+    "ElapsedRaw": "627",
+    "ExitCode": "0:0",
+    "JobIDRaw": "224111",
+    "MaxRSS": "",
+    "State": "COMPLETED",
+    "raw_state": "COMPLETED",
+    "source": "sacct"
   },
   "slurm_job_id": 224111,
-  "state": "RUNNING",
+  "state": "COMPLETED",
   "submitted_at": "2026-05-31T00:43:11+02:00"
 }
