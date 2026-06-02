@@ -111,6 +111,33 @@ class SpannedPartitionedDag : public PartitionedDag<Content>
 
     SpanT slack(int nodeIdx) const { return lst_[nodeIdx] - spannedNodes_[nodeIdx].span.start; }
 
+    // Returns the same-partition predecessor with the latest span.end (i.e. the one
+    // that executes immediately before n in execution order on that partition).
+    std::optional<SpannedNodeType> predecessor(const SpannedNodeType& n, int partition) const
+    {
+        std::optional<SpannedNodeType> result;
+        for (int src : this->incomingEdges(n.index))
+        {
+            if (spannedNodes_[src].partition != partition) continue;
+            if (!result || spannedNodes_[src].span.end > result->span.end)
+                result = spannedNodes_[src];
+        }
+        return result;
+    }
+
+    // Returns the same-partition successor with the earliest span.start.
+    std::optional<SpannedNodeType> successor(const SpannedNodeType& n) const
+    {
+        std::optional<SpannedNodeType> result;
+        for (int dst : this->outgoingEdges(n.index))
+        {
+            if (spannedNodes_[dst].partition != n.partition) continue;
+            if (!result || spannedNodes_[dst].span.start < result->span.start)
+                result = spannedNodes_[dst];
+        }
+        return result;
+    }
+
     std::vector<SpannedNodeType>&       spannedNodes() { return spannedNodes_; }
     const std::vector<SpannedNodeType>& spannedNodes() const { return spannedNodes_; }
 

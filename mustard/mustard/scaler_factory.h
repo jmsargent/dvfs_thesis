@@ -40,6 +40,11 @@ inline std::unique_ptr<IRuntimeEventHandle> makeScaler(
 
         case ScalerMode::ConstantFrequency:
             return std::make_unique<ScalerConstantFrequency>(cfg.baselineFreq, std::move(ctrl));
+
+        case ScalerMode::SyncPoints:
+            return std::make_unique<ScalerSyncPoints>(
+                repo, std::move(dag), pe, cfg.baselineFreq, goal, std::move(ctrl));
+
         default:
             throw std::invalid_argument("unknown ScalerMode");
     }

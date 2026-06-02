@@ -167,6 +167,15 @@ class PartitionedDag
         return result;
     }
 
+    std::vector<NodeType> getNodesWithXPartitionDependencies(int partition) const
+    {
+        std::vector<NodeType> result;
+        for (auto& n : nodes_)
+            if (n.partition == partition && hasIncomingXPartition(n))
+                result.push_back(n);
+        return result;
+    }
+
    private:
     std::vector<NodeType>         nodes_;
     std::vector<Edge>             edges_;
