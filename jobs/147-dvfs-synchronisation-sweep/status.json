@@ -1,0 +1,13 @@
+{
+  "git_sha": "2248f97144be0eda160c2d3909213fd1c4e3c1a5",
+  "id": "147-dvfs-synchronisation-sweep",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/147-dvfs-synchronisation-sweep",
+  "last_update_at": "2026-06-02T17:14:01+02:00",
+  "log_err": "/data/users/chjing/dvfs_thesis/jobs/147-dvfs-synchronisation-sweep/slurm-225862.err",
+  "log_out": "/data/users/chjing/dvfs_thesis/jobs/147-dvfs-synchronisation-sweep/slurm-225862.out",
+  "queued_at": "2026-06-02T17:13:55+02:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/147-dvfs-synchronisation-sweep/run.sbatch",
+  "slurm_job_id": 225862,
+  "state": "SUBMITTED",
+  "submitted_at": "2026-06-02T17:13:57+02:00"
+}
