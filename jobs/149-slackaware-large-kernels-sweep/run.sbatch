@@ -23,9 +23,9 @@ FREQS=(1515 1440 1365 1290 1215 1140 1065 990 915 840 795 765 690 615 540 465 39
 function get_db_path() {
     local bench=$1
     if [[ "$bench" == "cholesky" ]]; then
-        echo "/data/users/sargent/dvfs_thesis/dbs_2/cholesky_database.csv"
+        echo "/data/users/sargent/dvfs_thesis/database/cholesky_database.csv"
     elif [[ "$bench" == "lu" ]]; then
-        echo "/data/users/sargent/dvfs_thesis/dbs_2/lu_database.csv"
+        echo "/data/users/sargent/dvfs_thesis/database/lu_database.csv"
     else
         echo "Unknown benchmark: $bench" >&2
         exit 1
