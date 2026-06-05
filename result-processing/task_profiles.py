@@ -1,5 +1,4 @@
 import os
-import re
 import pandas as pd
 import numpy as np
 
@@ -30,8 +29,8 @@ import numpy as np
 
 def create_database(base, benchmark, pe, freq_mhz):
 
-    df_energy  = pd.read_csv(f'{base}/{benchmark}_{freq_mhz}/energy/gpu_{pe}.csv')
-    df_profile = pd.read_csv(f'{base}/{benchmark}_{freq_mhz}/profile/profile_pe{pe}.csv')
+    df_energy  = pd.read_csv(f'{base}/{benchmark}/constant/{freq_mhz}/energy/gpu_{pe}.csv')
+    df_profile = pd.read_csv(f'{base}/{benchmark}/constant/{freq_mhz}/profile/tasks_pe{pe}.csv')
     
     
     ##################################################                                               
@@ -79,27 +78,26 @@ def create_database(base, benchmark, pe, freq_mhz):
 
 def create_dbs(base):
 
-    _pattern = re.compile(r'^(.+)_(\d+)$')
-
-    benchmarks_freqs = [
-        (m.group(1), int(m.group(2)))
-        for d in os.listdir(base)
+    benchs = sorted(
+        d for d in os.listdir(base)
         if os.path.isdir(os.path.join(base, d))
-        if (m := _pattern.match(d))
-    ]
-
-    benchs = sorted({b for b, _ in benchmarks_freqs})
-    freqs  = sorted({f for _, f in benchmarks_freqs})
+    )
 
     PES = [0, 1, 2, 3]
 
     for bench in benchs:
+        constant_dir = os.path.join(base, bench, 'constant')
+        freqs = sorted(
+            int(d) for d in os.listdir(constant_dir)
+            if os.path.isdir(os.path.join(constant_dir, d)) and d.isdigit()
+        )
+
         dfs = []
         for pe in PES:
             for freq in freqs:
                 dfs.append(create_database(base, bench, pe, freq))
-                
+
         pd.concat(dfs, ignore_index=True).to_csv(f'{bench}_database.csv', index=False)
 
-BASE_DIR = '/Users/jonathansargent/dvfs_thesis/homogenous-retune-best-parameters'
+BASE_DIR = '/Users/jonathansargent/dvfs_thesis/experiments/saturate-functional-units'
 create_dbs(BASE_DIR)

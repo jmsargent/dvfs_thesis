@@ -1,6 +1,6 @@
 goal,best_frequency,score
-$EDP$,1065,{$1.277 \times 10^{6}$}
-$ED^{2}P$,1065,{$1.508 \times 10^{8}$}
-$E^{2}DP$,1065,{$1.381 \times 10^{10}$}
-{Mean Energy (J)},240,{$1.060 \times 10^{4}$}
-{Mean Execution Time (s)},1365,{$1.144 \times 10^{2}$}
+$EDP$,1365,{$1.062 \times 10^{7}$}
+$ED^{2}P$,1365,{$3.493 \times 10^{9}$}
+$E^{2}DP$,1365,{$3.425 \times 10^{11}$}
+{Mean Energy (J)},1215,{$3.201 \times 10^{4}$}
+{Mean Execution Time (s)},1365,{$3.291 \times 10^{2}$}

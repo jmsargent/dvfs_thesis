@@ -4,6 +4,7 @@ import re
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 BASE = "/Users/jonathansargent/dvfs_thesis/experiments"
 
@@ -200,68 +201,50 @@ def plots():
     plt.tight_layout()
     plt.show()
     
-
+def welchs_ttest(times_per_freq: dict, alpha=0.05):
+    """Given {freq: execution_times_array} (sorted), return the highest frequency
+    where stepping up still yields a statistically significant speedup."""
+    freqs = sorted(times_per_freq)
+    corrected_alpha = alpha / (len(freqs) - 1)
+    saturation_freq = freqs[0]
+    for f_lo, f_hi in zip(freqs, freqs[1:]):
+        _, p = stats.ttest_ind(times_per_freq[f_lo], times_per_freq[f_hi],
+                               equal_var=False, alternative="greater")
+        if p < corrected_alpha:
+            saturation_freq = f_hi
+    return saturation_freq
 
 if __name__ == "__main__":
 
+    for b in ["lu", "cholesky"]:
+        df_baseline = dvfs_algo_stats("saturate-functional-units", TUNER, b)
+        df_other = dvfs_algo_stats("dvfs-syncpoints", "sync-points", b)
+        compare_df, freq_df = compare_algos(df_baseline, ("slackaware", df_other))
+        print(f"\n{b}\n", compare_df.to_string(index=False))
+        print(freq_df.to_string(index=False))
 
-    for bench in ("lu", "cholesky"):
-        baseline_df = dvfs_algo_stats(SWEEP, TUNER, bench)
-        baseline_scores = goals(baseline_df)
-        goal_labels = {
-            "edp": "$EDP$",
-            "ed2p": "$ED^{2}P$",
-            "e2dp": "$E^{2}DP$",
-            "mean_energy_j": "{Mean Energy (J)}",
-            "mean_exec_s": "{Mean Execution Time (s)}",
-        }
-        def fmt_score(val):
-            mantissa, exp = f"{val:.3e}".split("e")
-            return f"{{${mantissa} \\times 10^{{{int(exp)}}}$}}"
+    # fig, ax = plt.subplots(figsize=(8, 5))
+    # for b in ["lu", "cholesky"]:
+    #     print(f"\n--- {b} ---")
+    #     base_path = f"{BASE}/sweep-big-kernels2/{b}/constant"
+    #     freqs = get_available_freqs(base_path)
+    #     times_per_freq = {f: runtimes_dfs(get_profile_dfs(f"{base_path}/{f}"))[1]["execution_time_s"].values for f in freqs}
+    #     df = dvfs_algo_stats('sweep-big-kernels2', 'constant', b)
+    #     for g, (freq, val) in goals(df).items():
+    #         print(f"  {g}: freq={freq}, value={val}")
+    #     print(f"  saturation_freq: {welchs_ttest(times_per_freq)}")
+    #     ax.plot(df["frequency"], df["mean_exec_s"], marker="o", label=b)
 
-        rows = [
-            {"goal": goal_labels[k], "best_frequency": v[0], "score": fmt_score(v[1])}
-            for k, v in baseline_scores.items()
-        ]
-        out_df = pd.DataFrame(rows, columns=["goal", "best_frequency", "score"])
-        out_path = f"baseline-csv/{bench}_baseline_goals.csv"
-        out_df.to_csv(out_path, index=False)
-        print(f"Wrote {out_path}")
-        print(out_df.to_string(index=False))
-    
-    
-    # I wanna check for what time is the program downtunes vs what time is it at base frequency
-    # 
-    
-    # print(baseline_df)
-    
-    
-    # other_folder = "slackaware"
-    # stats = dvfs_algo_stats(other_folder, "combined-slack", BENCHMARK)
-    # df_compare, df_freqs = compare_algos(baseline_df, (other_folder, stats))
+    # ax.set_xlabel("Frequency (MHz)")
+    # ax.set_ylabel("Mean Execution Time (s)")
+    # ax.set_xlim(left=0)
+    # ax.set_ylim(bottom=0)
+    # ax.set_xticks(freqs)
+    # ax.tick_params(axis="x", rotation=45)
+    # ax.legend()
+    # ax.grid(True, linestyle="--", alpha=0.5)
+    # plt.tight_layout()
+    # plt.show()
 
-    # # print(baseline_df)
-    # # print(baseline_df)
-    # print(stats)
-    # stats.to_csv(f"{other_folder}-csv/{BENCHMARK}_performance_low_frequency_sweep.csv", index=False)
-    # print("comparison:")
-    # print(df_compare)
-    # metric_labels = {
-    #     "edp": "EDP",
-    #     "ed2p": r"ED$^2$P",
-    #     "e2dp": r"E$^2$DP",
-    #     "mean_energy_j": "Mean Energy (J)",
-    #     "mean_exec_s": "Mean Time (s)",
-    # }
-    # df_compare["metric"] = df_compare["metric"].replace(metric_labels)
-    # df_freqs["metric"] = df_freqs["metric"].replace(metric_labels)
-    # df_compare = df_compare.rename(columns={other_folder: "Slack-Aware"})
-    # df_freqs = df_freqs.rename(columns={other_folder: "Slack-Aware"})
-
-    # df_compare.to_csv(f"{other_folder}-csv/{BENCHMARK}_baseline_goal_comparison.csv", index=False)
-    # # print("freqs:")
-    # print(df_freqs)
-    # df_freqs.to_csv(f"{other_folder}-csv/{BENCHMARK}_optimal_freq_per_goal_comparison.csv", index=False)
-
-    # # print("=====")
-    # # print(execution_times(baseline_df))
+# 1365 cholesky
+# 1440 lu
