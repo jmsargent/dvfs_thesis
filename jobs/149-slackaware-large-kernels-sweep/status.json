@@ -2,16 +2,21 @@
   "git_sha": "1c69bef0afc33c31a26b97670e1e270f5ec18994",
   "id": "149-slackaware-large-kernels-sweep",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/149-slackaware-large-kernels-sweep",
-  "last_update_at": "2026-06-05T02:01:05+02:00",
+  "last_update_at": "2026-06-05T02:07:06+02:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/149-slackaware-large-kernels-sweep/slurm-225964.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/149-slackaware-large-kernels-sweep/slurm-225964.out",
   "queued_at": "2026-06-05T02:00:55+02:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/149-slackaware-large-kernels-sweep/run.sbatch",
   "slurm_info": {
-    "raw_state": "RUNNING",
-    "source": "squeue"
+    "ElapsedRaw": "143",
+    "ExitCode": "0:0",
+    "JobIDRaw": "225964",
+    "MaxRSS": "",
+    "State": "COMPLETED",
+    "raw_state": "COMPLETED",
+    "source": "sacct"
   },
   "slurm_job_id": 225964,
-  "state": "RUNNING",
+  "state": "COMPLETED",
   "submitted_at": "2026-06-05T02:00:58+02:00"
 }
