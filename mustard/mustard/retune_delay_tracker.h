@@ -2,6 +2,9 @@
 
 #include <chrono>
 #include <cmath>
+#include <memory>
+#include <string>
+#include <cuda_runtime.h>
 
 using namespace std::chrono_literals;
 
@@ -65,3 +68,12 @@ class L40SRetuneDelayTracker : public RetuneDelayTracker
         }
     }
 };
+
+inline std::unique_ptr<RetuneDelayTracker> makeRetuneDelayTracker(int device)
+{
+    cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, device);
+    if (std::string(prop.name).find("L40") != std::string::npos)
+        return std::make_unique<L40SRetuneDelayTracker>();
+    return std::make_unique<L4RetuneDelayTracker>();
+}

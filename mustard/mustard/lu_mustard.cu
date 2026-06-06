@@ -1174,8 +1174,8 @@ void tiledLUPanel(bool verify, bool dot)
     EDP   goal(cfg.goalN, cfg.goalM);
     std::optional<PEWriter> planOut;
     if (cfg.logPlan) planOut.emplace(cfg.outputDir, "plan", myPE, ".log");
-    L4RetuneDelayTracker retuneDelayTracker;
-    auto scaler = makeScaler(cfg, repo, partitionedDag, myPE, goal, retuneDelayTracker,
+    auto retuneDelayTracker = makeRetuneDelayTracker(myPE);
+    auto scaler = makeScaler(cfg, repo, partitionedDag, myPE, goal, *retuneDelayTracker,
                              makeController(cfg, myPE), std::move(planOut));
     RuntimeEventHandler tuner(std::move(scaler), dvfsSignalBuilder.signals());
     tuner.init();
