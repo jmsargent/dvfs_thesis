@@ -2,12 +2,16 @@
   "git_sha": "376862de09443039d0cadd0639e8de6f38d85c2f",
   "id": "152-saturate-functional-units-sweep",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/152-saturate-functional-units-sweep",
-  "last_update_at": "2026-06-07T17:03:58+02:00",
+  "last_update_at": "2026-06-07T17:04:04+02:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/152-saturate-functional-units-sweep/slurm-226072.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/152-saturate-functional-units-sweep/slurm-226072.out",
   "queued_at": "2026-06-07T17:03:56+02:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/152-saturate-functional-units-sweep/run.sbatch",
+  "slurm_info": {
+    "raw_state": "RUNNING",
+    "source": "squeue"
+  },
   "slurm_job_id": 226072,
-  "state": "SUBMITTED",
+  "state": "RUNNING",
   "submitted_at": "2026-06-07T17:03:57+02:00"
 }
