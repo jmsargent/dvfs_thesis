@@ -152,39 +152,38 @@ def dvfs_algo_stats(algo, tuner, benchmark):
     return pd.DataFrame(rows)
 
 
-def compare_algos(stats_baseline_df, stats_other_tuple):
-    (other_name, stats_other_df) = stats_other_tuple
+def single_freq_stats(algo, tuner, benchmark, freq) -> pd.DataFrame:
+    """Return a one-row DataFrame with stats for a single fixed frequency."""
+    inner_path = f"{BASE}/{algo}/{benchmark}/{tuner}/{freq}"
+    profile_dfs = get_profile_dfs(inner_path)
+    run_bounds, exec_times = runtimes_dfs(profile_dfs)
+    energy_dfs = get_energy_dfs(inner_path)
+    energy_per_run = energy_per_run_df(run_bounds, energy_dfs)
+    return pd.DataFrame([frequency_stats_row(freq, exec_times, energy_per_run)])
 
+
+def compare_algos(stats_baseline_df, *others):
     baseline_results = goals(stats_baseline_df)
-    other_results = goals(stats_other_df)
+    others_results = [(name, goals(df)) for name, df in others]
 
     rows_compare = []
     rows_freq = []
-    
-    for metric, _ in baseline_results.items():
-        b_freq,b_result = baseline_results[metric]
-        o_freq,o_result = other_results[metric]
-        
-        ratio = b_result / o_result
-        
-        rows_compare.append(
-            {
-                "metric": metric,
-                "baseline": b_result,
-                other_name: o_result,
-                "ratio": ratio
-            }
-        )
-        
-        rows_freq.append(
-            {
-                "metric": metric,
-                "baseline": b_freq,
-                other_name: o_freq,
-            }
-        )
-        
-        
+
+    for metric in baseline_results:
+        b_freq, b_result = baseline_results[metric]
+
+        compare_row = {"metric": metric, "baseline": b_result}
+        freq_row = {"metric": metric, "baseline": b_freq}
+
+        for name, other_results in others_results:
+            o_freq, o_result = other_results[metric]
+            compare_row[name] = o_result
+            compare_row[f"{name}_ratio"] = b_result / o_result
+            freq_row[name] = o_freq
+
+        rows_compare.append(compare_row)
+        rows_freq.append(freq_row)
+
     return pd.DataFrame(rows_compare), pd.DataFrame(rows_freq)
 
 def plots():
@@ -217,9 +216,16 @@ def welchs_ttest(times_per_freq: dict, alpha=0.05):
 if __name__ == "__main__":
 
     for b in ["lu", "cholesky"]:
-        df_baseline = dvfs_algo_stats("saturate-functional-units", TUNER, b)
-        df_other = dvfs_algo_stats("dvfs-syncpoints", "sync-points", b)
-        compare_df, freq_df = compare_algos(df_baseline, ("slackaware", df_other))
+        df_2040 = single_freq_stats("saturate-functional-units", TUNER, b, 2040)
+        df_saturate = dvfs_algo_stats("saturate-functional-units", TUNER, b)
+        df_syncpoints = dvfs_algo_stats("syncpoints-bk-sweep", "combined-slack", b)
+        df_slackaware_sweep = dvfs_algo_stats("slackaware-bk-sweep", "combined-slack", b)
+        compare_df, freq_df = compare_algos(
+            df_2040,
+            ("constant-sweep", df_saturate),
+            ("syncpoints", df_syncpoints),
+            ("slackaware-sweep", df_slackaware_sweep),
+        )
         print(f"\n{b}\n", compare_df.to_string(index=False))
         print(freq_df.to_string(index=False))
 
