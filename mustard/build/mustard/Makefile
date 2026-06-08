@@ -259,6 +259,20 @@ cg_mustard/fast:
 	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cg_mustard.dir/build.make mustard/CMakeFiles/cg_mustard.dir/build
 .PHONY : cg_mustard/fast
 
+# Convenience name for target.
+mustard/CMakeFiles/cuda_scheduler_ordering.dir/rule:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mustard/CMakeFiles/cuda_scheduler_ordering.dir/rule
+.PHONY : mustard/CMakeFiles/cuda_scheduler_ordering.dir/rule
+
+# Convenience name for target.
+cuda_scheduler_ordering: mustard/CMakeFiles/cuda_scheduler_ordering.dir/rule
+.PHONY : cuda_scheduler_ordering
+
+# fast build rule for target.
+cuda_scheduler_ordering/fast:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cuda_scheduler_ordering.dir/build.make mustard/CMakeFiles/cuda_scheduler_ordering.dir/build
+.PHONY : cuda_scheduler_ordering/fast
+
 cg_mustard.o: cg_mustard.cu.o
 .PHONY : cg_mustard.o
 
@@ -306,6 +320,30 @@ cholesky_mustard.s: cholesky_mustard.cu.s
 cholesky_mustard.cu.s:
 	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cholesky_mustard.dir/build.make mustard/CMakeFiles/cholesky_mustard.dir/cholesky_mustard.cu.s
 .PHONY : cholesky_mustard.cu.s
+
+cuda_scheduler_ordering.o: cuda_scheduler_ordering.cu.o
+.PHONY : cuda_scheduler_ordering.o
+
+# target to build an object file
+cuda_scheduler_ordering.cu.o:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cuda_scheduler_ordering.dir/build.make mustard/CMakeFiles/cuda_scheduler_ordering.dir/cuda_scheduler_ordering.cu.o
+.PHONY : cuda_scheduler_ordering.cu.o
+
+cuda_scheduler_ordering.i: cuda_scheduler_ordering.cu.i
+.PHONY : cuda_scheduler_ordering.i
+
+# target to preprocess a source file
+cuda_scheduler_ordering.cu.i:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cuda_scheduler_ordering.dir/build.make mustard/CMakeFiles/cuda_scheduler_ordering.dir/cuda_scheduler_ordering.cu.i
+.PHONY : cuda_scheduler_ordering.cu.i
+
+cuda_scheduler_ordering.s: cuda_scheduler_ordering.cu.s
+.PHONY : cuda_scheduler_ordering.s
+
+# target to generate assembly for a file
+cuda_scheduler_ordering.cu.s:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cuda_scheduler_ordering.dir/build.make mustard/CMakeFiles/cuda_scheduler_ordering.dir/cuda_scheduler_ordering.cu.s
+.PHONY : cuda_scheduler_ordering.cu.s
 
 latency_signal.o: latency_signal.cu.o
 .PHONY : latency_signal.o
@@ -434,6 +472,7 @@ sync_kernels.o: sync_kernels.cu.o
 sync_kernels.cu.o:
 	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cholesky_mustard.dir/build.make mustard/CMakeFiles/cholesky_mustard.dir/sync_kernels.cu.o
 	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/lu_mustard.dir/build.make mustard/CMakeFiles/lu_mustard.dir/sync_kernels.cu.o
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cuda_scheduler_ordering.dir/build.make mustard/CMakeFiles/cuda_scheduler_ordering.dir/sync_kernels.cu.o
 .PHONY : sync_kernels.cu.o
 
 sync_kernels.i: sync_kernels.cu.i
@@ -443,6 +482,7 @@ sync_kernels.i: sync_kernels.cu.i
 sync_kernels.cu.i:
 	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cholesky_mustard.dir/build.make mustard/CMakeFiles/cholesky_mustard.dir/sync_kernels.cu.i
 	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/lu_mustard.dir/build.make mustard/CMakeFiles/lu_mustard.dir/sync_kernels.cu.i
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cuda_scheduler_ordering.dir/build.make mustard/CMakeFiles/cuda_scheduler_ordering.dir/sync_kernels.cu.i
 .PHONY : sync_kernels.cu.i
 
 sync_kernels.s: sync_kernels.cu.s
@@ -452,6 +492,7 @@ sync_kernels.s: sync_kernels.cu.s
 sync_kernels.cu.s:
 	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cholesky_mustard.dir/build.make mustard/CMakeFiles/cholesky_mustard.dir/sync_kernels.cu.s
 	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/lu_mustard.dir/build.make mustard/CMakeFiles/lu_mustard.dir/sync_kernels.cu.s
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cuda_scheduler_ordering.dir/build.make mustard/CMakeFiles/cuda_scheduler_ordering.dir/sync_kernels.cu.s
 .PHONY : sync_kernels.cu.s
 
 test_freq_controller.o: test_freq_controller.cu.o
@@ -536,6 +577,7 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... cg_mustard"
 	@echo "... cholesky_mustard"
+	@echo "... cuda_scheduler_ordering"
 	@echo "... latency_signal"
 	@echo "... latency_tile_pull"
 	@echo "... lu_mustard"
@@ -550,6 +592,9 @@ help:
 	@echo "... cholesky_mustard.o"
 	@echo "... cholesky_mustard.i"
 	@echo "... cholesky_mustard.s"
+	@echo "... cuda_scheduler_ordering.o"
+	@echo "... cuda_scheduler_ordering.i"
+	@echo "... cuda_scheduler_ordering.s"
 	@echo "... latency_signal.o"
 	@echo "... latency_signal.i"
 	@echo "... latency_signal.s"

@@ -249,6 +249,19 @@ cg_mustard/fast:
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cg_mustard.dir/build.make mustard/CMakeFiles/cg_mustard.dir/build
 .PHONY : cg_mustard/fast
 
+#=============================================================================
+# Target rules for targets named cuda_scheduler_ordering
+
+# Build rule for target.
+cuda_scheduler_ordering: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cuda_scheduler_ordering
+.PHONY : cuda_scheduler_ordering
+
+# fast build rule for target.
+cuda_scheduler_ordering/fast:
+	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cuda_scheduler_ordering.dir/build.make mustard/CMakeFiles/cuda_scheduler_ordering.dir/build
+.PHONY : cuda_scheduler_ordering/fast
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -259,6 +272,7 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... cg_mustard"
 	@echo "... cholesky_mustard"
+	@echo "... cuda_scheduler_ordering"
 	@echo "... latency_signal"
 	@echo "... latency_tile_pull"
 	@echo "... lu_mustard"

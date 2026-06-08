@@ -10,5 +10,6 @@
 /data/users/sargent/dvfs_thesis/mustard/build/mustard/CMakeFiles/lu_mustard.dir
 /data/users/sargent/dvfs_thesis/mustard/build/mustard/CMakeFiles/p_lu_mustard.dir
 /data/users/sargent/dvfs_thesis/mustard/build/mustard/CMakeFiles/cg_mustard.dir
+/data/users/sargent/dvfs_thesis/mustard/build/mustard/CMakeFiles/cuda_scheduler_ordering.dir
 /data/users/sargent/dvfs_thesis/mustard/build/mustard/CMakeFiles/edit_cache.dir
 /data/users/sargent/dvfs_thesis/mustard/build/mustard/CMakeFiles/rebuild_cache.dir

@@ -18,6 +18,7 @@ add_executable(lu_mustard lu_mustard.cu sync_kernels.cu
         StridedPanel.h)
 add_executable(p_lu_mustard lu_mustard_p.cu)
 add_executable(cg_mustard cg_mustard.cu)
+add_executable(cuda_scheduler_ordering cuda_scheduler_ordering.cu sync_kernels.cu)
 
 
 find_package(NVSHMEM REQUIRED)
@@ -49,3 +50,4 @@ target_link_libraries(pingpong_mustard ${MUSTARD_COMMON_LIBS})
 target_link_libraries(latency_signal ${MUSTARD_COMMON_LIBS})
 target_link_libraries(latency_tile_pull ${MUSTARD_COMMON_LIBS})
 target_link_libraries(cg_mustard ${MUSTARD_COMMON_LIBS} ${NVSHMEM_LIBRARIES})
+target_link_libraries(cuda_scheduler_ordering ${MUSTARD_COMMON_LIBS})

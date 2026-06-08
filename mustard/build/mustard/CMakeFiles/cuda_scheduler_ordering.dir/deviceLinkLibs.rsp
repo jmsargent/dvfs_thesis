@@ -1,0 +1,1 @@
+  -lnvshmem_host -lnvshmem_device "/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/12.6/targets/x86_64-linux/lib/libculibos.a" -lcudadevrt -lcudart_static -lrt -lpthread -ldl 

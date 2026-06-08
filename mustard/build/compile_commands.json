@@ -70,5 +70,17 @@
     "command": "/usr/bin/g++ -isystem /data/users/sargent/dvfs_thesis/mustard/include -isystem \"/data/users/sargent/.local/include/cuda\" -isystem \"/data/users/sargent/.local/include/ompi\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi/opal/mca/hwloc/hwloc201/hwloc/include\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi/opal/mca/event/libevent2022/libevent\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi/opal/mca/event/libevent2022/libevent/include\" -I/data/users/sargent/.local/include/nvshmem -L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib -lnvshmem_host -lnvshmem_device -lcuda -D_FORCE_INLINES -DVERBOSE -Xcompiler -pthread -c /data/users/sargent/dvfs_thesis/mustard/mustard/cg_mustard.cu -o CMakeFiles/cg_mustard.dir/cg_mustard.cu.o",
     "file": "/data/users/sargent/dvfs_thesis/mustard/mustard/cg_mustard.cu",
     "output": "mustard/CMakeFiles/cg_mustard.dir/cg_mustard.cu.o"
+  },
+  {
+    "directory": "/data/users/sargent/dvfs_thesis/mustard/build/mustard",
+    "command": "/usr/bin/g++ -isystem /data/users/sargent/dvfs_thesis/mustard/include -isystem \"/data/users/sargent/.local/include/cuda\" -isystem \"/data/users/sargent/.local/include/ompi\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi/opal/mca/hwloc/hwloc201/hwloc/include\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi/opal/mca/event/libevent2022/libevent\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi/opal/mca/event/libevent2022/libevent/include\" -I/data/users/sargent/.local/include/nvshmem -L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib -lnvshmem_host -lnvshmem_device -lcuda -D_FORCE_INLINES -DVERBOSE -Xcompiler -pthread -c /data/users/sargent/dvfs_thesis/mustard/mustard/cuda_scheduler_ordering.cu -o CMakeFiles/cuda_scheduler_ordering.dir/cuda_scheduler_ordering.cu.o",
+    "file": "/data/users/sargent/dvfs_thesis/mustard/mustard/cuda_scheduler_ordering.cu",
+    "output": "mustard/CMakeFiles/cuda_scheduler_ordering.dir/cuda_scheduler_ordering.cu.o"
+  },
+  {
+    "directory": "/data/users/sargent/dvfs_thesis/mustard/build/mustard",
+    "command": "/usr/bin/g++ -isystem /data/users/sargent/dvfs_thesis/mustard/include -isystem \"/data/users/sargent/.local/include/cuda\" -isystem \"/data/users/sargent/.local/include/ompi\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi/opal/mca/hwloc/hwloc201/hwloc/include\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi/opal/mca/event/libevent2022/libevent\" -isystem \"/data/users/sargent/.local/include/ompi/openmpi/opal/mca/event/libevent2022/libevent/include\" -I/data/users/sargent/.local/include/nvshmem -L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib -lnvshmem_host -lnvshmem_device -lcuda -D_FORCE_INLINES -DVERBOSE -Xcompiler -pthread -c /data/users/sargent/dvfs_thesis/mustard/mustard/sync_kernels.cu -o CMakeFiles/cuda_scheduler_ordering.dir/sync_kernels.cu.o",
+    "file": "/data/users/sargent/dvfs_thesis/mustard/mustard/sync_kernels.cu",
+    "output": "mustard/CMakeFiles/cuda_scheduler_ordering.dir/sync_kernels.cu.o"
   }
 ]
