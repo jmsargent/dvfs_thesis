@@ -2,16 +2,21 @@
   "git_sha": "056fa3d0c78d112dd4cb4642868e8f083cd76693",
   "id": "153-graph-execution-ordering",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/153-graph-execution-ordering",
-  "last_update_at": "2026-06-08T13:32:08+02:00",
+  "last_update_at": "2026-06-08T13:32:38+02:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/153-graph-execution-ordering/slurm-226116.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/153-graph-execution-ordering/slurm-226116.out",
   "queued_at": "2026-06-08T13:32:04+02:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/153-graph-execution-ordering/run.sbatch",
   "slurm_info": {
-    "raw_state": "RUNNING",
-    "source": "squeue"
+    "ElapsedRaw": "26",
+    "ExitCode": "0:0",
+    "JobIDRaw": "226116",
+    "MaxRSS": "",
+    "State": "COMPLETED",
+    "raw_state": "COMPLETED",
+    "source": "sacct"
   },
   "slurm_job_id": 226116,
-  "state": "RUNNING",
+  "state": "COMPLETED",
   "submitted_at": "2026-06-08T13:32:07+02:00"
 }
