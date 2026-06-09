@@ -44,6 +44,26 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
+  include("/data/users/sargent/dvfs_thesis/mustard/build/baselines/cusolver_Mg/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
+  include("/data/users/sargent/dvfs_thesis/mustard/build/baselines/starpu/lu/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
+  include("/data/users/sargent/dvfs_thesis/mustard/build/baselines/starpu/cholesky/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
+  include("/data/users/sargent/dvfs_thesis/mustard/build/baselines/slate/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
   include("/data/users/sargent/dvfs_thesis/mustard/build/mustard/cmake_install.cmake")
 endif()
 

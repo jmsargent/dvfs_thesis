@@ -120,6 +120,84 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named cusolver_MgGetrf_example
+
+# Build rule for target.
+cusolver_MgGetrf_example: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cusolver_MgGetrf_example
+.PHONY : cusolver_MgGetrf_example
+
+# fast build rule for target.
+cusolver_MgGetrf_example/fast:
+	$(MAKE) $(MAKESILENT) -f baselines/cusolver_Mg/CMakeFiles/cusolver_MgGetrf_example.dir/build.make baselines/cusolver_Mg/CMakeFiles/cusolver_MgGetrf_example.dir/build
+.PHONY : cusolver_MgGetrf_example/fast
+
+#=============================================================================
+# Target rules for targets named cusolver_MgPotrf_example
+
+# Build rule for target.
+cusolver_MgPotrf_example: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cusolver_MgPotrf_example
+.PHONY : cusolver_MgPotrf_example
+
+# fast build rule for target.
+cusolver_MgPotrf_example/fast:
+	$(MAKE) $(MAKESILENT) -f baselines/cusolver_Mg/CMakeFiles/cusolver_MgPotrf_example.dir/build.make baselines/cusolver_Mg/CMakeFiles/cusolver_MgPotrf_example.dir/build
+.PHONY : cusolver_MgPotrf_example/fast
+
+#=============================================================================
+# Target rules for targets named starpu_lu_example
+
+# Build rule for target.
+starpu_lu_example: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 starpu_lu_example
+.PHONY : starpu_lu_example
+
+# fast build rule for target.
+starpu_lu_example/fast:
+	$(MAKE) $(MAKESILENT) -f baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/build.make baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/build
+.PHONY : starpu_lu_example/fast
+
+#=============================================================================
+# Target rules for targets named starpu_cholesky_tile_tag
+
+# Build rule for target.
+starpu_cholesky_tile_tag: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 starpu_cholesky_tile_tag
+.PHONY : starpu_cholesky_tile_tag
+
+# fast build rule for target.
+starpu_cholesky_tile_tag/fast:
+	$(MAKE) $(MAKESILENT) -f baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir/build.make baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir/build
+.PHONY : starpu_cholesky_tile_tag/fast
+
+#=============================================================================
+# Target rules for targets named lu_slate
+
+# Build rule for target.
+lu_slate: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 lu_slate
+.PHONY : lu_slate
+
+# fast build rule for target.
+lu_slate/fast:
+	$(MAKE) $(MAKESILENT) -f baselines/slate/CMakeFiles/lu_slate.dir/build.make baselines/slate/CMakeFiles/lu_slate.dir/build
+.PHONY : lu_slate/fast
+
+#=============================================================================
+# Target rules for targets named chol_slate
+
+# Build rule for target.
+chol_slate: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 chol_slate
+.PHONY : chol_slate
+
+# fast build rule for target.
+chol_slate/fast:
+	$(MAKE) $(MAKESILENT) -f baselines/slate/CMakeFiles/chol_slate.dir/build.make baselines/slate/CMakeFiles/chol_slate.dir/build
+.PHONY : chol_slate/fast
+
+#=============================================================================
 # Target rules for targets named test_timer
 
 # Build rule for target.
@@ -271,13 +349,19 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... cg_mustard"
+	@echo "... chol_slate"
 	@echo "... cholesky_mustard"
 	@echo "... cuda_scheduler_ordering"
+	@echo "... cusolver_MgGetrf_example"
+	@echo "... cusolver_MgPotrf_example"
 	@echo "... latency_signal"
 	@echo "... latency_tile_pull"
 	@echo "... lu_mustard"
+	@echo "... lu_slate"
 	@echo "... p_lu_mustard"
 	@echo "... pingpong_mustard"
+	@echo "... starpu_cholesky_tile_tag"
+	@echo "... starpu_lu_example"
 	@echo "... test_freq_controller"
 	@echo "... test_spanned_dag"
 	@echo "... test_timer"

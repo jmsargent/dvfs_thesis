@@ -6,10 +6,11 @@
 /// !!!   are included in the SLATE Users' Guide.           !!!
 
 //---------- begin sec1
-#include <slate/slate.hh>
-#include <blas.hh>
 #include <mpi.h>
 #include <stdio.h>
+
+#include <blas.hh>
+#include <slate/slate.hh>
 
 // TODO: provide path
 #include "argh.h"
@@ -22,7 +23,7 @@ void lu_example(int64_t n, int64_t nrhs, int64_t nb, int p, int q, int runs);
 // template <typename matrix_type>
 // void random_matrix( matrix_type& A );
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     // Initialize MPI, requiring MPI_THREAD_MULTIPLE support.
     int err = 0, mpi_provided = 0;
@@ -33,22 +34,25 @@ int main(int argc, char **argv)
     }
 
     // Call the LU example.
-    int64_t n = 12000, nrhs = 1, nb = 2000 /* tile size */, p = 1, q = 1, runs = 10;
-    auto cmdl = argh::parser(argc, argv);
+    int64_t n = 12000, nrhs = 1, nb = 2000 /* tile size */, p = 2, q = 2, runs = 10;
+    auto    cmdl = argh::parser(argc, argv);
 
     if (!(cmdl({"N", "n"}, n) >> n))
     {
-        std::cerr << "Must provide a valid N value! Got '" << cmdl({"N", "n"}).str() << "'" << std::endl;
+        std::cerr << "Must provide a valid N value! Got '" << cmdl({"N", "n"}).str() << "'"
+                  << std::endl;
         return 0;
     }
     if (!(cmdl({"b", "B"}, nb) >> nb))
     {
-        std::cerr << "Must provide a valid B value! Got '" << cmdl({"B", "b"}).str() << "'" << std::endl;
+        std::cerr << "Must provide a valid B value! Got '" << cmdl({"B", "b"}).str() << "'"
+                  << std::endl;
         return 0;
     }
     if (!(cmdl({"run", "runs", "r", "R"}, runs) >> runs) || runs < 1)
     {
-        std::cerr << "Must provide a valid number of runs! Got '" << cmdl({"run", "r", "R"}).str() << "'" << std::endl;
+        std::cerr << "Must provide a valid number of runs! Got '" << cmdl({"run", "r", "R"}).str()
+                  << "'" << std::endl;
         return 0;
     }
 
@@ -69,10 +73,10 @@ template <typename scalar_t>
 void lu_example(int64_t n, int64_t nrhs, int64_t nb, int p, int q, int runs)
 {
     // Get associated real type, e.g., double for complex<double>.
-    using real_t = double; // blas::real_type<scalar_t>;
-    using llong = long long; // guaranteed >= 64 bits
+    using real_t       = double;     // blas::real_type<scalar_t>;
+    using llong        = long long;  // guaranteed >= 64 bits
     const scalar_t one = 1;
-    int err = 0, mpi_size = 0, mpi_rank = 0;
+    int            err = 0, mpi_size = 0, mpi_rank = 0;
 
     // Get MPI size. Must be >= p*q for this example.
     err = MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
@@ -135,28 +139,29 @@ void lu_example(int64_t n, int64_t nrhs, int64_t nb, int p, int q, int runs)
         double time = omp_get_wtime();
         // slate::lu_solve(A, B, opts); /* \label{line:lu-solve} */
         // slate::lu_factor( A, pivots, opts );
-        slate::getrf_nopiv( A, opts );
+        slate::getrf_nopiv(A, opts);
         time = omp_get_wtime() - time;
         // slate::lu_solve_using_factor( A, pivots, B, opts );
-        slate::getrs_nopiv( A, B, opts );
+        slate::getrs_nopiv(A, B, opts);
         slate::copy(B, BH);
 
-        // Compute residual ||A0 * X  - B0|| / ( ||X|| * ||A0|| * n )  /* \label{line:lu-residual} */
+        // Compute residual ||A0 * X  - B0|| / ( ||X|| * ||A0|| * n )  /* \label{line:lu-residual}
+        // */
         real_t A_norm = slate::norm(slate::Norm::One, A0);
         real_t X_norm = slate::norm(slate::Norm::One, BH);
         slate::gemm(-one, A0, BH, one, B0);
-        real_t R_norm = slate::norm(slate::Norm::One, B0);
-        real_t residual = R_norm / (X_norm * A_norm * n);
-        real_t tol = std::numeric_limits<real_t>::epsilon();
-        bool status_ok = (residual < tol);
+        real_t R_norm    = slate::norm(slate::Norm::One, B0);
+        real_t residual  = R_norm / (X_norm * A_norm * n);
+        real_t tol       = std::numeric_limits<real_t>::epsilon();
+        bool   status_ok = (residual < tol);
 
         if (mpi_rank == 0)
         {
-            printf("device getrf n %lld, nb %lld, p-by-q %lld-by-%lld, "
-                   "residual %.2e, tol %.2e, time %4.4f sec, %s\n",
-                   llong(n), llong(nb), llong(p), llong(q),
-                   residual, tol, time,
-                   status_ok ? "pass" : "FAILED");
+            printf(
+                "device getrf n %lld, nb %lld, p-by-q %lld-by-%lld, "
+                "residual %.2e, tol %.2e, time %4.4f sec, %s\n",
+                llong(n), llong(nb), llong(p), llong(q), residual, tol, time,
+                status_ok ? "pass" : "FAILED");
         }
 
         if (run == runs - 1)
@@ -175,14 +180,11 @@ void lu_example(int64_t n, int64_t nrhs, int64_t nb, int p, int q, int runs)
             // slate::getrs_nopiv( AH, BH, opts );
             // // slate::lu_solve_using_factor( AH, pivotsH, BH, opts );
 
-            // // Compute residual ||A0 * X  - B0|| / ( ||X|| * ||A0|| * n )  /* \label{line:lu-residual} */
-            // A_norm = slate::norm(slate::Norm::One, A0);
-            // X_norm = slate::norm(slate::Norm::One, BH);
-            // slate::gemm(-one, A0, BH, one, B0);
-            // R_norm = slate::norm(slate::Norm::One, B0);
-            // residual = R_norm / (X_norm * A_norm * n);
-            // tol = std::numeric_limits<real_t>::epsilon();
-            // status_ok = (residual < tol);
+            // // Compute residual ||A0 * X  - B0|| / ( ||X|| * ||A0|| * n )  /*
+            // \label{line:lu-residual} */ A_norm = slate::norm(slate::Norm::One, A0); X_norm =
+            // slate::norm(slate::Norm::One, BH); slate::gemm(-one, A0, BH, one, B0); R_norm =
+            // slate::norm(slate::Norm::One, B0); residual = R_norm / (X_norm * A_norm * n); tol =
+            // std::numeric_limits<real_t>::epsilon(); status_ok = (residual < tol);
 
             // if (mpi_rank == 0)
             // {
@@ -192,7 +194,9 @@ void lu_example(int64_t n, int64_t nrhs, int64_t nb, int p, int q, int runs)
             //            residual, tol, time,
             //            status_ok ? "pass" : "FAILED");
             // }
-        } else {
+        }
+        else
+        {
             slate::copy(A0, A);
             slate::copy(B0, B);
         }

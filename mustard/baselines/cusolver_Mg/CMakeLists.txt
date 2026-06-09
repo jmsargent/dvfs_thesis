@@ -7,6 +7,7 @@ add_executable(cusolver_MgPotrf_example cusolver_MgPotrf_example.cu)
 # Locate cusolverMg library (not provided as an imported target by CUDAToolkit).
 find_library(CUDA_cusolverMg_LIBRARY cusolverMg
     PATHS "${CUDAToolkit_LIBRARY_DIR}"
+          "$ENV{HOME}/.local/cuda-math/lib"
     NO_DEFAULT_PATH)
 if(NOT CUDA_cusolverMg_LIBRARY)
     message(FATAL_ERROR "cusolverMg library not found in ${CUDAToolkit_LIBRARY_DIR}")

@@ -66,16 +66,92 @@ CMAKE_BINARY_DIR = /data/users/sargent/dvfs_thesis/mustard/build
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
+all: baselines/cusolver_Mg/all
+all: baselines/starpu/lu/all
+all: baselines/starpu/cholesky/all
+all: baselines/slate/all
 all: mustard/all
 .PHONY : all
 
 # The main recursive "preinstall" target.
+preinstall: baselines/cusolver_Mg/preinstall
+preinstall: baselines/starpu/lu/preinstall
+preinstall: baselines/starpu/cholesky/preinstall
+preinstall: baselines/slate/preinstall
 preinstall: mustard/preinstall
 .PHONY : preinstall
 
 # The main recursive "clean" target.
+clean: baselines/cusolver_Mg/clean
+clean: baselines/starpu/lu/clean
+clean: baselines/starpu/cholesky/clean
+clean: baselines/slate/clean
 clean: mustard/clean
 .PHONY : clean
+
+#=============================================================================
+# Directory level rules for directory baselines/cusolver_Mg
+
+# Recursive "all" directory target.
+baselines/cusolver_Mg/all: baselines/cusolver_Mg/CMakeFiles/cusolver_MgGetrf_example.dir/all
+baselines/cusolver_Mg/all: baselines/cusolver_Mg/CMakeFiles/cusolver_MgPotrf_example.dir/all
+.PHONY : baselines/cusolver_Mg/all
+
+# Recursive "preinstall" directory target.
+baselines/cusolver_Mg/preinstall:
+.PHONY : baselines/cusolver_Mg/preinstall
+
+# Recursive "clean" directory target.
+baselines/cusolver_Mg/clean: baselines/cusolver_Mg/CMakeFiles/cusolver_MgGetrf_example.dir/clean
+baselines/cusolver_Mg/clean: baselines/cusolver_Mg/CMakeFiles/cusolver_MgPotrf_example.dir/clean
+.PHONY : baselines/cusolver_Mg/clean
+
+#=============================================================================
+# Directory level rules for directory baselines/slate
+
+# Recursive "all" directory target.
+baselines/slate/all: baselines/slate/CMakeFiles/lu_slate.dir/all
+baselines/slate/all: baselines/slate/CMakeFiles/chol_slate.dir/all
+.PHONY : baselines/slate/all
+
+# Recursive "preinstall" directory target.
+baselines/slate/preinstall:
+.PHONY : baselines/slate/preinstall
+
+# Recursive "clean" directory target.
+baselines/slate/clean: baselines/slate/CMakeFiles/lu_slate.dir/clean
+baselines/slate/clean: baselines/slate/CMakeFiles/chol_slate.dir/clean
+.PHONY : baselines/slate/clean
+
+#=============================================================================
+# Directory level rules for directory baselines/starpu/cholesky
+
+# Recursive "all" directory target.
+baselines/starpu/cholesky/all: baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir/all
+.PHONY : baselines/starpu/cholesky/all
+
+# Recursive "preinstall" directory target.
+baselines/starpu/cholesky/preinstall:
+.PHONY : baselines/starpu/cholesky/preinstall
+
+# Recursive "clean" directory target.
+baselines/starpu/cholesky/clean: baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir/clean
+.PHONY : baselines/starpu/cholesky/clean
+
+#=============================================================================
+# Directory level rules for directory baselines/starpu/lu
+
+# Recursive "all" directory target.
+baselines/starpu/lu/all: baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/all
+.PHONY : baselines/starpu/lu/all
+
+# Recursive "preinstall" directory target.
+baselines/starpu/lu/preinstall:
+.PHONY : baselines/starpu/lu/preinstall
+
+# Recursive "clean" directory target.
+baselines/starpu/lu/clean: baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/clean
+.PHONY : baselines/starpu/lu/clean
 
 #=============================================================================
 # Directory level rules for directory mustard
@@ -113,13 +189,169 @@ mustard/clean: mustard/CMakeFiles/cuda_scheduler_ordering.dir/clean
 .PHONY : mustard/clean
 
 #=============================================================================
+# Target rules for target baselines/cusolver_Mg/CMakeFiles/cusolver_MgGetrf_example.dir
+
+# All Build rule for target.
+baselines/cusolver_Mg/CMakeFiles/cusolver_MgGetrf_example.dir/all:
+	$(MAKE) $(MAKESILENT) -f baselines/cusolver_Mg/CMakeFiles/cusolver_MgGetrf_example.dir/build.make baselines/cusolver_Mg/CMakeFiles/cusolver_MgGetrf_example.dir/depend
+	$(MAKE) $(MAKESILENT) -f baselines/cusolver_Mg/CMakeFiles/cusolver_MgGetrf_example.dir/build.make baselines/cusolver_Mg/CMakeFiles/cusolver_MgGetrf_example.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=14,15,16 "Built target cusolver_MgGetrf_example"
+.PHONY : baselines/cusolver_Mg/CMakeFiles/cusolver_MgGetrf_example.dir/all
+
+# Build rule for subdir invocation for target.
+baselines/cusolver_Mg/CMakeFiles/cusolver_MgGetrf_example.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles 3
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 baselines/cusolver_Mg/CMakeFiles/cusolver_MgGetrf_example.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles 0
+.PHONY : baselines/cusolver_Mg/CMakeFiles/cusolver_MgGetrf_example.dir/rule
+
+# Convenience name for target.
+cusolver_MgGetrf_example: baselines/cusolver_Mg/CMakeFiles/cusolver_MgGetrf_example.dir/rule
+.PHONY : cusolver_MgGetrf_example
+
+# clean rule for target.
+baselines/cusolver_Mg/CMakeFiles/cusolver_MgGetrf_example.dir/clean:
+	$(MAKE) $(MAKESILENT) -f baselines/cusolver_Mg/CMakeFiles/cusolver_MgGetrf_example.dir/build.make baselines/cusolver_Mg/CMakeFiles/cusolver_MgGetrf_example.dir/clean
+.PHONY : baselines/cusolver_Mg/CMakeFiles/cusolver_MgGetrf_example.dir/clean
+
+#=============================================================================
+# Target rules for target baselines/cusolver_Mg/CMakeFiles/cusolver_MgPotrf_example.dir
+
+# All Build rule for target.
+baselines/cusolver_Mg/CMakeFiles/cusolver_MgPotrf_example.dir/all:
+	$(MAKE) $(MAKESILENT) -f baselines/cusolver_Mg/CMakeFiles/cusolver_MgPotrf_example.dir/build.make baselines/cusolver_Mg/CMakeFiles/cusolver_MgPotrf_example.dir/depend
+	$(MAKE) $(MAKESILENT) -f baselines/cusolver_Mg/CMakeFiles/cusolver_MgPotrf_example.dir/build.make baselines/cusolver_Mg/CMakeFiles/cusolver_MgPotrf_example.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=17,18,19 "Built target cusolver_MgPotrf_example"
+.PHONY : baselines/cusolver_Mg/CMakeFiles/cusolver_MgPotrf_example.dir/all
+
+# Build rule for subdir invocation for target.
+baselines/cusolver_Mg/CMakeFiles/cusolver_MgPotrf_example.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles 3
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 baselines/cusolver_Mg/CMakeFiles/cusolver_MgPotrf_example.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles 0
+.PHONY : baselines/cusolver_Mg/CMakeFiles/cusolver_MgPotrf_example.dir/rule
+
+# Convenience name for target.
+cusolver_MgPotrf_example: baselines/cusolver_Mg/CMakeFiles/cusolver_MgPotrf_example.dir/rule
+.PHONY : cusolver_MgPotrf_example
+
+# clean rule for target.
+baselines/cusolver_Mg/CMakeFiles/cusolver_MgPotrf_example.dir/clean:
+	$(MAKE) $(MAKESILENT) -f baselines/cusolver_Mg/CMakeFiles/cusolver_MgPotrf_example.dir/build.make baselines/cusolver_Mg/CMakeFiles/cusolver_MgPotrf_example.dir/clean
+.PHONY : baselines/cusolver_Mg/CMakeFiles/cusolver_MgPotrf_example.dir/clean
+
+#=============================================================================
+# Target rules for target baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir
+
+# All Build rule for target.
+baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/all:
+	$(MAKE) $(MAKESILENT) -f baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/build.make baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/depend
+	$(MAKE) $(MAKESILENT) -f baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/build.make baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=43,44,45,46,47,48 "Built target starpu_lu_example"
+.PHONY : baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/all
+
+# Build rule for subdir invocation for target.
+baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles 6
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles 0
+.PHONY : baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/rule
+
+# Convenience name for target.
+starpu_lu_example: baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/rule
+.PHONY : starpu_lu_example
+
+# clean rule for target.
+baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/clean:
+	$(MAKE) $(MAKESILENT) -f baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/build.make baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/clean
+.PHONY : baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/clean
+
+#=============================================================================
+# Target rules for target baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir
+
+# All Build rule for target.
+baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir/all:
+	$(MAKE) $(MAKESILENT) -f baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir/build.make baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir/depend
+	$(MAKE) $(MAKESILENT) -f baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir/build.make baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=38,39,40,41,42 "Built target starpu_cholesky_tile_tag"
+.PHONY : baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir/all
+
+# Build rule for subdir invocation for target.
+baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles 5
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles 0
+.PHONY : baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir/rule
+
+# Convenience name for target.
+starpu_cholesky_tile_tag: baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir/rule
+.PHONY : starpu_cholesky_tile_tag
+
+# clean rule for target.
+baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir/clean:
+	$(MAKE) $(MAKESILENT) -f baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir/build.make baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir/clean
+.PHONY : baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir/clean
+
+#=============================================================================
+# Target rules for target baselines/slate/CMakeFiles/lu_slate.dir
+
+# All Build rule for target.
+baselines/slate/CMakeFiles/lu_slate.dir/all:
+	$(MAKE) $(MAKESILENT) -f baselines/slate/CMakeFiles/lu_slate.dir/build.make baselines/slate/CMakeFiles/lu_slate.dir/depend
+	$(MAKE) $(MAKESILENT) -f baselines/slate/CMakeFiles/lu_slate.dir/build.make baselines/slate/CMakeFiles/lu_slate.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=30,31 "Built target lu_slate"
+.PHONY : baselines/slate/CMakeFiles/lu_slate.dir/all
+
+# Build rule for subdir invocation for target.
+baselines/slate/CMakeFiles/lu_slate.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles 2
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 baselines/slate/CMakeFiles/lu_slate.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles 0
+.PHONY : baselines/slate/CMakeFiles/lu_slate.dir/rule
+
+# Convenience name for target.
+lu_slate: baselines/slate/CMakeFiles/lu_slate.dir/rule
+.PHONY : lu_slate
+
+# clean rule for target.
+baselines/slate/CMakeFiles/lu_slate.dir/clean:
+	$(MAKE) $(MAKESILENT) -f baselines/slate/CMakeFiles/lu_slate.dir/build.make baselines/slate/CMakeFiles/lu_slate.dir/clean
+.PHONY : baselines/slate/CMakeFiles/lu_slate.dir/clean
+
+#=============================================================================
+# Target rules for target baselines/slate/CMakeFiles/chol_slate.dir
+
+# All Build rule for target.
+baselines/slate/CMakeFiles/chol_slate.dir/all:
+	$(MAKE) $(MAKESILENT) -f baselines/slate/CMakeFiles/chol_slate.dir/build.make baselines/slate/CMakeFiles/chol_slate.dir/depend
+	$(MAKE) $(MAKESILENT) -f baselines/slate/CMakeFiles/chol_slate.dir/build.make baselines/slate/CMakeFiles/chol_slate.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=4,5 "Built target chol_slate"
+.PHONY : baselines/slate/CMakeFiles/chol_slate.dir/all
+
+# Build rule for subdir invocation for target.
+baselines/slate/CMakeFiles/chol_slate.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles 2
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 baselines/slate/CMakeFiles/chol_slate.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles 0
+.PHONY : baselines/slate/CMakeFiles/chol_slate.dir/rule
+
+# Convenience name for target.
+chol_slate: baselines/slate/CMakeFiles/chol_slate.dir/rule
+.PHONY : chol_slate
+
+# clean rule for target.
+baselines/slate/CMakeFiles/chol_slate.dir/clean:
+	$(MAKE) $(MAKESILENT) -f baselines/slate/CMakeFiles/chol_slate.dir/build.make baselines/slate/CMakeFiles/chol_slate.dir/clean
+.PHONY : baselines/slate/CMakeFiles/chol_slate.dir/clean
+
+#=============================================================================
 # Target rules for target mustard/CMakeFiles/test_timer.dir
 
 # All Build rule for target.
 mustard/CMakeFiles/test_timer.dir/all:
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_timer.dir/build.make mustard/CMakeFiles/test_timer.dir/depend
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_timer.dir/build.make mustard/CMakeFiles/test_timer.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=32,33 "Built target test_timer"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=53,54 "Built target test_timer"
 .PHONY : mustard/CMakeFiles/test_timer.dir/all
 
 # Build rule for subdir invocation for target.
@@ -145,7 +377,7 @@ mustard/CMakeFiles/test_timer.dir/clean:
 mustard/CMakeFiles/test_freq_controller.dir/all:
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_freq_controller.dir/build.make mustard/CMakeFiles/test_freq_controller.dir/depend
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_freq_controller.dir/build.make mustard/CMakeFiles/test_freq_controller.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=28,29 "Built target test_freq_controller"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=49,50 "Built target test_freq_controller"
 .PHONY : mustard/CMakeFiles/test_freq_controller.dir/all
 
 # Build rule for subdir invocation for target.
@@ -171,7 +403,7 @@ mustard/CMakeFiles/test_freq_controller.dir/clean:
 mustard/CMakeFiles/test_spanned_dag.dir/all:
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_spanned_dag.dir/build.make mustard/CMakeFiles/test_spanned_dag.dir/depend
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/test_spanned_dag.dir/build.make mustard/CMakeFiles/test_spanned_dag.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=30,31 "Built target test_spanned_dag"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=51,52 "Built target test_spanned_dag"
 .PHONY : mustard/CMakeFiles/test_spanned_dag.dir/all
 
 # Build rule for subdir invocation for target.
@@ -197,7 +429,7 @@ mustard/CMakeFiles/test_spanned_dag.dir/clean:
 mustard/CMakeFiles/cholesky_mustard.dir/all:
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cholesky_mustard.dir/build.make mustard/CMakeFiles/cholesky_mustard.dir/depend
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cholesky_mustard.dir/build.make mustard/CMakeFiles/cholesky_mustard.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=4,5,6,7 "Built target cholesky_mustard"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=6,7,8,9 "Built target cholesky_mustard"
 .PHONY : mustard/CMakeFiles/cholesky_mustard.dir/all
 
 # Build rule for subdir invocation for target.
@@ -223,7 +455,7 @@ mustard/CMakeFiles/cholesky_mustard.dir/clean:
 mustard/CMakeFiles/pingpong_mustard.dir/all:
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/pingpong_mustard.dir/build.make mustard/CMakeFiles/pingpong_mustard.dir/depend
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/pingpong_mustard.dir/build.make mustard/CMakeFiles/pingpong_mustard.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=25,26,27 "Built target pingpong_mustard"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=35,36,37 "Built target pingpong_mustard"
 .PHONY : mustard/CMakeFiles/pingpong_mustard.dir/all
 
 # Build rule for subdir invocation for target.
@@ -249,7 +481,7 @@ mustard/CMakeFiles/pingpong_mustard.dir/clean:
 mustard/CMakeFiles/latency_signal.dir/all:
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/latency_signal.dir/build.make mustard/CMakeFiles/latency_signal.dir/depend
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/latency_signal.dir/build.make mustard/CMakeFiles/latency_signal.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=12,13,14 "Built target latency_signal"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=20,21,22 "Built target latency_signal"
 .PHONY : mustard/CMakeFiles/latency_signal.dir/all
 
 # Build rule for subdir invocation for target.
@@ -275,7 +507,7 @@ mustard/CMakeFiles/latency_signal.dir/clean:
 mustard/CMakeFiles/latency_tile_pull.dir/all:
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/latency_tile_pull.dir/build.make mustard/CMakeFiles/latency_tile_pull.dir/depend
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/latency_tile_pull.dir/build.make mustard/CMakeFiles/latency_tile_pull.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=15,16,17 "Built target latency_tile_pull"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=23,24,25 "Built target latency_tile_pull"
 .PHONY : mustard/CMakeFiles/latency_tile_pull.dir/all
 
 # Build rule for subdir invocation for target.
@@ -301,7 +533,7 @@ mustard/CMakeFiles/latency_tile_pull.dir/clean:
 mustard/CMakeFiles/lu_mustard.dir/all:
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/lu_mustard.dir/build.make mustard/CMakeFiles/lu_mustard.dir/depend
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/lu_mustard.dir/build.make mustard/CMakeFiles/lu_mustard.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=18,19,20,21 "Built target lu_mustard"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=26,27,28,29 "Built target lu_mustard"
 .PHONY : mustard/CMakeFiles/lu_mustard.dir/all
 
 # Build rule for subdir invocation for target.
@@ -327,7 +559,7 @@ mustard/CMakeFiles/lu_mustard.dir/clean:
 mustard/CMakeFiles/p_lu_mustard.dir/all:
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/p_lu_mustard.dir/build.make mustard/CMakeFiles/p_lu_mustard.dir/depend
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/p_lu_mustard.dir/build.make mustard/CMakeFiles/p_lu_mustard.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=22,23,24 "Built target p_lu_mustard"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=32,33,34 "Built target p_lu_mustard"
 .PHONY : mustard/CMakeFiles/p_lu_mustard.dir/all
 
 # Build rule for subdir invocation for target.
@@ -379,7 +611,7 @@ mustard/CMakeFiles/cg_mustard.dir/clean:
 mustard/CMakeFiles/cuda_scheduler_ordering.dir/all:
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cuda_scheduler_ordering.dir/build.make mustard/CMakeFiles/cuda_scheduler_ordering.dir/depend
 	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/cuda_scheduler_ordering.dir/build.make mustard/CMakeFiles/cuda_scheduler_ordering.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=8,9,10,11 "Built target cuda_scheduler_ordering"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/users/sargent/dvfs_thesis/mustard/build/CMakeFiles --progress-num=10,11,12,13 "Built target cuda_scheduler_ordering"
 .PHONY : mustard/CMakeFiles/cuda_scheduler_ordering.dir/all
 
 # Build rule for subdir invocation for target.

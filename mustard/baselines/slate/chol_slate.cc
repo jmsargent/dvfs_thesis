@@ -32,7 +32,7 @@ int main(int argc, char **argv)
     }
 
     // Call the LU example.
-    int64_t n = 12000, nrhs = 1, nb = 2000 /* tile size */, p = 1, q = 1, runs = 10;
+    int64_t n = 12000, nrhs = 1, nb = 2000 /* tile size */, p = 2, q = 2, runs = 10;
     auto cmdl = argh::parser(argc, argv);
 
     if (!(cmdl({"N", "n"}, n) >> n))

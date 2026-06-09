@@ -1,5 +1,83 @@
 [
   {
+    "directory": "/data/users/sargent/dvfs_thesis/mustard/build/baselines/cusolver_Mg",
+    "command": "/usr/bin/g++ --options-file CMakeFiles/cusolver_MgGetrf_example.dir/includes_CUDA.rsp -I/data/users/sargent/.local/include/nvshmem -L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib -lnvshmem_host -lnvshmem_device -lcuda -D_FORCE_INLINES -DVERBOSE -c /data/users/sargent/dvfs_thesis/mustard/baselines/cusolver_Mg/cusolver_MgGetrf_example.cu -o CMakeFiles/cusolver_MgGetrf_example.dir/cusolver_MgGetrf_example.cu.o",
+    "file": "/data/users/sargent/dvfs_thesis/mustard/baselines/cusolver_Mg/cusolver_MgGetrf_example.cu",
+    "output": "baselines/cusolver_Mg/CMakeFiles/cusolver_MgGetrf_example.dir/cusolver_MgGetrf_example.cu.o"
+  },
+  {
+    "directory": "/data/users/sargent/dvfs_thesis/mustard/build/baselines/cusolver_Mg",
+    "command": "/usr/bin/g++ --options-file CMakeFiles/cusolver_MgPotrf_example.dir/includes_CUDA.rsp -I/data/users/sargent/.local/include/nvshmem -L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib -lnvshmem_host -lnvshmem_device -lcuda -D_FORCE_INLINES -DVERBOSE -c /data/users/sargent/dvfs_thesis/mustard/baselines/cusolver_Mg/cusolver_MgPotrf_example.cu -o CMakeFiles/cusolver_MgPotrf_example.dir/cusolver_MgPotrf_example.cu.o",
+    "file": "/data/users/sargent/dvfs_thesis/mustard/baselines/cusolver_Mg/cusolver_MgPotrf_example.cu",
+    "output": "baselines/cusolver_Mg/CMakeFiles/cusolver_MgPotrf_example.dir/cusolver_MgPotrf_example.cu.o"
+  },
+  {
+    "directory": "/data/users/sargent/dvfs_thesis/mustard/build/baselines/starpu/lu",
+    "command": "/usr/bin/cc -DSTARPU_OPENBLAS -I/data/users/sargent/.local/starpu/include/starpu/1.3 -isystem /data/users/sargent/dvfs_thesis/mustard/include -isystem /data/users/sargent/.local/include/cuda -isystem /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/math_libs/12.6/include -o CMakeFiles/starpu_lu_example.dir/lu_example_double.c.o -c /data/users/sargent/dvfs_thesis/mustard/baselines/starpu/lu/lu_example_double.c",
+    "file": "/data/users/sargent/dvfs_thesis/mustard/baselines/starpu/lu/lu_example_double.c",
+    "output": "baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/lu_example_double.c.o"
+  },
+  {
+    "directory": "/data/users/sargent/dvfs_thesis/mustard/build/baselines/starpu/lu",
+    "command": "/usr/bin/cc -DSTARPU_OPENBLAS -I/data/users/sargent/.local/starpu/include/starpu/1.3 -isystem /data/users/sargent/dvfs_thesis/mustard/include -isystem /data/users/sargent/.local/include/cuda -isystem /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/math_libs/12.6/include -o CMakeFiles/starpu_lu_example.dir/dlu.c.o -c /data/users/sargent/dvfs_thesis/mustard/baselines/starpu/lu/dlu.c",
+    "file": "/data/users/sargent/dvfs_thesis/mustard/baselines/starpu/lu/dlu.c",
+    "output": "baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/dlu.c.o"
+  },
+  {
+    "directory": "/data/users/sargent/dvfs_thesis/mustard/build/baselines/starpu/lu",
+    "command": "/usr/bin/cc -DSTARPU_OPENBLAS -I/data/users/sargent/.local/starpu/include/starpu/1.3 -isystem /data/users/sargent/dvfs_thesis/mustard/include -isystem /data/users/sargent/.local/include/cuda -isystem /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/math_libs/12.6/include -o CMakeFiles/starpu_lu_example.dir/dlu_pivot.c.o -c /data/users/sargent/dvfs_thesis/mustard/baselines/starpu/lu/dlu_pivot.c",
+    "file": "/data/users/sargent/dvfs_thesis/mustard/baselines/starpu/lu/dlu_pivot.c",
+    "output": "baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/dlu_pivot.c.o"
+  },
+  {
+    "directory": "/data/users/sargent/dvfs_thesis/mustard/build/baselines/starpu/lu",
+    "command": "/usr/bin/cc -DSTARPU_OPENBLAS -I/data/users/sargent/.local/starpu/include/starpu/1.3 -isystem /data/users/sargent/dvfs_thesis/mustard/include -isystem /data/users/sargent/.local/include/cuda -isystem /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/math_libs/12.6/include -o CMakeFiles/starpu_lu_example.dir/dlu_kernels.c.o -c /data/users/sargent/dvfs_thesis/mustard/baselines/starpu/lu/dlu_kernels.c",
+    "file": "/data/users/sargent/dvfs_thesis/mustard/baselines/starpu/lu/dlu_kernels.c",
+    "output": "baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/dlu_kernels.c.o"
+  },
+  {
+    "directory": "/data/users/sargent/dvfs_thesis/mustard/build/baselines/starpu/lu",
+    "command": "/usr/bin/cc -DSTARPU_OPENBLAS -I/data/users/sargent/.local/starpu/include/starpu/1.3 -isystem /data/users/sargent/dvfs_thesis/mustard/include -isystem /data/users/sargent/.local/include/cuda -isystem /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/math_libs/12.6/include -o CMakeFiles/starpu_lu_example.dir/__/common/blas.c.o -c /data/users/sargent/dvfs_thesis/mustard/baselines/starpu/common/blas.c",
+    "file": "/data/users/sargent/dvfs_thesis/mustard/baselines/starpu/common/blas.c",
+    "output": "baselines/starpu/lu/CMakeFiles/starpu_lu_example.dir/__/common/blas.c.o"
+  },
+  {
+    "directory": "/data/users/sargent/dvfs_thesis/mustard/build/baselines/starpu/cholesky",
+    "command": "/usr/bin/cc -DSTARPU_OPENBLAS -I/data/users/sargent/.local/starpu/include/starpu/1.3 -isystem /data/users/sargent/dvfs_thesis/mustard/include -isystem /data/users/sargent/.local/include/cuda -isystem /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/math_libs/12.6/include -o CMakeFiles/starpu_cholesky_tile_tag.dir/cholesky_tile_tag.c.o -c /data/users/sargent/dvfs_thesis/mustard/baselines/starpu/cholesky/cholesky_tile_tag.c",
+    "file": "/data/users/sargent/dvfs_thesis/mustard/baselines/starpu/cholesky/cholesky_tile_tag.c",
+    "output": "baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir/cholesky_tile_tag.c.o"
+  },
+  {
+    "directory": "/data/users/sargent/dvfs_thesis/mustard/build/baselines/starpu/cholesky",
+    "command": "/usr/bin/cc -DSTARPU_OPENBLAS -I/data/users/sargent/.local/starpu/include/starpu/1.3 -isystem /data/users/sargent/dvfs_thesis/mustard/include -isystem /data/users/sargent/.local/include/cuda -isystem /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/math_libs/12.6/include -o CMakeFiles/starpu_cholesky_tile_tag.dir/cholesky_models.c.o -c /data/users/sargent/dvfs_thesis/mustard/baselines/starpu/cholesky/cholesky_models.c",
+    "file": "/data/users/sargent/dvfs_thesis/mustard/baselines/starpu/cholesky/cholesky_models.c",
+    "output": "baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir/cholesky_models.c.o"
+  },
+  {
+    "directory": "/data/users/sargent/dvfs_thesis/mustard/build/baselines/starpu/cholesky",
+    "command": "/usr/bin/cc -DSTARPU_OPENBLAS -I/data/users/sargent/.local/starpu/include/starpu/1.3 -isystem /data/users/sargent/dvfs_thesis/mustard/include -isystem /data/users/sargent/.local/include/cuda -isystem /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/math_libs/12.6/include -o CMakeFiles/starpu_cholesky_tile_tag.dir/cholesky_kernels.c.o -c /data/users/sargent/dvfs_thesis/mustard/baselines/starpu/cholesky/cholesky_kernels.c",
+    "file": "/data/users/sargent/dvfs_thesis/mustard/baselines/starpu/cholesky/cholesky_kernels.c",
+    "output": "baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir/cholesky_kernels.c.o"
+  },
+  {
+    "directory": "/data/users/sargent/dvfs_thesis/mustard/build/baselines/starpu/cholesky",
+    "command": "/usr/bin/cc -DSTARPU_OPENBLAS -I/data/users/sargent/.local/starpu/include/starpu/1.3 -isystem /data/users/sargent/dvfs_thesis/mustard/include -isystem /data/users/sargent/.local/include/cuda -isystem /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/math_libs/12.6/include -o CMakeFiles/starpu_cholesky_tile_tag.dir/__/common/blas.c.o -c /data/users/sargent/dvfs_thesis/mustard/baselines/starpu/common/blas.c",
+    "file": "/data/users/sargent/dvfs_thesis/mustard/baselines/starpu/common/blas.c",
+    "output": "baselines/starpu/cholesky/CMakeFiles/starpu_cholesky_tile_tag.dir/__/common/blas.c.o"
+  },
+  {
+    "directory": "/data/users/sargent/dvfs_thesis/mustard/build/baselines/slate",
+    "command": "/usr/bin/g++  -isystem /data/users/sargent/dvfs_thesis/mustard/include -isystem /data/users/sargent/.local/slate/include -isystem /data/users/sargent/.local/include/ompi -isystem /data/users/sargent/.local/include/ompi/openmpi -isystem /data/users/sargent/.local/include/ompi/openmpi/opal/mca/hwloc/hwloc201/hwloc/include -isystem /data/users/sargent/.local/include/ompi/openmpi/opal/mca/event/libevent2022/libevent -isystem /data/users/sargent/.local/include/ompi/openmpi/opal/mca/event/libevent2022/libevent/include -isystem /data/users/sargent/.local/include/cuda -isystem /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/math_libs/12.6/include -fopenmp -pthread -o CMakeFiles/lu_slate.dir/lu_slate.cc.o -c /data/users/sargent/dvfs_thesis/mustard/baselines/slate/lu_slate.cc",
+    "file": "/data/users/sargent/dvfs_thesis/mustard/baselines/slate/lu_slate.cc",
+    "output": "baselines/slate/CMakeFiles/lu_slate.dir/lu_slate.cc.o"
+  },
+  {
+    "directory": "/data/users/sargent/dvfs_thesis/mustard/build/baselines/slate",
+    "command": "/usr/bin/g++  -isystem /data/users/sargent/dvfs_thesis/mustard/include -isystem /data/users/sargent/.local/slate/include -isystem /data/users/sargent/.local/include/ompi -isystem /data/users/sargent/.local/include/ompi/openmpi -isystem /data/users/sargent/.local/include/ompi/openmpi/opal/mca/hwloc/hwloc201/hwloc/include -isystem /data/users/sargent/.local/include/ompi/openmpi/opal/mca/event/libevent2022/libevent -isystem /data/users/sargent/.local/include/ompi/openmpi/opal/mca/event/libevent2022/libevent/include -isystem /data/users/sargent/.local/include/cuda -isystem /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/math_libs/12.6/include -fopenmp -pthread -o CMakeFiles/chol_slate.dir/chol_slate.cc.o -c /data/users/sargent/dvfs_thesis/mustard/baselines/slate/chol_slate.cc",
+    "file": "/data/users/sargent/dvfs_thesis/mustard/baselines/slate/chol_slate.cc",
+    "output": "baselines/slate/CMakeFiles/chol_slate.dir/chol_slate.cc.o"
+  },
+  {
     "directory": "/data/users/sargent/dvfs_thesis/mustard/build/mustard",
     "command": "/usr/bin/g++ -isystem /data/users/sargent/dvfs_thesis/mustard/include -isystem \"/data/users/sargent/.local/include/cuda\" -I/data/users/sargent/.local/include/nvshmem -L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib -lnvshmem_host -lnvshmem_device -lcuda -D_FORCE_INLINES -DVERBOSE -c /data/users/sargent/dvfs_thesis/mustard/mustard/test_timer.cu -o CMakeFiles/test_timer.dir/test_timer.cu.o",
     "file": "/data/users/sargent/dvfs_thesis/mustard/mustard/test_timer.cu",

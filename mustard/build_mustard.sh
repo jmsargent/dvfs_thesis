@@ -29,6 +29,9 @@ apptainer exec "$CONTAINER" \
     "$INCLUDE_DIR/cuda"
 
 # ── Build ─────────────────────────────────────────────────────────────────────
+STARPU_PREFIX="$HOME/.local/starpu"
+SLATE_PREFIX="$HOME/.local/slate"
+
 apptainer exec --nv "$CONTAINER" bash -c "
     rm -rf build && mkdir -p build
 
@@ -36,12 +39,15 @@ apptainer exec --nv "$CONTAINER" bash -c "
 
     cd build
 
+    PKG_CONFIG_PATH=$STARPU_PREFIX/lib/pkgconfig \
     $LOCAL_CMAKE .. \
         -DCMAKE_CXX_COMPILER=g++ \
         -DCMAKE_CUDA_COMPILER=/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/12.6/bin/nvcc \
         -DCMAKE_CUDA_ARCHITECTURES=89 \
         -DMUSTARD_CUDA_ARCHITECTURES=89 \
         -DMUSTARD_BUILD_BASELINES=ON \
+        -Dslate_DIR=$SLATE_PREFIX/lib/cmake/slate \
+        -DCMAKE_PREFIX_PATH=$STARPU_PREFIX\;$SLATE_PREFIX \
         -DCMAKE_EXE_LINKER_FLAGS=\"-L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib\" \
         -DCMAKE_CUDA_FLAGS=\"-I/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/include -L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib -lnvshmem_host -lnvshmem_device -lcuda\"
 
@@ -57,7 +63,7 @@ PATCH_ARGS=(
     -e "s|/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/hpcx/hpcx-2.20/ompi/include|$INCLUDE_DIR/ompi|g"
 )
 
-find ~/dvfs_thesis/mustard/build -name "*.rsp" | while read rsp; do
+find ~/dvfs_thesis/mustard/build -name "*.rsp" | while read -r rsp; do
     sed -i "${PATCH_ARGS[@]}" "$rsp"
 done
 

@@ -28,6 +28,14 @@ class IRuntimeEventHandle
     virtual void onSignal(size_t signalIdx, int nodeIdx, KernelStatusUpdate status) = 0;
 };
 
+class ScalerNone : public IRuntimeEventHandle
+{
+   public:
+    void init()    override {}
+    void reset()   override {}
+    void onSignal(size_t, int, KernelStatusUpdate) override {}
+};
+
 
 
 inline SpannedPartitionedDag<TileOperation, double>

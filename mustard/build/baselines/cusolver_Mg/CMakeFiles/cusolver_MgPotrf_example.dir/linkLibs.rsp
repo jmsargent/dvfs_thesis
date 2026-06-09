@@ -1,0 +1,1 @@
+ -Wl,-rpath,/data/users/sargent/.local/cuda-math/lib "/data/users/sargent/.local/cuda-math/lib/libcusolverMg.so" -lcudadevrt -lcudart_static -lrt -lpthread -ldl 

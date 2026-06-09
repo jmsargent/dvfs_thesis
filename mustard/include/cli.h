@@ -9,6 +9,7 @@
 #include "utils.h"
 
 enum class ScalerMode {
+    None,
     GreedyNpiDowntune,
     CriticalPathRampUp,
     NpiGap,
@@ -239,7 +240,8 @@ inline bool parseCommonArgs(argh::parser& cmdl, MustardConfig& cfg)
     {
         std::string scalerSpec;
         cmdl("scaler", "combined-slack") >> scalerSpec;
-        if      (scalerSpec == "greedy-npi")    cfg.scalerMode = ScalerMode::GreedyNpiDowntune;
+        if      (scalerSpec == "none")           cfg.scalerMode = ScalerMode::None;
+        else if (scalerSpec == "greedy-npi")    cfg.scalerMode = ScalerMode::GreedyNpiDowntune;
         else if (scalerSpec == "cp-ramp-up")    cfg.scalerMode = ScalerMode::CriticalPathRampUp;
         else if (scalerSpec == "npi-gap")       cfg.scalerMode = ScalerMode::NpiGap;
         else if (scalerSpec == "npi-gap-ramp")  cfg.scalerMode = ScalerMode::NpiGapRamp;
@@ -249,7 +251,7 @@ inline bool parseCommonArgs(argh::parser& cmdl, MustardConfig& cfg)
         else
         {
             std::cerr << "Error: unrecognised scaler '" << scalerSpec
-                      << "'. Valid: greedy-npi, cp-ramp-up, npi-gap, npi-gap-ramp, combined-slack, constant, sync-points\n";
+                      << "'. Valid: none, greedy-npi, cp-ramp-up, npi-gap, npi-gap-ramp, combined-slack, constant, sync-points\n";
             return false;
         }
     }
