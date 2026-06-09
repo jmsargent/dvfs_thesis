@@ -41,6 +41,7 @@ apptainer exec --nv "$CONTAINER" bash -c "
         -DCMAKE_CUDA_COMPILER=/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/12.6/bin/nvcc \
         -DCMAKE_CUDA_ARCHITECTURES=89 \
         -DMUSTARD_CUDA_ARCHITECTURES=89 \
+        -DMUSTARD_BUILD_BASELINES=ON \
         -DCMAKE_EXE_LINKER_FLAGS=\"-L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib\" \
         -DCMAKE_CUDA_FLAGS=\"-I/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/include -L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib -lnvshmem_host -lnvshmem_device -lcuda\"
 
