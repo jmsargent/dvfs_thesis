@@ -2,12 +2,21 @@
   "git_sha": "de701f761f4c027649e390ee63d6fcbe4d3a9668",
   "id": "155-syncpoints-large-kernels-sweepL40",
   "job_dir": "/data/users/chjing/dvfs_thesis/jobs/155-syncpoints-large-kernels-sweepL40",
-  "last_update_at": "2026-06-09T20:29:57+02:00",
+  "last_update_at": "2026-06-09T20:30:07+02:00",
   "log_err": "/data/users/chjing/dvfs_thesis/jobs/155-syncpoints-large-kernels-sweepL40/slurm-226172.err",
   "log_out": "/data/users/chjing/dvfs_thesis/jobs/155-syncpoints-large-kernels-sweepL40/slurm-226172.out",
   "queued_at": "2026-06-09T20:29:54+02:00",
   "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/155-syncpoints-large-kernels-sweepL40/run.sbatch",
+  "slurm_info": {
+    "ElapsedRaw": "8",
+    "ExitCode": "0:0",
+    "JobIDRaw": "226172",
+    "MaxRSS": "",
+    "State": "COMPLETED",
+    "raw_state": "COMPLETED",
+    "source": "sacct"
+  },
   "slurm_job_id": 226172,
-  "state": "SUBMITTED",
+  "state": "COMPLETED",
   "submitted_at": "2026-06-09T20:29:54+02:00"
 }
