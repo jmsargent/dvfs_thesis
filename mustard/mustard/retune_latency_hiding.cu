@@ -1,42 +1,17 @@
 /**
- * Experiment: hide_retune
- * ------------------------------------------------------------------------------
- * Question: can the host latency of an NVML core-clock change on PE 0 be
- * overlapped with ("hidden behind") a panel transfer to/from PE 1, which lives
- * on a different GPU?
+ * Sample two distributions to decide if an NVML retune hides behind a panel
+ * transfer (retune hidden iff tau <= transfer; see the paired run for the
+ * T_retune = max(tau, transfer) model). Raw samples out; stats in analyze.py.
  *
- * The transfer uses the SAME primitive as panel Cholesky / LU: a strided
- * cudaMemcpy2DAsync (device-to-device) over an nvshmem_ptr() P2P pointer into
- * the peer's symmetric buffer (d_matrix <-> d_matrix_remote in those codes).
+ *   Phase 1: retune cost tau (setApplicationsClocks host block) under idle /
+ *            send-in-flight / recv-in-flight -- the call can block longer when
+ *            the GPU is busy, and the busy number is the deployment-valid one.
+ *            The cover copy (--cover-b) is sized to outlast the worst retune.
+ *   Phase 2: transfer time (GPU copy duration via CUDA events) of the panel
+ *            primitive, for send & recv, with and without a concurrent retune
+ *            (does a retune slow the copy?), swept over panel width b.
  *
- * Method (paired, per run, per direction):
- *     plain   : memcpy2D_async + stream_sync                      -> T_plain
- *     retune  : memcpy2D_async + setFrequency(f_to) + stream_sync -> T_retune
- *
- * cudaMemcpy2DAsync is host-non-blocking and copy-engine driven, so its
- * wall-clock duration does NOT depend on the SM clock. It is enqueued first, so
- * setFrequency()'s host blocking time (tau_call) runs while the bytes are in
- * flight on the link; cudaStreamSynchronize() then completes the copy.
- *
- *   delta = T_retune - T_plain  ~=  max(0, tau_call - T_transfer)
- *       delta ~= 0      -> retune fully hidden inside the transfer window
- *       delta  > 0      -> tau_call leaked past the window (panel too small)
- *
- * "send" = PE 0 pushes its panel into PE 1   (dst = peer).
- * "recv" = PE 0 pulls  a panel from PE 1     (src = peer).
- *
- * The panel is a strided N-row x B-col region (row stride N) of an NxN tiled
- * matrix -- the panel-broadcast primitive. With the defaults it is ~256 MB,
- * large enough that the retune fits comfortably inside the transfer window.
- *
- * Requires exactly 2 PEs and NVSHMEM_SYMMETRIC_SIZE >= N*N*8 bytes.
- *
- * Run, e.g.:
- *   NVSHMEM_SYMMETRIC_SIZE=4G mpirun -np 2 ./retune_latency_hiding \
- *       --n 16384 --b 2048 --f-lo 765 --f-hi 2040 --ramp both --dir both --runs 20
- *
- * Pick f-lo / f-hi from supported (mem,graphics) pairs:
- *   nvidia-smi -q -d SUPPORTED_CLOCKS
+ * CSV: kind,cond,dir,b,mb,sample,ms   (2 PEs; NVSHMEM_SYMMETRIC_SIZE >= N*N*8)
  */
 
 #include <cuda_runtime.h>
@@ -45,7 +20,7 @@
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
-#include <utility>
+#include <string>
 #include <vector>
 
 #include "argh.h"
@@ -62,168 +37,194 @@ static inline double ms_since(clk::time_point a, clk::time_point b)
     return std::chrono::duration<double, std::milli>(b - a).count();
 }
 
-// ── the experiment ────────────────────────────────────────────────────────────
-
-static void exp_hide_retune(int myPE, IFrequencyController& freq, int N, int B,
-                            int f_lo, int f_hi, int runs, bool do_send, bool do_recv,
-                            bool ramp_up, bool ramp_down)
+// "256,1024,2048" -> {256, 1024, 2048}
+static std::vector<int> parse_int_list(const std::string& s)
 {
-    if (nvshmem_n_pes() != 2)
+    std::vector<int> out;
+    std::string      tok;
+    for (char c : s)
     {
-        if (myPE == 0) fprintf(stderr, "hide_retune requires exactly 2 PEs\n");
-        return;
-    }
-    const int peer = (myPE == 0) ? 1 : 0;
-
-    // Symmetric NxN matrix on both PEs, exactly as the factorizations allocate it.
-    const size_t nbytes = (size_t)N * N * sizeof(double);
-    double* d_sym = (double*)nvshmem_malloc(nbytes);
-    if (!d_sym) { if (myPE == 0) fprintf(stderr, "nvshmem_malloc failed; raise NVSHMEM_SYMMETRIC_SIZE\n"); return; }
-    checkCudaErrors(cudaMemset(d_sym, 1, nbytes));
-    nvshmem_barrier_all();
-
-    // PE 0 drives. d_remote is a P2P pointer into PE 1's symmetric buffer; the
-    // local side is PE 0's own buffer -- the d_matrix / d_matrix_remote split.
-    double*      d_remote = nullptr;
-    cudaStream_t s        = nullptr;
-
-    if (myPE == 0)
-    {
-        d_remote = (double*)nvshmem_ptr(d_sym, peer);
-        if (!d_remote) { fprintf(stderr, "nvshmem_ptr returned null -- P2P unavailable\n"); nvshmem_free(d_sym); return; }
-        checkCudaErrors(cudaStreamCreate(&s));
-
-        printf("# results: delta_ms ~ 0 means the retune was hidden\n");
-        printf("direction,ramp,run,panel_MB,f_from,f_to,T_plain_ms,T_retune_ms,delta_ms,tau_call_ms\n");
-    }
-
-    const size_t pitch  = (size_t)N * sizeof(double);   // row stride of the matrix
-    const size_t width  = (size_t)B * sizeof(double);   // B columns copied per row
-    const int    height = N;                            // all N rows of the panel
-    const double panel_mb = (double)width * height / (1024.0 * 1024.0);
-
-    // One timed panel transfer on PE 0. The async copy is enqueued first so it is
-    // in flight on the copy engine while setFrequency() blocks the host thread.
-    auto transfer = [&](bool send, bool retune, int f_to) -> std::pair<double, double>
-    {
-        double* dst = send ? d_remote : d_sym;          // send: local -> peer
-        double* src = send ? d_sym    : d_remote;       // recv: peer  -> local
-
-        auto t0 = clk::now();
-        checkCudaErrors(cudaMemcpy2DAsync(dst, pitch, src, pitch, width, height,
-                                          cudaMemcpyDeviceToDevice, s));
-        double tau_call = 0.0;
-        if (retune)
+        if (c == ',')
         {
-            auto c0 = clk::now();
-            freq.setFrequency(f_to);     // host blocks here while bytes fly
-            auto c1 = clk::now();
-            tau_call = ms_since(c0, c1);
+            if (!tok.empty()) { out.push_back(std::atoi(tok.c_str())); tok.clear(); }
         }
-        checkCudaErrors(cudaStreamSynchronize(s));   // completes the copy
-        auto t1 = clk::now();
-        return {ms_since(t0, t1), tau_call};
-    };
-
-    struct Combo { bool send; const char* name; };
-    std::vector<Combo> dirs;
-    if (do_send) dirs.push_back({true,  "send"});
-    if (do_recv) dirs.push_back({false, "recv"});
-
-    int ramps[2][2] = {{f_lo, f_hi}, {f_hi, f_lo}};
-    const char* rnames[2] = {"up", "down"};
-    bool ramp_on[2] = {ramp_up, ramp_down};
-
-    for (int ri = 0; ri < 2; ++ri)
-    {
-        if (!ramp_on[ri]) continue;
-        int f_from = ramps[ri][0], f_to = ramps[ri][1];
-
-        for (auto& d : dirs)
+        else
         {
-            if (myPE == 0) freq.setFrequency(f_from);
-
-            // Warm the P2P path once (first transfer pays setup costs).
-            nvshmem_barrier_all();
-            if (myPE == 0) transfer(d.send, false, 0);
-            nvshmem_barrier_all();
-
-            for (int r = 0; r < runs; ++r)
-            {
-                double T_plain = 0, T_retune = 0, tau = 0;
-
-                nvshmem_barrier_all();                       // A
-                if (myPE == 0) { auto pr = transfer(d.send, false, 0); T_plain = pr.first; }
-
-                nvshmem_barrier_all();                       // B
-                if (myPE == 0)
-                {
-                    freq.setFrequency(f_from);               // ensure same start point
-                    auto rr  = transfer(d.send, true, f_to);
-                    T_retune = rr.first;
-                    tau      = rr.second;
-                    freq.setFrequency(f_from);               // reset for next run
-                }
-
-                nvshmem_barrier_all();                       // C
-                if (myPE == 0)
-                    printf("%s,%s,%d,%.1f,%d,%d,%.4f,%.4f,%.4f,%.4f\n",
-                           d.name, rnames[ri], r, panel_mb, f_from, f_to,
-                           T_plain, T_retune, T_retune - T_plain, tau);
-            }
+            tok.push_back(c);
         }
     }
-
-    if (myPE == 0)
-    {
-        freq.setFrequency(f_hi);
-        cudaStreamDestroy(s);
-    }
-    nvshmem_free(d_sym);
+    if (!tok.empty()) out.push_back(std::atoi(tok.c_str()));
+    return out;
 }
-
-// ── main ──────────────────────────────────────────────────────────────────────
 
 int main(int argc, char** argv)
 {
     auto cmdl = argh::parser(argc, argv);
 
-    int         n    = 16384;    // matrix dimension (row stride / panel height)
-    int         b    = 2048;     // panel width in columns -> ~256 MB transfer
-    int         f_lo = 765;
-    int         f_hi = 2040;
-    int         runs = 20;
-    std::string dir  = "both";   // send | recv | both
-    std::string ramp = "both";   // up | down | both
+    int         n        = 16384;
+    int         f_lo     = 240;
+    int         f_hi     = 2040;
+    int         n_retune = 2000;
+    int         n_xfer   = 500;
+    int         cover_b  = 8192;   // cover-copy width for in-flight retune (~52 ms, > worst tau)
+    std::string b_list   = "256,1024,2048,3072,4096,8192,14336";
 
-    cmdl("n",    n)    >> n;
-    cmdl("b",    b)    >> b;
-    cmdl("f-lo", f_lo) >> f_lo;
-    cmdl("f-hi", f_hi) >> f_hi;
-    cmdl("runs", runs) >> runs;
-    cmdl("dir",  dir)  >> dir;
-    cmdl("ramp", ramp) >> ramp;
+    cmdl("n",              n)        >> n;
+    cmdl("f-lo",           f_lo)     >> f_lo;
+    cmdl("f-hi",           f_hi)     >> f_hi;
+    cmdl("retune-samples", n_retune) >> n_retune;
+    cmdl("xfer-samples",   n_xfer)   >> n_xfer;
+    cmdl("cover-b",        cover_b)  >> cover_b;
+    cmdl("b-list",         b_list)   >> b_list;
 
-    bool do_send = (dir == "send"  || dir == "both");
-    bool do_recv = (dir == "recv"  || dir == "both");
-    bool ramp_up = (ramp == "up"   || ramp == "both");
-    bool ramp_dn = (ramp == "down" || ramp == "both");
+    std::vector<int> bs = parse_int_list(b_list);
 
     char* lr = getenv("OMPI_COMM_WORLD_LOCAL_RANK");
     if (!lr) { fprintf(stderr, "OMPI_COMM_WORLD_LOCAL_RANK not set\n"); return 1; }
-    int local_rank = atoi(lr);
-    cudaSetDevice(local_rank);
+    cudaSetDevice(atoi(lr));
 
     nvshmem_init();
     myPE = nvshmem_my_pe();
+    if (nvshmem_n_pes() != 2)
+    {
+        if (myPE == 0) fprintf(stderr, "requires exactly 2 PEs\n");
+        nvshmem_finalize();
+        return 1;
+    }
+    const int peer = 1 - myPE;
 
     int dev = 0;
     cudaGetDevice(&dev);
     NvmlFrequencyController freq(dev);
 
-    exp_hide_retune(myPE, freq, n, b, f_lo, f_hi, runs, do_send, do_recv, ramp_up, ramp_dn);
+    // Symmetric NxN matrix on both PEs, as the factorizations allocate it.
+    const size_t nbytes = (size_t)n * n * sizeof(double);
+    double*      d_sym  = (double*)nvshmem_malloc(nbytes);
+    if (!d_sym) { if (myPE == 0) fprintf(stderr, "nvshmem_malloc failed; raise NVSHMEM_SYMMETRIC_SIZE\n"); nvshmem_finalize(); return 1; }
+    checkCudaErrors(cudaMemset(d_sym, 1, nbytes));
+    nvshmem_barrier_all();
+
+    if (myPE == 0)
+    {
+        printf("kind,cond,dir,b,mb,sample,ms\n");
+
+        double* d_remote = (double*)nvshmem_ptr(d_sym, peer);   // P2P pointer; null if unavailable
+        if (!d_remote)
+            fprintf(stderr, "nvshmem_ptr null -- P2P unavailable; idle retune only, no transfer phase\n");
+
+        cudaStream_t s;
+        checkCudaErrors(cudaStreamCreate(&s));
+        const size_t pitch       = (size_t)n * sizeof(double);        // row stride of the matrix
+        const size_t cover_width = (size_t)cover_b * sizeof(double);  // cover-copy width per row
+
+        // One retune to `target`, optionally with a cover copy in flight.
+        //   cond 0 = idle, 1 = send (push) in flight, 2 = recv (pull) in flight.
+        auto one_retune = [&](int target, int cond) -> double
+        {
+            if (cond == 1)
+                checkCudaErrors(cudaMemcpy2DAsync(d_remote, pitch, d_sym, pitch, cover_width, n,
+                                                  cudaMemcpyDeviceToDevice, s));   // local -> peer
+            else if (cond == 2)
+                checkCudaErrors(cudaMemcpy2DAsync(d_sym, pitch, d_remote, pitch, cover_width, n,
+                                                  cudaMemcpyDeviceToDevice, s));   // peer  -> local
+
+            auto c0 = clk::now();
+            freq.setFrequency(target);     // host blocks here; cover copy (if any) runs concurrently
+            auto c1 = clk::now();
+
+            if (cond != 0) checkCudaErrors(cudaStreamSynchronize(s));   // drain the cover copy
+            return ms_since(c0, c1);
+        };
+
+        // ── Phase 1: retune cost under idle / send-in-flight / recv-in-flight ──
+        struct Cond { int id; const char* name; };
+        std::vector<Cond> conds;
+        conds.push_back({0, "idle"});
+        if (d_remote) { conds.push_back({1, "send"}); conds.push_back({2, "recv"}); }
+
+        for (auto& c : conds)
+        {
+            freq.setFrequency(f_hi);   // known start; also warms the NVML path
+            for (int i = 0; i < n_retune; ++i)
+            {
+                int         target;
+                const char* dir;
+                if (i % 2 == 0) { target = f_lo; dir = "down"; }   // f_hi -> f_lo
+                else            { target = f_hi; dir = "up";   }   // f_lo -> f_hi
+
+                double tau = one_retune(target, c.id);
+                printf("retune,%s,%s,0,0.0,%d,%.4f\n", c.name, dir, i, tau);
+            }
+        }
+        freq.setFrequency(f_hi);
+
+        // ── Phase 2: transfer time, send & recv, plain & retune-in-flight ──────
+        // CUDA events time the copy on the GPU, so the host-blocking setFrequency
+        // does not pollute the measurement -- isolating whether it slows the copy.
+        if (d_remote)
+        {
+            cudaEvent_t e0, e1;
+            checkCudaErrors(cudaEventCreate(&e0));
+            checkCudaErrors(cudaEventCreate(&e1));
+
+            // dir 0 = send (push, local -> peer), 1 = recv (pull, peer -> local).
+            auto one_transfer = [&](size_t width, int dir, bool retune, int target) -> float
+            {
+                double* dst;
+                double* src;
+                if (dir == 0) { dst = d_remote; src = d_sym;    }
+                else          { dst = d_sym;    src = d_remote; }
+
+                checkCudaErrors(cudaEventRecord(e0, s));
+                checkCudaErrors(cudaMemcpy2DAsync(dst, pitch, src, pitch, width, n,
+                                                  cudaMemcpyDeviceToDevice, s));
+                checkCudaErrors(cudaEventRecord(e1, s));
+                if (retune) freq.setFrequency(target);   // host blocks; copy runs concurrently
+                checkCudaErrors(cudaStreamSynchronize(s));
+                float ms = 0.0f;
+                checkCudaErrors(cudaEventElapsedTime(&ms, e0, e1));
+                return ms;
+            };
+
+            struct Dir  { int  id;     const char* name; };
+            struct Mode { bool retune; const char* name; };
+            Dir  dirs[2]  = {{0, "send"},   {1, "recv"}};
+            Mode modes[2] = {{false, "plain"}, {true, "retune"}};
+
+            for (int b : bs)
+            {
+                const size_t width = (size_t)b * sizeof(double);
+                const double mb    = (double)width * n / (1024.0 * 1024.0);
+
+                for (auto& dr : dirs)
+                {
+                    for (auto& mo : modes)
+                    {
+                        freq.setFrequency(f_hi);
+                        one_transfer(width, dr.id, false, f_hi);   // warm
+
+                        for (int i = 0; i < n_xfer; ++i)
+                        {
+                            int target;
+                            if (i % 2 == 0) target = f_lo;
+                            else            target = f_hi;
+                            float ms = one_transfer(width, dr.id, mo.retune, target);
+                            printf("transfer,%s,%s,%d,%.1f,%d,%.4f\n",
+                                   mo.name, dr.name, b, mb, i, ms);
+                        }
+                    }
+                }
+            }
+
+            checkCudaErrors(cudaEventDestroy(e0));
+            checkCudaErrors(cudaEventDestroy(e1));
+        }
+
+        checkCudaErrors(cudaStreamDestroy(s));
+    }
 
     nvshmem_barrier_all();
+    nvshmem_free(d_sym);
     nvshmem_finalize();
     return 0;
 }
