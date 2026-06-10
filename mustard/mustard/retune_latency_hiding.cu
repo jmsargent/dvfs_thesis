@@ -211,14 +211,25 @@ int main(int argc, char** argv)
 
                         for (int i = 0; i < n_xfer; ++i)
                         {
-                            int target;
+                            int         target;
+                            const char* retune_dir;
                             if (i % 2 == 0)
-                                target = f_lo;
+                            {
+                                target     = f_lo;
+                                retune_dir = "down";
+                            }
                             else
-                                target = f_hi;
+                            {
+                                target     = f_hi;
+                                retune_dir = "up";
+                            }
                             double ms = one_transfer(width, dr.id, mo.retune, target);
-                            printf("transfer,%s,%s,%d,%.1f,%d,%.4f\n", mo.name, dr.name, b, mb, i,
-                                   ms);
+                            if (mo.retune)
+                                printf("transfer,retune-%s,%s,%d,%.1f,%d,%.4f\n", retune_dir,
+                                       dr.name, b, mb, i, ms);
+                            else
+                                printf("transfer,plain,%s,%d,%.1f,%d,%.4f\n", dr.name, b, mb, i,
+                                       ms);
                         }
                     }
                 }
