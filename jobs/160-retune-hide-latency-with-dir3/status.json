@@ -1,0 +1,9 @@
+{
+  "git_sha": "8288154a57d077ace777f73e4a997f76e9cf6a35",
+  "id": "160-retune-hide-latency-with-dir3",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/160-retune-hide-latency-with-dir3",
+  "last_update_at": "2026-06-10T21:32:04+02:00",
+  "queued_at": "2026-06-10T21:32:04+02:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/160-retune-hide-latency-with-dir3/run.sbatch",
+  "state": "QUEUED"
+}
