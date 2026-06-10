@@ -64,8 +64,8 @@ class OperationCapturer
 {
    public:
     OperationCapturer(mustard::TiledGraphCreator& creator, int* completionFlags,
-                      cudaStream_t stream)
-        : creator_(creator), completionFlags_(completionFlags), stream_(stream)
+                      cudaStream_t stream, int debug = 0)
+        : creator_(creator), completionFlags_(completionFlags), stream_(stream), debug_(debug)
     {
     }
 
@@ -86,13 +86,13 @@ class OperationCapturer
 
     void launchWait(int* d_wait, int n)
     {
-        mustard::kernel_wait_static<<<1, 1, 0, stream_>>>(d_wait, n, completionFlags_, 0);
+        mustard::kernel_wait_static<<<1, 1, 0, stream_>>>(d_wait, n, completionFlags_, debug_);
     }
 
     void launchSignal(int nodeIndex, int* d_signal, int n)
     {
         mustard::kernel_signal_static<<<1, 1, 0, stream_>>>(nodeIndex, completionFlags_, d_signal,
-                                                            n, 0);
+                                                            n, debug_);
     }
 
     void launchTimestamp(unsigned long long* ptr)
@@ -113,6 +113,7 @@ class OperationCapturer
     mustard::TiledGraphCreator& creator_;
     int*                        completionFlags_;
     cudaStream_t                stream_;
+    int                         debug_;
 };
 
 class KernelStopWatch

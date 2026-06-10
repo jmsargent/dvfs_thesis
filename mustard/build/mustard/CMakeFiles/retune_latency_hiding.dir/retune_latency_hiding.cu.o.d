@@ -718,6 +718,11 @@ mustard/CMakeFiles/retune_latency_hiding.dir/retune_latency_hiding.cu.o : /data/
     /usr/include/c++/11/bits/ostream.tcc \
     /usr/include/c++/11/bits/istream.tcc \
     /usr/include/c++/11/bits/sstream.tcc \
+    /data/users/sargent/dvfs_thesis/mustard/mustard/frequency_controller.h \
+    /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/12.6/targets/x86_64-linux/include/nvml.h \
+    /usr/include/c++/11/optional \
+    /data/users/sargent/dvfs_thesis/mustard/mustard/pe_writer.h \
+    /usr/include/c++/11/cstdarg \
     /data/users/sargent/dvfs_thesis/mustard/mustard/mustard.h \
     /usr/include/c++/11/fstream \
     /usr/include/c++/11/bits/codecvt.h \
@@ -749,9 +754,4 @@ mustard/CMakeFiles/retune_latency_hiding.dir/retune_latency_hiding.cu.o : /data/
     /usr/include/libintl.h \
     /usr/include/c++/11/bits/locale_facets_nonio.tcc \
     /usr/include/c++/11/bits/locale_conv.h \
-    /usr/include/c++/11/bits/quoted_string.h \
-    /data/users/sargent/dvfs_thesis/mustard/mustard/frequency_controller.h \
-    /opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/12.6/targets/x86_64-linux/include/nvml.h \
-    /usr/include/c++/11/optional \
-    /data/users/sargent/dvfs_thesis/mustard/mustard/pe_writer.h \
-    /usr/include/c++/11/cstdarg
+    /usr/include/c++/11/bits/quoted_string.h

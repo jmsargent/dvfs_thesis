@@ -562,7 +562,7 @@ void tiledCholeskyPanel(bool verify, bool dot)
     auto creator = std::make_unique<mustard::TiledGraphCreator>(s, graph, true, totalNodes);
 
     MeasureFlags      flags{cfg.measureWait, cfg.measureCompute};
-    OperationCapturer capturer(*creator, d_completion_flags.data(), s);
+    OperationCapturer capturer(*creator, d_completion_flags.data(), s, cfg.debugKernels);
     KernelStopWatch   sw(flags, capturer);
     CUDASignalBuilder dvfsSignalBuilder(capturer);
     PartitionedCudaGraphBuilder<CholeskyCudaOperations> graphBuilder(myPE, ops, capturer, sw,
