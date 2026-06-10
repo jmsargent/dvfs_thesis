@@ -1,0 +1,9 @@
+{
+  "git_sha": "18f4eb8a78b3c8a45da20ee3b554db2070160547",
+  "id": "160-retune-hide-latency",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/160-retune-hide-latency",
+  "last_update_at": "2026-06-10T20:37:32+02:00",
+  "queued_at": "2026-06-10T20:37:32+02:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/160-retune-hide-latency/run.sbatch",
+  "state": "QUEUED"
+}
