@@ -1,0 +1,17 @@
+{
+  "git_sha": "88bfeeb2166c3a14780350df00b10daa0a85fc6f",
+  "id": "158-retune-latency-hiding",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/158-retune-latency-hiding",
+  "last_update_at": "2026-06-10T16:05:36+02:00",
+  "log_err": "/data/users/chjing/dvfs_thesis/jobs/158-retune-latency-hiding/slurm-226244.err",
+  "log_out": "/data/users/chjing/dvfs_thesis/jobs/158-retune-latency-hiding/slurm-226244.out",
+  "queued_at": "2026-06-10T16:05:32+02:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/158-retune-latency-hiding/run.sbatch",
+  "slurm_info": {
+    "raw_state": "RUNNING",
+    "source": "squeue"
+  },
+  "slurm_job_id": 226244,
+  "state": "RUNNING",
+  "submitted_at": "2026-06-10T16:05:35+02:00"
+}
