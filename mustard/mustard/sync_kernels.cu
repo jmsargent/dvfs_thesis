@@ -17,6 +17,7 @@ __global__ void kernel_signal_static(int task_id, int* d_completion_flags, int* 
             printf("[signal] task %d -> PE %d flag[%d]\n", task_id, d_notify_pes[i], task_id);
         nvshmem_int_put(&d_completion_flags[task_id], &one, 1, d_notify_pes[i]);
     }
+    nvshmem_quiet();
     if (debug) printf("[signal] task %d: done\n", task_id);
 }
 
