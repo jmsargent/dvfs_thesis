@@ -112,7 +112,7 @@ CMAKE_CUDA_ARCHITECTURES:UNINITIALIZED=89
 CMAKE_CUDA_COMPILER:STRING=/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/12.6/bin/nvcc
 
 //Flags used by the CUDA compiler during all build types.
-CMAKE_CUDA_FLAGS:STRING=-I/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/include -L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib -lnvshmem_host -lnvshmem_device -lcuda
+CMAKE_CUDA_FLAGS:STRING=-I/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/include -L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib
 
 //Flags used by the CUDA compiler during DEBUG builds.
 CMAKE_CUDA_FLAGS_DEBUG:STRING=-g

@@ -90,6 +90,7 @@
 
 int main(int argc, char *argv[])
 {
+    setvbuf(stdout, NULL, _IONBF, 0);
     auto cmdl = argh::parser(argc, argv);
 
     size_t N               = 24000;

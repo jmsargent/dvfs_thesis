@@ -60,12 +60,12 @@ set(CMAKE_CUDA_ARCHITECTURES_NATIVE "No CUDA devices found.-real")
 
 set(CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES "/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/12.6/targets/x86_64-linux/include")
 
-set(CMAKE_CUDA_HOST_IMPLICIT_LINK_LIBRARIES "nvshmem_host;nvshmem_device;cuda")
+set(CMAKE_CUDA_HOST_IMPLICIT_LINK_LIBRARIES "")
 set(CMAKE_CUDA_HOST_IMPLICIT_LINK_DIRECTORIES "/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib;/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/12.6/targets/x86_64-linux/lib/stubs;/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/12.6/targets/x86_64-linux/lib")
 set(CMAKE_CUDA_HOST_IMPLICIT_LINK_FRAMEWORK_DIRECTORIES "")
 
 set(CMAKE_CUDA_IMPLICIT_INCLUDE_DIRECTORIES "/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/include;/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/nccl/include;/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/compilers/extras/qd/include/qd;/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/math_libs/include;/usr/local/gdrcopy/include;/usr/include/c++/11;/usr/include/x86_64-linux-gnu/c++/11;/usr/include/c++/11/backward;/usr/lib/gcc/x86_64-linux-gnu/11/include;/usr/local/include;/usr/include/x86_64-linux-gnu;/usr/include")
-set(CMAKE_CUDA_IMPLICIT_LINK_LIBRARIES "nvshmem_host;nvshmem_device;cuda;stdc++;m;gcc_s;gcc;c;gcc_s;gcc")
+set(CMAKE_CUDA_IMPLICIT_LINK_LIBRARIES "stdc++;m;gcc_s;gcc;c;gcc_s;gcc")
 set(CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES "/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib;/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/12.6/targets/x86_64-linux/lib/stubs;/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/cuda/12.6/targets/x86_64-linux/lib;/usr/local/gdrcopy/lib;/usr/lib/gcc/x86_64-linux-gnu/11;/usr/lib/x86_64-linux-gnu;/usr/lib;/lib/x86_64-linux-gnu;/lib")
 set(CMAKE_CUDA_IMPLICIT_LINK_FRAMEWORK_DIRECTORIES "")
 

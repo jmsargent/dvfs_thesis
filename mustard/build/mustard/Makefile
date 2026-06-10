@@ -218,6 +218,20 @@ latency_tile_pull/fast:
 .PHONY : latency_tile_pull/fast
 
 # Convenience name for target.
+mustard/CMakeFiles/retune_latency_hiding.dir/rule:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mustard/CMakeFiles/retune_latency_hiding.dir/rule
+.PHONY : mustard/CMakeFiles/retune_latency_hiding.dir/rule
+
+# Convenience name for target.
+retune_latency_hiding: mustard/CMakeFiles/retune_latency_hiding.dir/rule
+.PHONY : retune_latency_hiding
+
+# fast build rule for target.
+retune_latency_hiding/fast:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/retune_latency_hiding.dir/build.make mustard/CMakeFiles/retune_latency_hiding.dir/build
+.PHONY : retune_latency_hiding/fast
+
+# Convenience name for target.
 mustard/CMakeFiles/lu_mustard.dir/rule:
 	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mustard/CMakeFiles/lu_mustard.dir/rule
 .PHONY : mustard/CMakeFiles/lu_mustard.dir/rule
@@ -465,6 +479,30 @@ pingpong_mustard.cu.s:
 	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/pingpong_mustard.dir/build.make mustard/CMakeFiles/pingpong_mustard.dir/pingpong_mustard.cu.s
 .PHONY : pingpong_mustard.cu.s
 
+retune_latency_hiding.o: retune_latency_hiding.cu.o
+.PHONY : retune_latency_hiding.o
+
+# target to build an object file
+retune_latency_hiding.cu.o:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/retune_latency_hiding.dir/build.make mustard/CMakeFiles/retune_latency_hiding.dir/retune_latency_hiding.cu.o
+.PHONY : retune_latency_hiding.cu.o
+
+retune_latency_hiding.i: retune_latency_hiding.cu.i
+.PHONY : retune_latency_hiding.i
+
+# target to preprocess a source file
+retune_latency_hiding.cu.i:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/retune_latency_hiding.dir/build.make mustard/CMakeFiles/retune_latency_hiding.dir/retune_latency_hiding.cu.i
+.PHONY : retune_latency_hiding.cu.i
+
+retune_latency_hiding.s: retune_latency_hiding.cu.s
+.PHONY : retune_latency_hiding.s
+
+# target to generate assembly for a file
+retune_latency_hiding.cu.s:
+	cd /data/users/sargent/dvfs_thesis/mustard/build && $(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/retune_latency_hiding.dir/build.make mustard/CMakeFiles/retune_latency_hiding.dir/retune_latency_hiding.cu.s
+.PHONY : retune_latency_hiding.cu.s
+
 sync_kernels.o: sync_kernels.cu.o
 .PHONY : sync_kernels.o
 
@@ -583,6 +621,7 @@ help:
 	@echo "... lu_mustard"
 	@echo "... p_lu_mustard"
 	@echo "... pingpong_mustard"
+	@echo "... retune_latency_hiding"
 	@echo "... test_freq_controller"
 	@echo "... test_spanned_dag"
 	@echo "... test_timer"
@@ -610,6 +649,9 @@ help:
 	@echo "... pingpong_mustard.o"
 	@echo "... pingpong_mustard.i"
 	@echo "... pingpong_mustard.s"
+	@echo "... retune_latency_hiding.o"
+	@echo "... retune_latency_hiding.i"
+	@echo "... retune_latency_hiding.s"
 	@echo "... sync_kernels.o"
 	@echo "... sync_kernels.i"
 	@echo "... sync_kernels.s"

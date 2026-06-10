@@ -79,7 +79,6 @@ void lu_example(int64_t n, int64_t nrhs, int64_t nb, int p, int q, int runs)
     {
         throw std::runtime_error("MPI_Comm_size failed");
     }
-    p = mpi_size;
     // if (mpi_size < p*q) {
     //     printf( "Usage: mpirun -np %d ... # %d ranks hard coded\n",
     //             p*q, p*q );
@@ -108,7 +107,7 @@ void lu_example(int64_t n, int64_t nrhs, int64_t nb, int p, int q, int runs)
     // Set random seed so data is different on each MPI rank.
     srand(100 * mpi_rank);
     // Initialize the data for A, B. /* \label{line:lu-rand} */
-    slate::Uplo::Lower, (AH);
+    random_matrix_diag_dominant(AH);
     random_matrix_diag_dominant(BH);
 
     // For residual error check,

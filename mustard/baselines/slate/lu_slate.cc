@@ -84,7 +84,6 @@ void lu_example(int64_t n, int64_t nrhs, int64_t nb, int p, int q, int runs)
     {
         throw std::runtime_error("MPI_Comm_size failed");
     }
-    p = mpi_size;
     // if (mpi_size < p*q) {
     //     printf( "Usage: mpirun -np %d ... # %d ranks hard coded\n",
     //             p*q, p*q );

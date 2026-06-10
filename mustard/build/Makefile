@@ -289,6 +289,19 @@ latency_tile_pull/fast:
 .PHONY : latency_tile_pull/fast
 
 #=============================================================================
+# Target rules for targets named retune_latency_hiding
+
+# Build rule for target.
+retune_latency_hiding: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 retune_latency_hiding
+.PHONY : retune_latency_hiding
+
+# fast build rule for target.
+retune_latency_hiding/fast:
+	$(MAKE) $(MAKESILENT) -f mustard/CMakeFiles/retune_latency_hiding.dir/build.make mustard/CMakeFiles/retune_latency_hiding.dir/build
+.PHONY : retune_latency_hiding/fast
+
+#=============================================================================
 # Target rules for targets named lu_mustard
 
 # Build rule for target.
@@ -360,6 +373,7 @@ help:
 	@echo "... lu_slate"
 	@echo "... p_lu_mustard"
 	@echo "... pingpong_mustard"
+	@echo "... retune_latency_hiding"
 	@echo "... starpu_cholesky_tile_tag"
 	@echo "... starpu_lu_example"
 	@echo "... test_freq_controller"

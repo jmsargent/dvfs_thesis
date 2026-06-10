@@ -49,7 +49,7 @@ apptainer exec --nv "$CONTAINER" bash -c "
         -Dslate_DIR=$SLATE_PREFIX/lib/cmake/slate \
         -DCMAKE_PREFIX_PATH=$STARPU_PREFIX\;$SLATE_PREFIX \
         -DCMAKE_EXE_LINKER_FLAGS=\"-L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib\" \
-        -DCMAKE_CUDA_FLAGS=\"-I/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/include -L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib -lnvshmem_host -lnvshmem_device -lcuda\"
+        -DCMAKE_CUDA_FLAGS=\"-I/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/include -L/opt/nvidia/hpc_sdk/Linux_x86_64/24.9/comm_libs/12.6/nvshmem/lib\"
 
     make -j\$(nproc)
 "
