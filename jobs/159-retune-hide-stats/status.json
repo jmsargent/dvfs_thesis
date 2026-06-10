@@ -1,0 +1,13 @@
+{
+  "git_sha": "31e94e106f5910fcbcb997f88a447600c2110f28",
+  "id": "159-retune-hide-stats",
+  "job_dir": "/data/users/chjing/dvfs_thesis/jobs/159-retune-hide-stats",
+  "last_update_at": "2026-06-10T17:55:57+02:00",
+  "log_err": "/data/users/chjing/dvfs_thesis/jobs/159-retune-hide-stats/slurm-226249.err",
+  "log_out": "/data/users/chjing/dvfs_thesis/jobs/159-retune-hide-stats/slurm-226249.out",
+  "queued_at": "2026-06-10T17:55:53+02:00",
+  "sbatch_script": "/data/users/chjing/dvfs_thesis/jobs/159-retune-hide-stats/run.sbatch",
+  "slurm_job_id": 226249,
+  "state": "SUBMITTED",
+  "submitted_at": "2026-06-10T17:55:55+02:00"
+}
